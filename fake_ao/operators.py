@@ -4,10 +4,13 @@ import bpy
 import bmesh
 
 from . import geometry
+from . import object_settings
+from . import properties
 from . import sollumz_integration as szi
 
 _NAME_PATTERN = re.compile(r"^seto_fakeao_(\d{3,})$")
-_UV_SCALE_DELTA = -0.08
+# Span of the UV island's longer axis once fitted into the 0..1 square.
+_UV_SIZE = object_settings.UV_SIZE
 
 
 def _next_fake_ao_name():
@@ -36,22 +39,6 @@ def _select_only(context, obj):
     context.view_layer.objects.active = obj
 
 
-def _apply_cube_projection(obj):
-    """Equivalent of manually entering Edit Mode, selecting all faces, and
-    running UV > Cube Projection - done automatically so the user never has
-    to touch Edit Mode for this."""
-    bpy.ops.object.mode_set(mode='EDIT')
-    bm = bmesh.from_edit_mesh(obj.data)
-    for f in bm.faces:
-        f.select = True
-    bmesh.update_edit_mesh(obj.data)
-    if obj.data.uv_layers:
-        obj.data.uv_layers.active_index = 0
-    bpy.ops.uv.cube_project()
-    bpy.ops.object.mode_set(mode='OBJECT')
-    geometry.scale_active_uvs(obj.data, _UV_SCALE_DELTA)
-
-
 def _set_origin_to_geometry(obj):
     """Equivalent of Object > Set Origin > Origin to Geometry. Assumes `obj`
     is already the only selected/active object (see _select_only)."""
@@ -62,7 +49,28 @@ class SETO_OT_create_fake_ao(bpy.types.Operator):
     """Generate a separate Fake AO decal strip along the selected edges"""
     bl_idname = "seto.create_fake_ao"
     bl_label = "Create Fake AO"
+    # REGISTER + UNDO is what puts this operator in Blender's "Adjust Last
+    # Operation" (F9) panel. Because the settings below are the operator's own
+    # properties, dragging a slider there re-runs execute() live.
     bl_options = {'REGISTER', 'UNDO'}
+
+    # Same definitions as the Scene settings - see properties.settings_annotations().
+    __annotations__ = properties.settings_annotations()
+
+    def _seed_from_panel(self, context):
+        """Fill in any property the caller did not set from the N-panel settings.
+
+        Deliberately done in execute() rather than invoke(): Blender skips
+        invoke() entirely in background mode, so relying on it would make the
+        operator behave differently from a script than from the button.
+        """
+        panel = context.scene.seto_fake_ao
+        for name in properties.SETTING_NAMES:
+            if not self.properties.is_property_set(name):
+                value = getattr(panel, name)
+                if hasattr(value, "__len__") and not isinstance(value, str):
+                    value = tuple(value)
+                setattr(self, name, value)
 
     @classmethod
     def poll(cls, context):
@@ -79,7 +87,11 @@ class SETO_OT_create_fake_ao(bpy.types.Operator):
             self.report({'ERROR'}, "Sollumz is not enabled/available. Seto Fake AO & Decals requires Sollumz.")
             return {'CANCELLED'}
 
-        settings = context.scene.seto_fake_ao
+        self._seed_from_panel(context)
+
+        # Read from the operator's own properties, never from the Scene
+        # settings: on a redo those are what the F9 panel is editing.
+        settings = self
         source_obj = context.active_object
         source_mesh = source_obj.data
 
@@ -88,6 +100,7 @@ class SETO_OT_create_fake_ao(bpy.types.Operator):
         # after we leave edit mode below.
         bm = bmesh.from_edit_mesh(source_mesh)
         segments, skipped = geometry.gather_selected_edge_segments(bm)
+        edge_keys = object_settings.serialise_edge_keys(bm)
 
         if not segments:
             self.report({'WARNING'}, "No usable selected edges found (an edge needs at least one adjacent face).")
@@ -130,6 +143,10 @@ class SETO_OT_create_fake_ao(bpy.types.Operator):
         # already carry matching UV/Color data at their shared inner edge.
         geometry.merge_by_distance(new_mesh, settings.merge_distance)
 
+        # The UVs geometry.py authored are already a straight rectangle in
+        # metres; this only fits them into the 0..1 square, aspect intact.
+        geometry.normalise_uvs(new_mesh, _UV_SIZE)
+
         new_obj = bpy.data.objects.new(new_name, new_mesh)
 
         # The strip was built entirely in source_obj's local space, so copying
@@ -169,20 +186,29 @@ class SETO_OT_create_fake_ao(bpy.types.Operator):
         except Exception as e:
             shader_warning = f"unexpected error: {e}"
 
-        # Automatic UV Cube Projection - no manual Edit Mode step required.
-        try:
-            _apply_cube_projection(new_obj)
-        except Exception as e:
-            if bpy.context.mode != 'OBJECT':
-                bpy.ops.object.mode_set(mode='OBJECT')
-            self.report({'WARNING'}, f"Fake AO mesh created, but automatic Cube Projection failed: {e}")
-
         # Automatic Origin to Geometry - equivalent to Object > Set Origin > Origin to Geometry.
         _select_only(context, new_obj)
         try:
             _set_origin_to_geometry(new_obj)
         except Exception as e:
             self.report({'WARNING'}, f"Fake AO mesh created, but setting Origin to Geometry failed: {e}")
+
+        # Stamp the strip with everything needed to regenerate itself later,
+        # so its settings stay live in the panel (see object_settings.py).
+        # Suppressed: each assignment fires the live-rebuild callback, which
+        # would regenerate the mesh before this operator has finished with it.
+        with object_settings.suppress_rebuild():
+            obj_data = new_obj.seto_fake_ao_data
+            obj_data.is_fake_ao = True
+            obj_data.source_object = source_obj
+            obj_data.edge_keys = edge_keys
+            properties.copy_settings(self, obj_data)
+            obj_data.status = ""
+
+        # Push the values that actually produced this result back onto the
+        # N-panel, so a value dialled in through the F9 panel becomes the
+        # starting point for the next strip instead of silently reverting.
+        properties.copy_settings(self, context.scene.seto_fake_ao)
 
         msg = f"Created '{new_name}' with {len(strip_data.faces)} strip quad(s)."
         if skipped:

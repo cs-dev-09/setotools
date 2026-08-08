@@ -164,7 +164,13 @@ def build_strip_mesh_data(segments, width, surface_offset, alpha_center, alpha_o
 
             base_idx = len(data.verts)
             data.verts.extend([inner0, inner1, outer1, outer0])
-            data.vertex_uv.extend([(0.0, 0.0), (0.0, 1.0), (1.0, 1.0), (1.0, 0.0)])
+            # UVs in metres, laid out straight from the wing itself: U runs
+            # along the selected edge, V across the shelf. Built rather than
+            # projected, so the island is a clean rectangle whatever direction
+            # the edge points in - see normalise_uvs().
+            data.vertex_uv.extend([
+                (0.0, 0.0), (edge_len, 0.0), (edge_len, width), (0.0, width),
+            ])
             data.vertex_alpha.extend([inner_alpha, inner_alpha, outer_alpha, outer_alpha])
 
             face = _oriented_quad_indices(
@@ -373,19 +379,33 @@ def merge_by_distance(mesh, distance):
     mesh.update()
 
 
-def scale_active_uvs(mesh, delta):
-    """Scale the active UV layer around its own bounding-box center by
-    `1.0 + delta` (e.g. delta=-0.08 shrinks it by 8%)."""
+def normalise_uvs(mesh, size=1.5):
+    """Fit the UV island into the 0..1 square, centred, keeping its aspect ratio.
+
+    The authored UVs are in metres, so a long edge would otherwise sprawl far
+    outside the square. Both axes are scaled by the SAME factor - never fitted
+    independently - so a long thin shelf stays long and thin in UV space
+    rather than being squashed into a square.
+
+    `size` is the span of the longer axis once fitted.
+    """
     uv_layer = mesh.uv_layers.active
     if uv_layer is None or len(uv_layer.data) == 0:
         return
 
     us = [loop.uv[0] for loop in uv_layer.data]
     vs = [loop.uv[1] for loop in uv_layer.data]
-    center_u = (min(us) + max(us)) * 0.5
-    center_v = (min(vs) + max(vs)) * 0.5
-    scale = 1.0 + delta
+    min_u, max_u = min(us), max(us)
+    min_v, max_v = min(vs), max(vs)
 
+    longest = max(max_u - min_u, max_v - min_v)
+    if longest < 1e-9:
+        return
+    scale = size / longest
+
+    centre_u = (min_u + max_u) * 0.5
+    centre_v = (min_v + max_v) * 0.5
     for loop in uv_layer.data:
         u, v = loop.uv
-        loop.uv = (center_u + (u - center_u) * scale, center_v + (v - center_v) * scale)
+        loop.uv = (0.5 + (u - centre_u) * scale,
+                   0.5 + (v - centre_v) * scale)

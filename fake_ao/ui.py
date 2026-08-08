@@ -59,7 +59,69 @@ class SETO_PT_fake_ao_panel(bpy.types.Panel):
             layout.label(text="Enter Edit Mode and select edges first.", icon='INFO')
 
 
-_classes = (SETO_PT_fake_ao_panel,)
+class SETO_PT_fake_ao_object_panel(bpy.types.Panel):
+    """Settings of the selected Fake AO strip, editable after the fact.
+
+    Nested under the Fake AO section rather than given its own tab, and only
+    drawn when the active object is actually one of our strips.
+    """
+    bl_label = "Selected Strip"
+    bl_idname = "SETO_PT_fake_ao_object_panel"
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    bl_category = "Seto Tools"
+    bl_parent_id = "SETO_PT_fake_ao_panel"
+
+    @classmethod
+    def poll(cls, context):
+        obj = context.active_object
+        return (obj is not None and obj.type == 'MESH'
+                and obj.seto_fake_ao_data.is_fake_ao)
+
+    def draw_header(self, context):
+        self.layout.label(text="", icon='MODIFIER')
+
+    def draw(self, context):
+        layout = self.layout
+        obj = context.active_object
+        data = obj.seto_fake_ao_data
+
+        box = layout.box()
+        row = box.row()
+        row.label(text=obj.name, icon='OUTLINER_OB_MESH')
+        row.label(text=f"{len(obj.data.polygons)} quads")
+        source_row = box.row()
+        source_row.enabled = False
+        source_row.prop(data, "source_object", text="From")
+
+        if data.status:
+            warn = layout.box()
+            warn.alert = True
+            col = warn.column(align=True)
+            col.label(text="Cannot rebuild:", icon='ERROR')
+            for line in _wrap(data.status, 38):
+                col.label(text=line)
+
+        layout.prop(data, "live_update")
+
+        col = layout.column(align=True)
+        col.prop(data, "width")
+        col.prop(data, "surface_offset")
+        col.prop(data, "merge_distance")
+
+        layout.separator()
+        col = layout.column(align=True)
+        col.prop(data, "alpha_center")
+        col.prop(data, "alpha_outer")
+        layout.prop(data, "invert_fade")
+        layout.prop(data, "flip_direction")
+
+        if not data.live_update:
+            layout.separator()
+            layout.operator("seto.fake_ao_rebuild", icon='FILE_REFRESH')
+
+
+_classes = (SETO_PT_fake_ao_panel, SETO_PT_fake_ao_object_panel)
 
 
 def register():
