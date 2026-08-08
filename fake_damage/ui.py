@@ -61,7 +61,7 @@ class SETO_PT_fake_damage_panel(bpy.types.Panel):
         if context.mode != 'EDIT_MESH':
             layout.label(text="Enter Edit Mode and select edges first.", icon='INFO')
         else:
-            layout.label(text="Tweak live afterwards in the F9 panel.", icon='INFO')
+            layout.label(text="Settings stay live on the created strip.", icon='INFO')
 
 
 class SETO_PT_fake_damage_object_panel(bpy.types.Panel):
@@ -121,14 +121,9 @@ class SETO_PT_fake_damage_object_panel(bpy.types.Panel):
         layout.prop(data, "invert_fade")
         layout.prop(data, "flip_direction")
 
-        layout.separator()
         if not data.live_update:
+            layout.separator()
             layout.operator("seto.fake_damage_rebuild", icon='FILE_REFRESH')
-
-        row = layout.row()
-        row.operator("seto.fake_damage_unwrap", icon='UV')
-        if data.uv_dirty:
-            layout.label(text="UVs are from the rebuild - unwrap to finish.", icon='INFO')
 
 
 _classes = (SETO_PT_fake_damage_panel, SETO_PT_fake_damage_object_panel)

@@ -18,15 +18,20 @@ edge-by-edge is what makes the two headline behaviours possible:
 The ribbon is 2 quads wide per segment: one wing lying flat on each adjacent
 wall, meeting at a shared inner vertex line that sits on the corner itself.
 
-The UV values written here are a FALLBACK. The operator runs a Conformal
-unwrap on the finished object, which replaces them. They are still authored
-because the Sollumz "UVMap 0" attribute has to exist and hold sane values
-before the unwrap, and because they are what survives if the unwrap fails:
+UVs are built straight by construction, in real world units:
 
-    V = 0.0   outer edge of wing 0 (on wall 0)
-    V = 0.5   the corner (shared inner vertex)
-    V = 1.0   outer edge of wing 1 (on wall 1)
-    U         distance travelled along the chain
+    U   distance travelled along the chain
+    V   distance across the cross-section - 0 at wing 0's outer edge, `width`
+        at the corner, `2 * width` at wing 1's outer edge
+
+Laying them out from the geometry rather than unwrapping is what guarantees a
+straight rectangular island no matter how the selected edges curve: an arc,
+a 90-degree turn and a straight run all produce the same clean strip in UV
+space. normalise_uvs() then fits that rectangle into the 0..1 square with its
+aspect ratio intact, which is numerically the same result a Conformal unwrap
+gives on a strip like this - just without the wobble a solver introduces on
+curved input, and without needing an operator, so the live rebuild can
+produce final UVs too.
 """
 
 from dataclasses import dataclass, field
@@ -42,8 +47,11 @@ _EPS = 1e-8
 # a spike that reaches across the whole model.
 _MITER_LIMIT = 4.0
 
-_V_INNER = 0.5
-_V_OUTER = (0.0, 1.0)
+# Cross-section V positions as multiples of `width`: wing 0's outer edge, the
+# shared corner, wing 1's outer edge. Scaled by the real width at build time so
+# U and V share one unit and the island keeps true proportions.
+_V_INNER_FACTOR = 1.0
+_V_OUTER_FACTORS = (0.0, 2.0)
 
 
 @dataclass
@@ -429,7 +437,7 @@ def build_damage_mesh_data(edges, chains, coords, width, surface_offset,
 
             inner_index[j] = len(data.verts)
             data.verts.append(inner_point)
-            data.vertex_uv.append((u, _V_INNER))
+            data.vertex_uv.append((u, _V_INNER_FACTOR * width))
             data.vertex_alpha.append(inner_alpha)
 
             for wing in (0, 1):
@@ -438,7 +446,7 @@ def build_damage_mesh_data(edges, chains, coords, width, surface_offset,
                     continue
                 outer_index[wing][j] = len(data.verts)
                 data.verts.append(outer_point)
-                data.vertex_uv.append((u, _V_OUTER[wing]))
+                data.vertex_uv.append((u, _V_OUTER_FACTORS[wing] * width))
                 data.vertex_alpha.append(outer_alpha)
 
         for k in range(len(eseq)):
@@ -494,13 +502,16 @@ def compute_loop_uv_and_alpha(mesh, strip_data, color_rgb=(1.0, 1.0, 1.0)):
     return loop_uv, loop_rgba
 
 
-def scale_active_uvs(mesh, factor):
-    """Scale the active UV layer around its own bounding-box center by `factor`
-    (e.g. 1.5 grows the island by 50%).
+def normalise_uvs(mesh, size=1.5):
+    """Fit the UV island into the 0..1 square, centred, keeping its aspect ratio.
 
-    Applied after the Conformal unwrap, which normalises every island into the
-    0..1 square - so this is the equivalent of selecting all in the UV editor
-    and pressing S, 1.5.
+    The authored UVs are in metres, so a long run would otherwise sprawl far
+    outside the square. Both axes are scaled by the SAME factor - never fitted
+    independently - so the strip keeps its true proportions: a 2 m run 0.05 m
+    wide stays 20:1 in UV space rather than being squashed into a square.
+
+    `size` is the span of the longer axis once fitted; 1.5 matches what the
+    tool has always produced.
     """
     uv_layer = mesh.uv_layers.active
     if uv_layer is None or len(uv_layer.data) == 0:
@@ -508,13 +519,20 @@ def scale_active_uvs(mesh, factor):
 
     us = [loop.uv[0] for loop in uv_layer.data]
     vs = [loop.uv[1] for loop in uv_layer.data]
-    center_u = (min(us) + max(us)) * 0.5
-    center_v = (min(vs) + max(vs)) * 0.5
+    min_u, max_u = min(us), max(us)
+    min_v, max_v = min(vs), max(vs)
 
+    longest = max(max_u - min_u, max_v - min_v)
+    if longest < 1e-9:
+        return
+    scale = size / longest
+
+    centre_u = (min_u + max_u) * 0.5
+    centre_v = (min_v + max_v) * 0.5
     for loop in uv_layer.data:
         u, v = loop.uv
-        loop.uv = (center_u + (u - center_u) * factor,
-                   center_v + (v - center_v) * factor)
+        loop.uv = (0.5 + (u - centre_u) * scale,
+                   0.5 + (v - centre_v) * scale)
 
 
 def _snap_clusters_to_centroid(bm, distance):

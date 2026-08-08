@@ -10,10 +10,8 @@ from . import sollumz_integration as szi
 
 _NAME_PATTERN = re.compile(r"^Fake_Damage_(\d{3,})$")
 
-# Applied to the UVs straight after the Conformal unwrap, which normalises
-# every island into the 0..1 square - the equivalent of selecting all in the
-# UV editor and pressing S, 1.5.
-_UV_SCALE = 1.5
+# Span of the UV island's longer axis once fitted into the 0..1 square.
+_UV_SIZE = object_settings.UV_SIZE
 
 
 def _next_fake_damage_name():
@@ -40,26 +38,6 @@ def _select_only(context, obj):
             other.select_set(False)
     obj.select_set(True)
     context.view_layer.objects.active = obj
-
-
-def apply_conformal_unwrap(obj):
-    """Equivalent of manually entering Edit Mode, selecting all faces, running
-    UV > Unwrap with the Conformal method, then scaling the result by
-    _UV_SCALE - done automatically so the user never has to touch Edit Mode.
-
-    Replaces the arc-length UVs geometry.py authored; those remain the
-    fallback if this fails.
-    """
-    bpy.ops.object.mode_set(mode='EDIT')
-    bm = bmesh.from_edit_mesh(obj.data)
-    for f in bm.faces:
-        f.select = True
-    bmesh.update_edit_mesh(obj.data)
-    if obj.data.uv_layers:
-        obj.data.uv_layers.active_index = 0
-    bpy.ops.uv.unwrap(method='CONFORMAL')
-    bpy.ops.object.mode_set(mode='OBJECT')
-    geometry.scale_active_uvs(obj.data, _UV_SCALE)
 
 
 def _set_origin_to_geometry(obj):
@@ -164,8 +142,6 @@ class SETO_OT_create_fake_damage(bpy.types.Operator):
 
         # UVMap 0 / Color 1: decal_normal_only's vertex layout requires both
         # TexCoord0 and Colour0, so this must succeed or the tool has failed.
-        # The attribute has to exist before the Conformal unwrap below can
-        # write into it.
         try:
             szi.write_uv_and_color(new_mesh, loop_uv, loop_rgba)
         except szi.SollumzUnavailableError as e:
@@ -178,6 +154,10 @@ class SETO_OT_create_fake_damage(bpy.types.Operator):
         # weld to each other. Geometry inside a single chain is already
         # continuous by construction and has nothing to merge.
         geometry.merge_by_distance(new_mesh, settings.merge_distance)
+
+        # The UVs geometry.py authored are already a straight rectangle in
+        # metres; this only fits them into the 0..1 square, aspect intact.
+        geometry.normalise_uvs(new_mesh, _UV_SIZE)
 
         new_obj = bpy.data.objects.new(new_name, new_mesh)
 
@@ -219,16 +199,6 @@ class SETO_OT_create_fake_damage(bpy.types.Operator):
         except Exception as e:
             shader_warning = f"unexpected error: {e}"
 
-        # Automatic Conformal unwrap + UV scale - no manual Edit Mode step
-        # required. Runs after the material is assigned so it operates on the
-        # UV layer the shader actually uses.
-        try:
-            apply_conformal_unwrap(new_obj)
-        except Exception as e:
-            if bpy.context.mode != 'OBJECT':
-                bpy.ops.object.mode_set(mode='OBJECT')
-            self.report({'WARNING'}, f"Fake Damage mesh created, but automatic Conformal unwrap failed: {e}")
-
         # Automatic Origin to Geometry - equivalent to Object > Set Origin > Origin to Geometry.
         _select_only(context, new_obj)
         try:
@@ -246,7 +216,6 @@ class SETO_OT_create_fake_damage(bpy.types.Operator):
             obj_data.source_object = source_obj
             obj_data.edge_keys = object_settings.serialise_edge_keys(edges)
             properties.copy_settings(self, obj_data)
-            obj_data.uv_dirty = False
             obj_data.status = ""
 
         # Push the values that actually produced this result back onto the

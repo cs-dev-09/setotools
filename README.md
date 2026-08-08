@@ -48,10 +48,7 @@ the source-mesh vertex-index pairs of the edges that were selected, and the
 settings that were used. Changing a setting re-reads those edges and rebuilds.
 
 - **Live Update** — off freezes the strip; use **Rebuild Now** when you are done.
-- **Conformal Unwrap** — the live rebuild leaves the arc-length UVs in place,
-  because unwrapping needs an operator and Blender is not safe to call
-  operators in from a property callback mid-drag. Press this once the shape is
-  dialled in; the panel tells you when the UVs are waiting for it.
+- The rebuild produces **final UVs**, not a placeholder — see UVs below.
 - Editing the **source** mesh's topology invalidates the stored edges. The
   panel says so rather than rebuilding something wrong.
 - Right after creating, the settings are also in Blender's **Adjust Last
@@ -78,14 +75,23 @@ settings that were used. Changing a setting re-reads those edges and rebuilds.
 
 ## UVs
 
-Fully automatic — no manual Edit Mode step. On create, the finished object gets
-a **Conformal unwrap**, then its UVs are **scaled by 1.5**. Conformal preserves
-the strip's aspect ratio, so a long thin run stays long and thin in UV space
-instead of being squashed into a square.
+Fully automatic and **straight by construction** — no unwrap, no manual Edit
+Mode step, nothing to straighten afterwards. The UVs are laid out from the
+geometry itself, in metres:
 
-Before the unwrap, arc-length UVs are authored along the chain (`U` = distance
-travelled, `V` = 0.0 / 0.5 / 1.0 across the wrap). Those are a fallback: they
-only survive if the unwrap fails, and you get a warning if that happens.
+- `U` = distance travelled along the edge chain
+- `V` = distance across the cross-section (0 at one wing's outer edge, `width`
+  at the corner, `2 x width` at the other wing's outer edge)
+
+Then the island is fitted into the 0..1 square with **both axes scaled by the
+same factor**, so a 2 m run 0.05 m wide stays 20:1 in UV space rather than
+being squashed into a square. The long axis ends up spanning 1.5.
+
+This is why an arc, a 90° turn and a straight run all give the same clean
+rectangle: nothing is being solved, so there is no wobble to straighten. On a
+16-segment curved rim the island measures **0.0 deviation** from a perfect
+axis-aligned grid. It is also why the live rebuild can produce final UVs — no
+operator is involved, so it is safe to run from a property callback.
 
 ## Material
 

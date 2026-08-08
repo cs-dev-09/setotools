@@ -15,11 +15,11 @@ bmesh and the data API:
   * merge/cleanup         - bmesh.ops, safe
   * origin to geometry    - done by hand (shift the verts, compensate in the
                             object matrix) instead of bpy.ops.object.origin_set
-  * UVs                   - the arc-length UVs from geometry.py
+  * UVs                   - laid out straight from the chain, then normalised
 
-The one thing that genuinely needs an operator is the Conformal unwrap, so
-that stays a button (SETO_OT_fake_damage_unwrap). While a strip has been
-rebuilt but not re-unwrapped, `uv_dirty` is set and the panel says so.
+That last one is why there is no unwrap step to re-run: the UVs are built from
+the geometry rather than solved, so a live rebuild produces final UVs, not a
+placeholder to be fixed up afterwards.
 """
 
 import contextlib
@@ -31,6 +31,10 @@ from mathutils import Matrix, Vector
 from . import geometry
 from . import properties
 from . import sollumz_integration as szi
+
+# Span of the UV island's longer axis once fitted into the 0..1 square. Kept
+# here rather than imported from operators.py, which imports this module.
+UV_SIZE = 1.5
 
 # Guards against a rebuild triggering another rebuild through the same
 # property callbacks.
@@ -44,8 +48,8 @@ def suppress_rebuild():
     Needed when the create operator stamps its settings onto a freshly built
     strip: each assignment fires the update callback, and an unsuppressed
     rebuild there would immediately regenerate the mesh - throwing away the
-    Conformal unwrap the operator had just applied and leaving the arc-length
-    fallback UVs behind.
+    rebuild there would regenerate the mesh before the operator has finished
+    setting it up.
     """
     global _rebuilding
     previous = _rebuilding
@@ -203,6 +207,7 @@ def rebuild(obj):
             # attributes come back the next time it is available.
             pass
         geometry.merge_by_distance(new_mesh, data.merge_distance)
+        geometry.normalise_uvs(new_mesh, UV_SIZE)
 
         for mat in materials:
             new_mesh.materials.append(mat)
@@ -215,8 +220,6 @@ def rebuild(obj):
 
         if old_mesh.users == 0:
             bpy.data.meshes.remove(old_mesh)
-
-        data.uv_dirty = True
 
         if missing:
             return f"{missing} stored edge(s) no longer exist in the source mesh."
@@ -262,11 +265,6 @@ def _object_annotations():
             ),
             default=True,
         ),
-        "uv_dirty": bpy.props.BoolProperty(
-            name="UV Dirty",
-            description="Set when the mesh has been rebuilt since the last Conformal unwrap",
-            default=False,
-        ),
         "status": bpy.props.StringProperty(
             name="Status",
             description="Why the last rebuild could not run, if it could not",
@@ -303,43 +301,9 @@ class SETO_OT_fake_damage_rebuild(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class SETO_OT_fake_damage_unwrap(bpy.types.Operator):
-    """Re-run the Conformal unwrap on this strip and scale its UVs
-
-    The live rebuild leaves the arc-length UVs in place because unwrapping
-    needs an operator, which is not safe to call while a slider is being
-    dragged. Press this once the shape is dialled in.
-    """
-    bl_idname = "seto.fake_damage_unwrap"
-    bl_label = "Conformal Unwrap"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    @classmethod
-    def poll(cls, context):
-        obj = context.active_object
-        return (obj is not None and obj.type == 'MESH'
-                and obj.seto_fake_damage_data.is_fake_damage
-                and context.mode == 'OBJECT')
-
-    def execute(self, context):
-        from . import operators
-        obj = context.active_object
-        try:
-            operators.apply_conformal_unwrap(obj)
-        except Exception as e:
-            if context.mode != 'OBJECT':
-                bpy.ops.object.mode_set(mode='OBJECT')
-            self.report({'ERROR'}, f"Conformal unwrap failed: {e}")
-            return {'CANCELLED'}
-        obj.seto_fake_damage_data.uv_dirty = False
-        self.report({'INFO'}, f"Unwrapped '{obj.name}'.")
-        return {'FINISHED'}
-
-
 _classes = (
     SETO_PG_fake_damage_object,
     SETO_OT_fake_damage_rebuild,
-    SETO_OT_fake_damage_unwrap,
 )
 
 
