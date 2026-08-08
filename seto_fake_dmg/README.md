@@ -31,7 +31,7 @@ other and either works installed on its own.
 2. Open **N-Panel > Seto Tools > Fake Damage**, adjust settings if needed.
 3. Press **Create Fake Damage**.
 
-A new `Fake_Damage_00N` object is created: a strip that wraps the edge onto
+A new `fake_dmg_00N` object is created: a strip that wraps the edge onto
 both adjacent walls (or lies flat on one wall for a boundary edge like a door
 frame), with UVs, a `decal_normal_only.sps` material, `Color 1` alpha for
 export, and its origin at its own centre — all automatically.

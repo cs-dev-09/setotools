@@ -8,20 +8,20 @@ from . import object_settings
 from . import properties
 from . import sollumz_integration as szi
 
-_NAME_PATTERN = re.compile(r"^seto_fakeao_(\d{3,})$")
+_NAME_PATTERN = re.compile(r"^fake_ao_(\d{3,})$")
 # Span of the UV island's longer axis once fitted into the 0..1 square.
 _UV_SIZE = object_settings.UV_SIZE
 
 
 def _next_fake_ao_name():
-    """Explicit sequential naming (seto_fakeao_001, _002, ...) instead of
-    relying on Blender's automatic .001 suffixing."""
+    """Explicit sequential naming (fake_ao_001, _002, ...) instead of relying
+    on Blender's automatic .001 suffixing."""
     max_n = 0
     for name in bpy.data.objects.keys():
         match = _NAME_PATTERN.match(name)
         if match:
             max_n = max(max_n, int(match.group(1)))
-    return f"seto_fakeao_{max_n + 1:03d}"
+    return f"fake_ao_{max_n + 1:03d}"
 
 
 def _parent_keep_transform(child, parent):

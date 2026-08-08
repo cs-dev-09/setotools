@@ -1,6 +1,6 @@
 """Per-object settings that rebuild the strip live when you change them.
 
-A generated seto_fakeao object keeps everything needed to regenerate itself:
+A generated fake_ao object keeps everything needed to regenerate itself:
 which object it was built from, which edges were selected, and the settings
 that were used. Dragging any of those settings fires an update callback that
 regenerates the mesh in place - the same feel as tweaking the width on a

@@ -8,21 +8,21 @@ from . import object_settings
 from . import properties
 from . import sollumz_integration as szi
 
-_NAME_PATTERN = re.compile(r"^Fake_Damage_(\d{3,})$")
+_NAME_PATTERN = re.compile(r"^fake_dmg_(\d{3,})$")
 
 # Span of the UV island's longer axis once fitted into the 0..1 square.
 _UV_SIZE = object_settings.UV_SIZE
 
 
 def _next_fake_damage_name():
-    """Explicit sequential naming (Fake_Damage_001, _002, ...) instead of
+    """Explicit sequential naming (fake_dmg_001, _002, ...) instead of
     relying on Blender's automatic .001 suffixing."""
     max_n = 0
     for name in bpy.data.objects.keys():
         match = _NAME_PATTERN.match(name)
         if match:
             max_n = max(max_n, int(match.group(1)))
-    return f"Fake_Damage_{max_n + 1:03d}"
+    return f"fake_dmg_{max_n + 1:03d}"
 
 
 def _parent_keep_transform(child, parent):

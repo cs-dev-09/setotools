@@ -18,7 +18,7 @@ Tools included:
 
 ## Install
 
-1. Download `seto_fake_ao_decals.zip` (don't unzip).
+1. Download `seto_fake_ao.zip` (don't unzip).
 2. Blender: **Edit > Preferences > Add-ons > Install from Disk** → pick the zip.
 3. Enable it, then **restart Blender**.
 
@@ -28,7 +28,7 @@ Tools included:
 2. Open **N-Panel > Seto Tools > Fake AO**, adjust settings if needed.
 3. Press **Create Fake AO**.
 
-A new `seto_fakeao_00N` object is created: wraps the corner (or lies flat
+A new `fake_ao_00N` object is created: wraps the corner (or lies flat
 on one wall for a boundary edge like a door frame), gets UVs, a `decal.sps`
 material, correct `Color 1` alpha for export, and its origin set to its
 center — all automatically.

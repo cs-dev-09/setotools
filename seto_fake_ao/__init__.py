@@ -1,9 +1,9 @@
 bl_info = {
-    "name": "Seto Fake AO & Decals",
+    "name": "Seto Fake AO",
     "author": "Seto",
     "version": (0, 1, 0),
     "blender": (4, 2, 0),
-    "location": "View3D > N-Panel > Seto Fake AO & Decals",
+    "location": "View3D > N-Panel > Seto Tools",
     "description": (
         "GTA V / FiveM decal authoring tools that integrate with Sollumz. "
         "First tool: Fake AO corner decal generator."

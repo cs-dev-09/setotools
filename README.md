@@ -6,7 +6,7 @@ selection and never touch your original mesh.
 
 | Add-on | What it makes |
 | --- | --- |
-| [`seto_fake_ao_decals`](seto_fake_ao_decals) | Fake ambient-occlusion corner decals |
+| [`seto_fake_ao`](seto_fake_ao) | Fake ambient-occlusion corner decals |
 | [`seto_fake_dmg`](seto_fake_dmg) | Chipped-edge damage decals |
 
 They are **separate add-ons** — install either on its own, or both. Installed
