@@ -10,11 +10,19 @@ def _wrap(text, width):
 
 
 class SETO_PT_fake_ao_panel(bpy.types.Panel):
-    bl_label = "seto_fake_ao"
+    bl_label = "Fake AO"
     bl_idname = "SETO_PT_fake_ao_panel"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
-    bl_category = "Seto Fake AO & Decals"
+    # Shared with the other Seto addons: every panel using this category is
+    # merged by Blender into one "Seto Tools" N-panel tab, each tool appearing
+    # as its own collapsible section (the way Sollumz Tools is laid out).
+    bl_category = "Seto Tools"
+    bl_options = {'DEFAULT_CLOSED'}
+    bl_order = 0
+
+    def draw_header(self, context):
+        self.layout.label(text="", icon='MOD_SOLIDIFY')
 
     def draw(self, context):
         layout = self.layout

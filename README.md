@@ -25,7 +25,7 @@ Tools included:
 ## Usage
 
 1. Select your mesh, enter **Edit Mode**, select one or more corner edges.
-2. Open **N-Panel > Seto Fake AO & Decals**, adjust settings if needed.
+2. Open **N-Panel > Seto Tools > Fake AO**, adjust settings if needed.
 3. Press **Create Fake AO**.
 
 A new `seto_fakeao_00N` object is created: wraps the corner (or lies flat
