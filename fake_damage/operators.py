@@ -4,6 +4,8 @@ import bpy
 import bmesh
 
 from . import geometry
+from . import object_settings
+from . import properties
 from . import sollumz_integration as szi
 
 _NAME_PATTERN = re.compile(r"^Fake_Damage_(\d{3,})$")
@@ -40,7 +42,7 @@ def _select_only(context, obj):
     context.view_layer.objects.active = obj
 
 
-def _apply_conformal_unwrap(obj):
+def apply_conformal_unwrap(obj):
     """Equivalent of manually entering Edit Mode, selecting all faces, running
     UV > Unwrap with the Conformal method, then scaling the result by
     _UV_SCALE - done automatically so the user never has to touch Edit Mode.
@@ -70,7 +72,14 @@ class SETO_OT_create_fake_damage(bpy.types.Operator):
     """Generate a separate Fake Damage decal strip along the selected edges"""
     bl_idname = "seto.create_fake_damage"
     bl_label = "Create Fake Damage"
+    # REGISTER + UNDO is what puts this operator in Blender's "Adjust Last
+    # Operation" (F9) panel. Because the settings below are the operator's own
+    # properties, dragging a slider there makes Blender undo and re-run
+    # execute(), regenerating the strip live.
     bl_options = {'REGISTER', 'UNDO'}
+
+    # Same definitions as the Scene settings - see properties.settings_annotations().
+    __annotations__ = properties.settings_annotations()
 
     @classmethod
     def poll(cls, context):
@@ -82,12 +91,38 @@ class SETO_OT_create_fake_damage(bpy.types.Operator):
             and szi.is_sollumz_available()
         )
 
+    def _seed_from_panel(self, context):
+        """Fill in any property the caller did not set from the N-panel settings.
+
+        Deliberately done here rather than in invoke(): Blender skips invoke()
+        entirely in background mode, and relying on it would mean the operator
+        behaves differently when driven from a script than from the button.
+
+        is_property_set() is what distinguishes the two cases:
+          * fresh run (button press, or bpy.ops with no arguments) - nothing is
+            set, so every value comes from the panel;
+          * F9 redo after dragging a slider - that property IS set, so the
+            user's live value wins, while the rest fall back to the panel,
+            which execute() keeps in sync with whatever last ran.
+        """
+        panel = context.scene.seto_fake_damage
+        for name in properties.SETTING_NAMES:
+            if not self.properties.is_property_set(name):
+                value = getattr(panel, name)
+                if hasattr(value, "__len__") and not isinstance(value, str):
+                    value = tuple(value)
+                setattr(self, name, value)
+
     def execute(self, context):
         if not szi.is_sollumz_available():
             self.report({'ERROR'}, "Sollumz is not enabled/available. Seto Fake Damage requires Sollumz.")
             return {'CANCELLED'}
 
-        settings = context.scene.seto_fake_damage
+        self._seed_from_panel(context)
+
+        # Read from the operator's own properties, never from the Scene
+        # settings: on a redo those are what the F9 panel is editing.
+        settings = self
         source_obj = context.active_object
         source_mesh = source_obj.data
 
@@ -188,7 +223,7 @@ class SETO_OT_create_fake_damage(bpy.types.Operator):
         # required. Runs after the material is assigned so it operates on the
         # UV layer the shader actually uses.
         try:
-            _apply_conformal_unwrap(new_obj)
+            apply_conformal_unwrap(new_obj)
         except Exception as e:
             if bpy.context.mode != 'OBJECT':
                 bpy.ops.object.mode_set(mode='OBJECT')
@@ -200,6 +235,24 @@ class SETO_OT_create_fake_damage(bpy.types.Operator):
             _set_origin_to_geometry(new_obj)
         except Exception as e:
             self.report({'WARNING'}, f"Fake Damage mesh created, but setting Origin to Geometry failed: {e}")
+
+        # Stamp the strip with everything needed to regenerate itself later,
+        # so its settings stay live in the panel (see object_settings.py).
+        # Suppressed: each assignment below fires the live-rebuild callback,
+        # which would regenerate the mesh and discard the unwrap just applied.
+        with object_settings.suppress_rebuild():
+            obj_data = new_obj.seto_fake_damage_data
+            obj_data.is_fake_damage = True
+            obj_data.source_object = source_obj
+            obj_data.edge_keys = object_settings.serialise_edge_keys(edges)
+            properties.copy_settings(self, obj_data)
+            obj_data.uv_dirty = False
+            obj_data.status = ""
+
+        # Push the values that actually produced this result back onto the
+        # N-panel, so a value dialled in through the F9 panel becomes the
+        # starting point for the next strip instead of silently reverting.
+        properties.copy_settings(self, context.scene.seto_fake_damage)
 
         msg = (f"Created '{new_name}': {len(chains)} chain(s), "
                f"{len(strip_data.faces)} quad(s).")

@@ -60,9 +60,78 @@ class SETO_PT_fake_damage_panel(bpy.types.Panel):
 
         if context.mode != 'EDIT_MESH':
             layout.label(text="Enter Edit Mode and select edges first.", icon='INFO')
+        else:
+            layout.label(text="Tweak live afterwards in the F9 panel.", icon='INFO')
 
 
-_classes = (SETO_PT_fake_damage_panel,)
+class SETO_PT_fake_damage_object_panel(bpy.types.Panel):
+    """Settings of the selected Fake Damage strip, editable after the fact.
+
+    Nested under the Fake Damage section rather than given its own tab, and
+    only drawn when the active object is actually one of our strips.
+    """
+    bl_label = "Selected Strip"
+    bl_idname = "SETO_PT_fake_damage_object_panel"
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    bl_category = "Seto Tools"
+    bl_parent_id = "SETO_PT_fake_damage_panel"
+
+    @classmethod
+    def poll(cls, context):
+        obj = context.active_object
+        return (obj is not None and obj.type == 'MESH'
+                and obj.seto_fake_damage_data.is_fake_damage)
+
+    def draw_header(self, context):
+        self.layout.label(text="", icon='MODIFIER')
+
+    def draw(self, context):
+        layout = self.layout
+        obj = context.active_object
+        data = obj.seto_fake_damage_data
+
+        box = layout.box()
+        row = box.row()
+        row.label(text=obj.name, icon='OUTLINER_OB_MESH')
+        row.label(text=f"{len(obj.data.polygons)} quads")
+        source_row = box.row()
+        source_row.enabled = False
+        source_row.prop(data, "source_object", text="From")
+
+        if data.status:
+            warn = layout.box()
+            warn.alert = True
+            col = warn.column(align=True)
+            col.label(text="Cannot rebuild:", icon='ERROR')
+            for line in _wrap(data.status, 38):
+                col.label(text=line)
+
+        layout.prop(data, "live_update")
+
+        col = layout.column(align=True)
+        col.prop(data, "width")
+        col.prop(data, "surface_offset")
+        col.prop(data, "merge_distance")
+
+        layout.separator()
+        col = layout.column(align=True)
+        col.prop(data, "alpha_center")
+        col.prop(data, "alpha_outer")
+        layout.prop(data, "invert_fade")
+        layout.prop(data, "flip_direction")
+
+        layout.separator()
+        if not data.live_update:
+            layout.operator("seto.fake_damage_rebuild", icon='FILE_REFRESH')
+
+        row = layout.row()
+        row.operator("seto.fake_damage_unwrap", icon='UV')
+        if data.uv_dirty:
+            layout.label(text="UVs are from the rebuild - unwrap to finish.", icon='INFO')
+
+
+_classes = (SETO_PT_fake_damage_panel, SETO_PT_fake_damage_object_panel)
 
 
 def register():

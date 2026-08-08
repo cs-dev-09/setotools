@@ -36,6 +36,27 @@ both adjacent walls (or lies flat on one wall for a boundary edge like a door
 frame), with UVs, a `decal_normal_only.sps` material, `Color 1` alpha for
 export, and its origin at its own centre — all automatically.
 
+## Live settings
+
+The strip you create keeps its own settings. Select it and the **Selected
+Strip** section appears under Fake Damage: drag **Damage Width** and the mesh
+regenerates as you drag, the same feel as a Geometry Nodes modifier — except
+the result is real mesh data, so nothing has to be applied before export.
+
+It works because the strip remembers what it was made from: the source object,
+the source-mesh vertex-index pairs of the edges that were selected, and the
+settings that were used. Changing a setting re-reads those edges and rebuilds.
+
+- **Live Update** — off freezes the strip; use **Rebuild Now** when you are done.
+- **Conformal Unwrap** — the live rebuild leaves the arc-length UVs in place,
+  because unwrapping needs an operator and Blender is not safe to call
+  operators in from a property callback mid-drag. Press this once the shape is
+  dialled in; the panel tells you when the UVs are waiting for it.
+- Editing the **source** mesh's topology invalidates the stored edges. The
+  panel says so rather than rebuilding something wrong.
+- Right after creating, the settings are also in Blender's **Adjust Last
+  Operation** (F9) panel.
+
 ## How the geometry works
 
 - **Edge chains.** The selection is first grouped into continuous chains, then
