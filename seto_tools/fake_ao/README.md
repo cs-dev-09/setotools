@@ -1,8 +1,8 @@
-# Seto Fake AO & Decals
+# Fake AO
 
-Blender addon (built on [Sollumz](https://docs.sollumz.org)) that generates
-decals for GTA V / FiveM assets. Select an edge, press a button, get a
-ready-to-export corner decal — your original mesh is never touched.
+Part of **Seto Tools**, built on [Sollumz](https://docs.sollumz.org). Generates
+fake ambient-occlusion decals for GTA V / FiveM assets. Select an edge, press a
+button, get a ready-to-export corner decal — your original mesh is never touched.
 
 Tools included:
 
@@ -18,7 +18,7 @@ Tools included:
 
 ## Install
 
-1. Download `seto_fake_ao.zip` (don't unzip).
+1. Install `seto_tools.zip` — this tool ships inside it.
 2. Blender: **Edit > Preferences > Add-ons > Install from Disk** → pick the zip.
 3. Enable it, then **restart Blender**.
 

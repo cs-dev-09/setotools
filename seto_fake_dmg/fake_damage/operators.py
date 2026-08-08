@@ -13,6 +13,42 @@ _NAME_PATTERN = re.compile(r"^fake_dmg_(\d{3,})$")
 # Span of the UV island's longer axis once fitted into the 0..1 square.
 _UV_SIZE = object_settings.UV_SIZE
 
+# Every generated strip is collected here, created on first use.
+COLLECTION_NAME = "fake_dmg"
+
+# Blender's automatic ".001" suffix, so a collection it had to rename is still
+# recognised as ours on the next run instead of spawning ".002", ".003", ...
+_SUFFIX_PATTERN = re.compile(r"\.\d{3}$")
+
+
+def _base_name(name):
+    return _SUFFIX_PATTERN.sub("", name)
+
+
+def _get_or_create_collection(context, name, parent=None):
+    """Find or create the collection called `name` under `parent`.
+
+    Reuses one we created earlier even if Blender had to suffix its name, and
+    never adopts or moves an unrelated collection the user already has
+    somewhere else in the scene.
+    """
+    parent = parent or context.scene.collection
+
+    for child in parent.children:
+        if _base_name(child.name) == name:
+            return child
+
+    existing = bpy.data.collections.get(name)
+    if existing is not None and existing is not parent and \
+            existing not in context.scene.collection.children_recursive:
+        # Exists but is not in this scene (appended, or orphaned) - adopt it.
+        parent.children.link(existing)
+        return existing
+
+    collection = bpy.data.collections.new(name)
+    parent.children.link(collection)
+    return collection
+
 
 def _next_fake_damage_name():
     """Explicit sequential naming (fake_dmg_001, _002, ...) instead of
@@ -166,9 +202,10 @@ class SETO_OT_create_fake_damage(bpy.types.Operator):
         # the source object's translation/rotation/non-uniform scale.
         new_obj.matrix_world = source_obj.matrix_world.copy()
 
-        target_collections = source_obj.users_collection or (context.collection,)
-        for coll in target_collections:
-            coll.objects.link(new_obj)
+        # Generated strips are gathered in their own collection rather than
+        # dropped next to the source, so they stay easy to hide, select and
+        # export as a group.
+        _get_or_create_collection(context, COLLECTION_NAME).objects.link(new_obj)
 
         # Select only the new object so every subsequent bpy.ops call below
         # unambiguously targets it, not the source object.

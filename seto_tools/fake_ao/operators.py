@@ -6,7 +6,7 @@ import bmesh
 from . import geometry
 from . import object_settings
 from . import properties
-from . import sollumz_integration as szi
+from ..shared import sollumz_integration as szi
 
 _NAME_PATTERN = re.compile(r"^fake_ao_(\d{3,})$")
 # Span of the UV island's longer axis once fitted into the 0..1 square.
@@ -216,7 +216,7 @@ class SETO_OT_create_fake_ao(bpy.types.Operator):
         # function of this tool, so a shader failure must not remove the mesh.
         shader_warning = None
         try:
-            material = szi.find_or_create_decal_material(reuse=(settings.material_mode == 'AUTO'))
+            material = szi.find_or_create_fake_ao_material(reuse=(settings.material_mode == 'AUTO'))
             szi.assign_material_to_object(new_obj, material)
         except szi.SollumzShaderError as e:
             shader_warning = str(e)

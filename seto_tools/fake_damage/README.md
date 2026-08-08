@@ -1,11 +1,11 @@
-# Seto Fake Damage
+# Fake Damage
 
-Blender addon (built on [Sollumz](https://docs.sollumz.org)) that generates
+Part of **Seto Tools**, built on [Sollumz](https://docs.sollumz.org). Generates
 chipped-edge damage decals for GTA V / FiveM assets. Select the sharp edges,
 press a button, get a ready-to-export damage strip — your original mesh is
 never touched.
 
-Standalone: it does not require, and does not talk to, the Seto Fake AO addon.
+Self-contained: it does not require, and does not talk to, the other tools.
 Both can be installed at the same time — they share one **Seto Tools** N-panel
 tab, each appearing as its own collapsible section, but neither depends on the
 other and either works installed on its own.
@@ -21,7 +21,7 @@ other and either works installed on its own.
 
 ## Install
 
-1. Download `seto_fake_dmg.zip` (don't unzip).
+1. Install `seto_tools.zip` — this tool ships inside it.
 2. Blender: **Edit > Preferences > Add-ons > Install from Disk** → pick the zip.
 3. Enable it, then **restart Blender**.
 

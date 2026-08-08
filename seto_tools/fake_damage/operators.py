@@ -6,14 +6,15 @@ import bmesh
 from . import geometry
 from . import object_settings
 from . import properties
-from . import sollumz_integration as szi
+from ..shared import sollumz_integration as szi
 
-_NAME_PATTERN = re.compile(r"^fake_ao_(\d{3,})$")
+_NAME_PATTERN = re.compile(r"^fake_dmg_(\d{3,})$")
+
 # Span of the UV island's longer axis once fitted into the 0..1 square.
 _UV_SIZE = object_settings.UV_SIZE
 
 # Every generated strip is collected here, created on first use.
-COLLECTION_NAME = "fake_ao"
+COLLECTION_NAME = "fake_dmg"
 
 # Blender's automatic ".001" suffix, so a collection it had to rename is still
 # recognised as ours on the next run instead of spawning ".002", ".003", ...
@@ -49,15 +50,15 @@ def _get_or_create_collection(context, name, parent=None):
     return collection
 
 
-def _next_fake_ao_name():
-    """Explicit sequential naming (fake_ao_001, _002, ...) instead of relying
-    on Blender's automatic .001 suffixing."""
+def _next_fake_damage_name():
+    """Explicit sequential naming (fake_dmg_001, _002, ...) instead of
+    relying on Blender's automatic .001 suffixing."""
     max_n = 0
     for name in bpy.data.objects.keys():
         match = _NAME_PATTERN.match(name)
         if match:
             max_n = max(max_n, int(match.group(1)))
-    return f"fake_ao_{max_n + 1:03d}"
+    return f"fake_dmg_{max_n + 1:03d}"
 
 
 def _parent_keep_transform(child, parent):
@@ -81,32 +82,18 @@ def _set_origin_to_geometry(obj):
     bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='MEDIAN')
 
 
-class SETO_OT_create_fake_ao(bpy.types.Operator):
-    """Generate a separate Fake AO decal strip along the selected edges"""
-    bl_idname = "seto.create_fake_ao"
-    bl_label = "Create Fake AO"
+class SETO_OT_create_fake_damage(bpy.types.Operator):
+    """Generate a separate Fake Damage decal strip along the selected edges"""
+    bl_idname = "seto.create_fake_damage"
+    bl_label = "Create Fake Damage"
     # REGISTER + UNDO is what puts this operator in Blender's "Adjust Last
     # Operation" (F9) panel. Because the settings below are the operator's own
-    # properties, dragging a slider there re-runs execute() live.
+    # properties, dragging a slider there makes Blender undo and re-run
+    # execute(), regenerating the strip live.
     bl_options = {'REGISTER', 'UNDO'}
 
     # Same definitions as the Scene settings - see properties.settings_annotations().
     __annotations__ = properties.settings_annotations()
-
-    def _seed_from_panel(self, context):
-        """Fill in any property the caller did not set from the N-panel settings.
-
-        Deliberately done in execute() rather than invoke(): Blender skips
-        invoke() entirely in background mode, so relying on it would make the
-        operator behave differently from a script than from the button.
-        """
-        panel = context.scene.seto_fake_ao
-        for name in properties.SETTING_NAMES:
-            if not self.properties.is_property_set(name):
-                value = getattr(panel, name)
-                if hasattr(value, "__len__") and not isinstance(value, str):
-                    value = tuple(value)
-                setattr(self, name, value)
 
     @classmethod
     def poll(cls, context):
@@ -118,9 +105,31 @@ class SETO_OT_create_fake_ao(bpy.types.Operator):
             and szi.is_sollumz_available()
         )
 
+    def _seed_from_panel(self, context):
+        """Fill in any property the caller did not set from the N-panel settings.
+
+        Deliberately done here rather than in invoke(): Blender skips invoke()
+        entirely in background mode, and relying on it would mean the operator
+        behaves differently when driven from a script than from the button.
+
+        is_property_set() is what distinguishes the two cases:
+          * fresh run (button press, or bpy.ops with no arguments) - nothing is
+            set, so every value comes from the panel;
+          * F9 redo after dragging a slider - that property IS set, so the
+            user's live value wins, while the rest fall back to the panel,
+            which execute() keeps in sync with whatever last ran.
+        """
+        panel = context.scene.seto_fake_damage
+        for name in properties.SETTING_NAMES:
+            if not self.properties.is_property_set(name):
+                value = getattr(panel, name)
+                if hasattr(value, "__len__") and not isinstance(value, str):
+                    value = tuple(value)
+                setattr(self, name, value)
+
     def execute(self, context):
         if not szi.is_sollumz_available():
-            self.report({'ERROR'}, "Sollumz is not enabled/available. Seto Fake AO & Decals requires Sollumz.")
+            self.report({'ERROR'}, "Sollumz is not enabled/available. Seto Fake Damage requires Sollumz.")
             return {'CANCELLED'}
 
         self._seed_from_panel(context)
@@ -131,19 +140,21 @@ class SETO_OT_create_fake_ao(bpy.types.Operator):
         source_obj = context.active_object
         source_mesh = source_obj.data
 
-        # Read the current edge selection while still in Edit Mode. All values
-        # are copied out as plain Vectors (local space), so they stay valid
-        # after we leave edit mode below.
+        # Read the edge selection while still in Edit Mode. Everything is
+        # copied out as plain Vectors (source-object local space) so it stays
+        # valid after we leave edit mode below.
         bm = bmesh.from_edit_mesh(source_mesh)
-        segments, skipped = geometry.gather_selected_edge_segments(bm)
-        edge_keys = object_settings.serialise_edge_keys(bm)
+        edges, coords, skipped = geometry.gather_selected_edges(bm)
 
-        if not segments:
+        if not edges:
             self.report({'WARNING'}, "No usable selected edges found (an edge needs at least one adjacent face).")
             return {'CANCELLED'}
 
-        strip_data = geometry.build_strip_mesh_data(
-            segments,
+        chains = geometry.build_edge_chains(edges)
+        strip_data = geometry.build_damage_mesh_data(
+            edges,
+            chains,
+            coords,
             width=settings.width,
             surface_offset=settings.surface_offset,
             alpha_center=settings.alpha_center,
@@ -152,21 +163,21 @@ class SETO_OT_create_fake_ao(bpy.types.Operator):
             flip_direction=settings.flip_direction,
         )
         if not strip_data.faces:
-            self.report({'WARNING'}, "Could not generate strip geometry from the selected edges (degenerate geometry?).")
+            self.report({'WARNING'}, "Could not generate damage geometry from the selected edges (degenerate geometry?).")
             return {'CANCELLED'}
 
-        # Leave Edit Mode now that we're done reading the source BMesh, so we
-        # can safely create/select/parent a new object.
+        # Done reading the source BMesh - leave Edit Mode so we can safely
+        # create/select/parent a new object. The source mesh is never modified.
         bpy.ops.object.mode_set(mode='OBJECT')
 
-        new_name = _next_fake_ao_name()
+        new_name = _next_fake_damage_name()
         new_mesh = geometry.create_mesh_from_strip_data(new_name, strip_data)
         loop_uv, loop_rgba = geometry.compute_loop_uv_and_alpha(
             new_mesh, strip_data, color_rgb=tuple(settings.color_rgb)
         )
 
-        # UVMap 0 / Color 1: hard dependency on Sollumz, must succeed or the
-        # tool has failed at its core job.
+        # UVMap 0 / Color 1: decal_normal_only's vertex layout requires both
+        # TexCoord0 and Colour0, so this must succeed or the tool has failed.
         try:
             szi.write_uv_and_color(new_mesh, loop_uv, loop_rgba)
         except szi.SollumzUnavailableError as e:
@@ -174,9 +185,10 @@ class SETO_OT_create_fake_ao(bpy.types.Operator):
             self.report({'ERROR'}, f"Sollumz became unavailable while creating UV/Color data: {e}")
             return {'CANCELLED'}
 
-        # Weld near-duplicate vertices (e.g. the two wings of an L-shaped
-        # corner meeting at the same edge) - safe to do now since both wings
-        # already carry matching UV/Color data at their shared inner edge.
+        # Cleanup runs once, on the finished mesh containing every chain -
+        # never per chain - so sections that meet at a junction get a chance to
+        # weld to each other. Geometry inside a single chain is already
+        # continuous by construction and has nothing to merge.
         geometry.merge_by_distance(new_mesh, settings.merge_distance)
 
         # The UVs geometry.py authored are already a straight rectangle in
@@ -185,9 +197,9 @@ class SETO_OT_create_fake_ao(bpy.types.Operator):
 
         new_obj = bpy.data.objects.new(new_name, new_mesh)
 
-        # The strip was built entirely in source_obj's local space, so copying
-        # its world matrix places it exactly on the source geometry regardless
-        # of the source object's translation/rotation/non-uniform scale.
+        # Built entirely in source_obj's local space, so copying its world
+        # matrix places the strip exactly on the source geometry regardless of
+        # the source object's translation/rotation/non-uniform scale.
         new_obj.matrix_world = source_obj.matrix_world.copy()
 
         # Generated strips are gathered in their own collection rather than
@@ -196,14 +208,12 @@ class SETO_OT_create_fake_ao(bpy.types.Operator):
         _get_or_create_collection(context, COLLECTION_NAME).objects.link(new_obj)
 
         # Select only the new object so every subsequent bpy.ops call below
-        # (parenting aside) unambiguously targets it, not the source object
-        # or anything else that happened to be selected.
+        # unambiguously targets it, not the source object.
         _select_only(context, new_obj)
 
         # Only parent into a Sollumz Drawable hierarchy if the source object
-        # already belongs to one. Otherwise the strip is left fully
-        # unparented as an independent object (still placed correctly via
-        # the matrix_world copy above).
+        # already belongs to one; otherwise the strip stays an independent
+        # object, still placed correctly via the matrix_world copy above.
         drawable_root = szi.find_drawable_parent(source_obj)
         if drawable_root is not None:
             _parent_keep_transform(new_obj, drawable_root)
@@ -215,8 +225,11 @@ class SETO_OT_create_fake_ao(bpy.types.Operator):
         # Shader assignment is best-effort: geometry generation is the primary
         # function of this tool, so a shader failure must not remove the mesh.
         shader_warning = None
+        missing_params = []
         try:
-            material = szi.find_or_create_decal_material(reuse=(settings.material_mode == 'AUTO'))
+            material, missing_params = szi.find_or_create_damage_material(
+                reuse=(settings.material_mode == 'AUTO'),
+            )
             szi.assign_material_to_object(new_obj, material)
         except szi.SollumzShaderError as e:
             shader_warning = str(e)
@@ -228,37 +241,40 @@ class SETO_OT_create_fake_ao(bpy.types.Operator):
         try:
             _set_origin_to_geometry(new_obj)
         except Exception as e:
-            self.report({'WARNING'}, f"Fake AO mesh created, but setting Origin to Geometry failed: {e}")
+            self.report({'WARNING'}, f"Fake Damage mesh created, but setting Origin to Geometry failed: {e}")
 
         # Stamp the strip with everything needed to regenerate itself later,
         # so its settings stay live in the panel (see object_settings.py).
-        # Suppressed: each assignment fires the live-rebuild callback, which
-        # would regenerate the mesh before this operator has finished with it.
+        # Suppressed: each assignment below fires the live-rebuild callback,
+        # which would regenerate the mesh and discard the unwrap just applied.
         with object_settings.suppress_rebuild():
-            obj_data = new_obj.seto_fake_ao_data
-            obj_data.is_fake_ao = True
+            obj_data = new_obj.seto_fake_damage_data
+            obj_data.is_fake_damage = True
             obj_data.source_object = source_obj
-            obj_data.edge_keys = edge_keys
+            obj_data.edge_keys = object_settings.serialise_edge_keys(edges)
             properties.copy_settings(self, obj_data)
             obj_data.status = ""
 
         # Push the values that actually produced this result back onto the
         # N-panel, so a value dialled in through the F9 panel becomes the
         # starting point for the next strip instead of silently reverting.
-        properties.copy_settings(self, context.scene.seto_fake_ao)
+        properties.copy_settings(self, context.scene.seto_fake_damage)
 
-        msg = f"Created '{new_name}' with {len(strip_data.faces)} strip quad(s)."
+        msg = (f"Created '{new_name}': {len(chains)} chain(s), "
+               f"{len(strip_data.faces)} quad(s).")
         if skipped:
-            msg += f" Skipped {skipped} edge(s) with no adjacent face."
+            msg += f" Skipped {skipped} unusable edge(s)."
         self.report({'INFO'}, msg)
 
         if shader_warning:
-            self.report({'WARNING'}, f"Fake AO mesh created, but {szi.DECAL_SHADER_FILENAME} assignment failed: {shader_warning}")
+            self.report({'WARNING'}, f"Fake Damage mesh created, but {szi.DAMAGE_SHADER_FILENAME} assignment failed: {shader_warning}")
+        elif missing_params:
+            self.report({'WARNING'}, f"Shader parameter(s) not found on {szi.DAMAGE_SHADER_FILENAME}: {', '.join(missing_params)}.")
 
         return {'FINISHED'}
 
 
-_classes = (SETO_OT_create_fake_ao,)
+_classes = (SETO_OT_create_fake_damage,)
 
 
 def register():
