@@ -1,0 +1,17 @@
+# Python bytecode (Blender generates these next to the source when an addon loads)
+__pycache__/
+*.py[cod]
+
+# Built addon zips - published as GitHub Release assets, not tracked here
+*.zip
+
+# Blender
+*.blend1
+*.blend2
+
+# OS / editor
+Thumbs.db
+desktop.ini
+.DS_Store
+.vscode/
+.idea/
