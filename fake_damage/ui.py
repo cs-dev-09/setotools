@@ -10,11 +10,22 @@ def _wrap(text, width):
 
 
 class SETO_PT_fake_damage_panel(bpy.types.Panel):
-    bl_label = "Seto Fake Damage"
+    bl_label = "Fake Damage"
     bl_idname = "SETO_PT_fake_damage_panel"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
-    bl_category = "Seto Fake Damage"
+    # Shared with the other Seto addons: every panel using this category is
+    # merged by Blender into one "Seto Tools" N-panel tab, each tool appearing
+    # as its own collapsible section (the way Sollumz Tools is laid out).
+    # Deliberately identical to the Fake AO addon's category - that is what
+    # makes them land in the same tab - even though the two addons are
+    # otherwise fully independent and either can be installed on its own.
+    bl_category = "Seto Tools"
+    bl_options = {'DEFAULT_CLOSED'}
+    bl_order = 1
+
+    def draw_header(self, context):
+        self.layout.label(text="", icon='MOD_EDGESPLIT')
 
     def draw(self, context):
         layout = self.layout

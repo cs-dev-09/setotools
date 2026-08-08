@@ -6,7 +6,9 @@ press a button, get a ready-to-export damage strip — your original mesh is
 never touched.
 
 Standalone: it does not require, and does not talk to, the Seto Fake AO addon.
-Both can be installed at the same time.
+Both can be installed at the same time — they share one **Seto Tools** N-panel
+tab, each appearing as its own collapsible section, but neither depends on the
+other and either works installed on its own.
 
 ## Requirements
 
@@ -26,7 +28,7 @@ Both can be installed at the same time.
 ## Usage
 
 1. Select your mesh, enter **Edit Mode**, select one or more sharp edges.
-2. Open **N-Panel > Seto Fake Damage**, adjust settings if needed.
+2. Open **N-Panel > Seto Tools > Fake Damage**, adjust settings if needed.
 3. Press **Create Fake Damage**.
 
 A new `Fake_Damage_00N` object is created: a strip that wraps the edge onto
