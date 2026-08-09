@@ -2,6 +2,63 @@
 
 All notable changes to Seto Tools.
 
+## 1.1.0
+
+### Added — Surface Painter
+
+Brush dirt, grime and graffiti straight onto a surface, without the surface
+ever being modified. **Start Paint** spawns a separate *paint mesh* over it — a
+copy of the surface, packed with extra vertices, floated a few millimetres off
+it, wearing a `decal.sps` material — and painting happens on that. Delete it and
+the dirt is gone and the wall is exactly as it was. Same trick GTA uses for
+grime.
+
+`decal.sps` reads `Color 1`'s alpha as its blend factor, which is Sollumz's own
+node wiring, so painting alpha is painting visibility: the brush works in
+`ADD_ALPHA` / `ERASE_ALPHA` and the mesh carries only what Sollumz exports —
+`Color 1`, `UVMap 0`, and nothing else in either list.
+
+- **Layers.** One per texture, per wall. Picking a different texture and
+  pressing Start Paint again adds a layer over the first rather than
+  retexturing what you already painted.
+- **Its own UVs.** The paint mesh is given one planar projection across the
+  whole surface instead of inheriting the wall's unwrap. A wall's layout is
+  built for its tiling texture, so it is usually several islands stacked in
+  0–1 — a wall with one loop cut is two of them — and inheriting that drew the
+  decal once per island. A projection cannot overlap itself.
+- **Place On Surface.** Drags the texture with the mouse, and the point you
+  grabbed stays under the pointer at any Width, Height or Rotation. It keeps
+  tracking past the edge of the surface, by falling back to the projection
+  plane, so a decal can be pushed into a corner or half off an edge. The wheel
+  resizes around the pointer, `X`/`Y` lock an axis.
+- **Lossless placement.** Opacity, Width, Height, Offset and Rotation all
+  recompute from a pristine copy of the UVs and strokes, so dragging a slider
+  back where it was gives back exactly what you had.
+- **Preview Texture.** The whole texture shown semi-transparent over the
+  surface, Substance-projection style, as an object-level override on a copy —
+  the material that exports is never touched.
+- **Optimize**, which never touches the texture: unpainted faces are cropped
+  away so the layer ends up the size of the decal rather than the wall, the
+  staircase left around the patch is welded down, and inside it the vertices a
+  stroke does not need are dissolved. Then the origin moves to the middle of
+  what is left. Measured: **1024 triangles down to 91**, UVs bit-identical.
+- **Texture library** with categories, an in-panel browser and disk-backed
+  thumbnails, so browsing loads nothing into your file.
+
+Baking was built, worked, and was removed. A baked texture is flattened from a
+tiling one and can never be sharper than what it sampled, which on a wall is a
+lot worse — so the optimisation removes geometry instead, and the pixels are
+untouched.
+
+### Verified
+
+`tests/surface_painter.py`, headless against Sollumz on Blender 5.2.0 LTS. The
+two checks worth keeping: that the paint mesh's UVs are one **affine** function
+of position — an island or a repeat breaks that fit and nothing else does — and
+that a drag leaves the texture point you grabbed under the pointer at every
+Width, Height and Rotation, which catches a wrong sign, a missing divide by the
+size and a missing rotation as three separate failures.
+
 ## 1.0.0
 
 ### One add-on instead of three

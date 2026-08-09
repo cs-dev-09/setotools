@@ -1,8 +1,8 @@
 # Seto Tools
 
 One Blender add-on for GTA V / FiveM asset authoring, built on
-[Sollumz](https://docs.sollumz.org). It generates decal geometry from a
-selection and never touches your original mesh.
+[Sollumz](https://docs.sollumz.org). Every tool builds separate decal geometry
+and never touches your original mesh.
 
 | Tool | What it makes | Built from |
 | --- | --- | --- |
@@ -10,6 +10,7 @@ selection and never touches your original mesh.
 | [Fake Damage](seto_tools/fake_damage) | Chipped-edge damage decals | selected edges |
 | [Decal Tool](seto_tools/decal_tool) | Surface-aligned decal planes from your own decal library | selected faces |
 | [Smooth Edge](seto_tools/smooth_edge) | Normal-map strips that make a hard edge read as rounded | selected edges |
+| [Surface Painter](seto_tools/surface_painter) | Dirt, grime and graffiti brushed onto a surface | a paint mesh over the whole object |
 
 They all live in the **Seto Tools** N-panel tab, each as its own collapsible
 section, the way Sollumz Tools is laid out.
@@ -36,11 +37,18 @@ seto_tools/
         sollumz_integration.py   every call into Sollumz, and the material builders
         vertex_color.py          the Color 1 they all write
         bundled_textures.py      finding a tool's own textures/ folder
+        addon_prefs.py           the single AddonPreferences, reached from anywhere
+    textures/        textures shipped with the add-on, per tool and category
     fake_ao/
     fake_damage/
     decal_tool/
     smooth_edge/
+    surface_painter/
 ```
+
+Blender allows exactly one `AddonPreferences` class per add-on, and that class
+lives in `decal_tool/` for historical reasons. `shared/addon_prefs.py` is how
+the others reach it, so no tool has to know where it ended up.
 
 Each tool stays self-contained — its own settings, operators and panel, exactly
 as when they shipped separately. `shared/` holds only what genuinely belongs to
@@ -57,10 +65,18 @@ Inside a tool the split is always the same:
 | `operators.py` | the Create operator, tying it together |
 | `ui.py` | the N-panel |
 
+Surface Painter is the exception, because it is the one tool that is not
+"select, press Create": it has no `geometry.py`, and its work lives in
+`shell.py` (the paint mesh — building, masking, placement, optimising),
+`library.py` (folder scanning, which knows nothing of `bpy.data`),
+`previews.py` and `brush.py`.
+
 ## What they have in common
 
 - **Select, press a button.** A separate decal object is created; the source
-  mesh is never modified.
+  mesh is never modified. Surface Painter reaches the same end differently — it
+  spawns a paint mesh over the surface and you brush on that — but the promise
+  is identical: delete what the tool made and the original is exactly as it was.
 - **Sorted output.** Inside a Sollumz Drawable, what a tool generates lands in
   the Drawable's own collection, beside the rest of the asset. Outside one, each
   tool files into its own collection, created on first use: `fake_ao`,

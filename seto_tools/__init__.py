@@ -1,7 +1,7 @@
 bl_info = {
     "name": "Seto Tools",
     "author": "Seto",
-    "version": (1, 0, 0),
+    "version": (1, 1, 0),
     "blender": (4, 2, 0),
     "location": "View3D > N-Panel > Seto Tools",
     "description": (
@@ -26,8 +26,9 @@ from . import fake_ao
 from . import fake_damage
 from . import decal_tool
 from . import smooth_edge
+from . import surface_painter
 
-_modules = (fake_ao, fake_damage, decal_tool, smooth_edge)
+_modules = (fake_ao, fake_damage, decal_tool, smooth_edge, surface_painter)
 
 
 def register():
