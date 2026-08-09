@@ -5,11 +5,6 @@ __pycache__/
 # Built addon zips - published as GitHub Release assets, not tracked here
 *.zip
 
-# Work in progress, not wired into __init__.py and so never loaded by Blender.
-# Kept on disk, deliberately out of the repo and out of the released zip until
-# it is finished and registered.
-seto_tools/lighting/
-
 # Blender
 *.blend1
 *.blend2
