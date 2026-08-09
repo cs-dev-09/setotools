@@ -2,7 +2,14 @@
 
 All notable changes to Seto Tools.
 
-## Unreleased
+## 1.2.0
+
+### Removed — the lighting module is gone
+
+An unfinished God Ray tool that was never registered, so Blender never loaded
+it. It has been excluded from the zip by hand since it was written; it is now
+simply deleted, along with the `.gitignore` entry and the sync-script step that
+kept working around it.
 
 ### Changed — The tab is two sections instead of five headers
 
