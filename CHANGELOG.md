@@ -2,7 +2,7 @@
 
 All notable changes to Seto Tools.
 
-## Unreleased
+## 1.2.1
 
 ### Changed — the tab has its own icons
 
