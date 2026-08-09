@@ -2,6 +2,56 @@
 
 All notable changes to Seto Tools.
 
+## 1.1.1
+
+### Fixed — Sollumz was not detected when installed from the repository
+
+Every tool reported **"Sollumz not available"** on machines that plainly had it.
+The detection required the add-on's module name to end in exactly `sollumz`,
+which is true for an extension and for a folder called `Sollumz` — and false
+for the most ordinary way there is to install it. GitHub names its archive
+after the branch or tag, so downloading Sollumz from its repository installs as
+`Sollumz-main`, `Sollumz-master` or `Sollumz-2.9.0`, and none of those matched.
+
+The name test is now a loose *candidate* filter — anything starting with
+`sollumz` — and the decision is made by importing a module only Sollumz has.
+Guessing which separators are legitimate is what caused this in the first
+place; verifying is what settles it, and it also means an unrelated add-on
+called `sollumz_extras` is rejected for being the wrong thing rather than for
+being spelled unexpectedly. Extension names are split at the `bl_ext.<repo>.`
+prefix rather than the last dot, so a version number in a folder name no longer
+turns `Sollumz-2.9.0` into `0`.
+
+When nothing is found at all, the message now says the add-on must also be
+*enabled* — `preferences.addons` only lists enabled ones, so installed-but-
+unticked was reported as "not installed", which sends people to reinstall
+something they already have.
+
+### Fixed — Surface Painter did not say when Sollumz was missing
+
+The other four tools each showed a "Sollumz not available" box; Surface Painter
+was the one that never got the paste, so it drew its whole UI and looked like
+the tool that worked without Sollumz — until Start Paint, which needs a
+`decal.sps` material that only Sollumz can build. Failing in the panel, with
+the reason, beats failing at the button.
+
+That block now lives once in `shared/ui_common.py` and all five tools use it,
+along with the label-wrapping helper that had been copy-pasted five times.
+
+### Changed
+
+- **"No textures found" now says what to do.** With nothing bundled, an empty
+  library is the normal first run, not a fault, so the panel points at Library
+  Folder instead of showing an error icon.
+
+### Added
+
+- `tests/panels.py` drives **every** Seto panel's `draw()` against a validating
+  stub layout, with Sollumz both available and missing — 261 checks. Blender
+  only calls `draw()` from the UI thread, so every other test here can pass
+  while a panel explodes on first redraw; that had happened three times before
+  this existed, and each time a user found it rather than the suite.
+
 ## 1.1.0
 
 ### Added — Surface Painter

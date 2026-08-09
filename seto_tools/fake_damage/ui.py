@@ -1,12 +1,6 @@
-import textwrap
-
 import bpy
 
-from ..shared import sollumz_integration as szi
-
-
-def _wrap(text, width):
-    return textwrap.wrap(text, width) or [""]
+from ..shared import ui_common
 
 
 class SETO_PT_fake_damage_panel(bpy.types.Panel):
@@ -14,9 +8,6 @@ class SETO_PT_fake_damage_panel(bpy.types.Panel):
     bl_idname = "SETO_PT_fake_damage_panel"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
-    # Shared with the other Seto addons: every panel using this category is
-    # merged by Blender into one "Seto Tools" N-panel tab, each tool appearing
-    # as its own collapsible section (the way Sollumz Tools is laid out).
     # Shared with the other Seto tools - that is what makes them land in the
     # same tab. bl_order 1 keeps it beside the other two edge-strip tools,
     # Fake AO (0) and Smooth Edge (2), above the two surface tools.
@@ -31,13 +22,7 @@ class SETO_PT_fake_damage_panel(bpy.types.Panel):
         layout = self.layout
         settings = context.scene.seto_fake_damage
 
-        available, status_msg = szi.get_status_message()
-        if not available:
-            box = layout.box()
-            box.label(text="Sollumz not available:", icon='ERROR')
-            col = box.column(align=True)
-            for line in _wrap(status_msg, 40):
-                col.label(text=line)
+        if ui_common.draw_sollumz_warning(layout):
             return
 
         col = layout.column(align=True)
@@ -109,7 +94,7 @@ class SETO_PT_fake_damage_object_panel(bpy.types.Panel):
             warn.alert = True
             col = warn.column(align=True)
             col.label(text="Cannot rebuild:", icon='ERROR')
-            for line in _wrap(data.status, 38):
+            for line in ui_common.wrap(data.status, 38):
                 col.label(text=line)
 
         layout.prop(data, "live_update")

@@ -63,19 +63,76 @@ class TextureLoadError(Exception):
     """The decal image file is missing or could not be read by Blender."""
 
 
-def _get_sollumz_base_module_name():
-    """Resolve Sollumz's registered addon module name.
+# A module only Sollumz has. Importing it is what turns "this name looks like
+# Sollumz" into "this is Sollumz".
+_SOLLUMZ_MARKER_MODULE = "sollumz_properties"
 
-    Case-insensitive match on the last path component, because the module name
-    differs depending on how Sollumz was installed:
-      - Legacy addon (unzipped into scripts/addons/Sollumz): "Sollumz"
-      - Blender 4.2+ Extension: derived from blender_manifest.toml's
-        `id = "sollumz"` (lowercase), e.g. "bl_ext.user_default.sollumz"
+
+def _addon_leaf_name(module_name):
+    """The add-on's own name, with any extension-repository prefix removed.
+
+    Splitting on the last dot is wrong here: an extension is
+    "bl_ext.<repo>.<id>", where the id never contains a dot, but a legacy
+    add-on folder freely does - "Sollumz-2.9.0" would come back as "0".
     """
-    for module_name in bpy.context.preferences.addons.keys():
-        if module_name.rsplit(".", 1)[-1].lower() == "sollumz":
-            return module_name
-    return None
+    if module_name.startswith("bl_ext."):
+        parts = module_name.split(".", 2)
+        return parts[2] if len(parts) > 2 else ""
+    return module_name
+
+
+def _looks_like_sollumz(module_name):
+    """Could this registered add-on be Sollumz? A CANDIDATE test, not a verdict.
+
+    Deliberately loose, because the module name depends entirely on how Sollumz
+    was installed, and being too strict means every tool reports "Sollumz not
+    available" on a machine that plainly has it:
+
+      - Extension (Blender 4.2+): the manifest id, so "bl_ext.<repo>.sollumz".
+        The repo part varies - "user_default" for Install from Disk, something
+        else when it comes from a remote repository.
+      - Legacy add-on unzipped into scripts/addons: "Sollumz".
+      - **Downloaded from the GitHub repository**: GitHub names its archive
+        after the branch or tag, so the folder - and therefore the module - is
+        "Sollumz-main", "Sollumz-master" or "Sollumz-2.9.0". This is the case
+        that was being missed, and it is a completely normal way to install it.
+
+    Guessing which separators are legitimate is a losing game, so this does not
+    try: anything starting with "sollumz" is a candidate, and
+    _get_sollumz_base_module_name() decides by importing. That way an unrelated
+    "sollumz_extras" is rejected because it is not Sollumz, not because its
+    name was spelled in a way this function failed to anticipate.
+    """
+    return _addon_leaf_name(module_name).lower().startswith("sollumz")
+
+
+def _get_sollumz_base_module_name():
+    """Resolve Sollumz's registered add-on module name, or None.
+
+    A name that looks right is not proof, so each candidate is confirmed by
+    importing a module only Sollumz has. If none confirm, the best-looking
+    candidate is still returned - get_status_message() can then say what was
+    found and why it did not work, which is far more useful than "not
+    installed" when it plainly is.
+    """
+    candidates = [name for name in bpy.context.preferences.addons.keys()
+                  if _looks_like_sollumz(name)]
+    if not candidates:
+        return None
+    # An exact "sollumz" wins over "Sollumz-main" if somehow both are enabled.
+    candidates.sort(key=lambda name: _addon_leaf_name(name).lower() != "sollumz")
+
+    for name in candidates:
+        try:
+            importlib.import_module(f"{name}.{_SOLLUMZ_MARKER_MODULE}")
+            return name
+        except Exception:
+            continue
+    # Nothing verified. Hand back the best-looking candidate anyway so
+    # get_status_message() can name it and say why it failed - far more use than
+    # claiming Sollumz is not installed when something calling itself Sollumz
+    # clearly is.
+    return candidates[0]
 
 
 def _import(submodule_path):
@@ -97,7 +154,11 @@ def get_status_message():
     "not detected"."""
     base = _get_sollumz_base_module_name()
     if base is None:
-        return False, "Sollumz addon is not installed/enabled."
+        # Installed but unticked looks identical to not installed from here:
+        # preferences.addons only lists what is enabled. Say both, because
+        # "not installed" alone sends people to reinstall something they have.
+        return False, ("No enabled Sollumz add-on found. Install it, and make "
+                       "sure its checkbox is ticked in Preferences > Add-ons.")
     try:
         deps = importlib.import_module(f"{base}.dependencies")
     except Exception as e:

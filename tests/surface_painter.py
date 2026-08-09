@@ -262,6 +262,83 @@ edge_on = shell.uv_for_ray(mapping, matrix @ Vector((0.0, -3.0, 0.0)),
 check("a ray parallel to the wall is refused, not guessed", edge_on is None,
       edge_on)
 
+print("=== Sollumz is found however it was installed ===")
+from seto_tools.shared import sollumz_integration as szi
+
+
+def _imports(dotted):
+    try:
+        importlib.import_module(dotted)
+        return True
+    except Exception:
+        return False
+
+
+# The one that was being missed: GitHub names its archive after the branch or
+# tag, so "Download ZIP" from the Sollumz repository installs as Sollumz-main.
+# A tester hit exactly this and was told Sollumz was not installed.
+for name in ("Sollumz", "sollumz", "bl_ext.user_default.sollumz",
+             "bl_ext.somerepo.sollumz", "Sollumz-main", "Sollumz-master",
+             "Sollumz-2.9.0", "sollumz_2_9"):
+    check(f"recognised: {name}", szi._looks_like_sollumz(name))
+
+# Names that are not Sollumz at all are not even candidates.
+for name in ("solid", "my_bridge", "bl_ext.user_default.decal_helper"):
+    check(f"not a candidate: {name}", not szi._looks_like_sollumz(name))
+
+# A candidate is not a verdict. Something like "sollumz_extras" passes the name
+# filter on purpose - guessing which separators are legitimate is what broke
+# Sollumz-main - and is then rejected by importing a module only Sollumz has.
+# That is the check that must do the work.
+check("an unrelated add-on fails verification",
+      not _imports(f"sollumz_extras.{szi._SOLLUMZ_MARKER_MODULE}"))
+
+# Extension paths are split at the repository prefix, not the last dot: a
+# legacy folder name contains dots ("Sollumz-2.9.0" would come back as "0").
+check("an extension's own id is what gets matched",
+      szi._addon_leaf_name("bl_ext.user_default.sollumz") == "sollumz")
+check("a versioned folder name survives intact",
+      szi._addon_leaf_name("Sollumz-2.9.0") == "Sollumz-2.9.0")
+
+base = szi._get_sollumz_base_module_name()
+check("this Blender's Sollumz resolves to a real module", base is not None, base)
+check("and the resolved module really is Sollumz",
+      base is not None and _imports(f"{base}.{szi._SOLLUMZ_MARKER_MODULE}"), base)
+check("and it reports as available", szi.is_sollumz_available(),
+      szi.get_status_message()[1])
+
+print("=== the panel says so when Sollumz is missing ===")
+from seto_tools.shared import ui_common
+
+real_status = szi.get_status_message
+drawn = []
+
+
+class _Box:
+    def __init__(self, sink):
+        self.sink = sink
+        self.scale_y = 1.0
+
+    def label(self, text="", icon=''):
+        self.sink.append(text)
+
+    def column(self, align=False):
+        return self
+
+    def box(self):
+        return self
+
+
+szi.get_status_message = lambda: (False, "Sollumz addon is not installed/enabled.")
+try:
+    warned = ui_common.draw_sollumz_warning(_Box(drawn))
+finally:
+    szi.get_status_message = real_status
+
+check("it warns instead of drawing the tool", warned)
+check("the warning names Sollumz",
+      any("Sollumz" in line for line in drawn), drawn)
+
 print("=== the modal operator's setup ===")
 cursors = bpy.types.Window.bl_rna.functions['cursor_modal_set'].parameters['cursor']
 check("the grab cursor name is real", 'HAND' in cursors.enum_items.keys(),

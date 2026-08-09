@@ -9,8 +9,6 @@ Blender draws child panels after their parent's draw(), so the CREATE DECAL
 button sits above the collapsed sections and stays reachable without scrolling.
 """
 
-import textwrap
-
 import bpy
 
 from . import geometry
@@ -19,26 +17,13 @@ from . import preferences
 from . import previews
 from ..shared import addon_prefs
 from ..shared import sollumz_integration as szi
+from ..shared import ui_common
 
 # Height of the texture thumbnail, in UI units.
 PREVIEW_SCALE = 6.0
 
 
-def _wrap(text, width):
-    return textwrap.wrap(text, width) or [""]
-
-
-def _sollumz_warning(layout):
-    """Draws the "Sollumz not available" box. Returns True if it did."""
-    available, status_msg = szi.get_status_message()
-    if available:
-        return False
-    box = layout.box()
-    box.label(text="Sollumz not available:", icon='ERROR')
-    col = box.column(align=True)
-    for line in _wrap(status_msg, 40):
-        col.label(text=line)
-    return True
+_sollumz_warning = ui_common.draw_sollumz_warning
 
 
 class _DecalChildPanel:
@@ -221,7 +206,7 @@ class SETO_PT_decal_object_panel(bpy.types.Panel):
             warn.alert = True
             col = warn.column(align=True)
             col.label(text="Cannot update:", icon='ERROR')
-            for line in _wrap(data.status, 38):
+            for line in ui_common.wrap(data.status, 38):
                 col.label(text=line)
 
         layout.prop(data, "live_update")

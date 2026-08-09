@@ -21,6 +21,7 @@ stays reachable without scrolling.
 import bpy
 
 from ..shared import addon_prefs
+from ..shared import ui_common
 from . import brush
 from . import library
 from . import previews
@@ -104,6 +105,8 @@ class SETO_PT_surface_painter_panel(bpy.types.Panel):
         settings = context.scene.seto_surface
         obj = context.active_object
 
+        if ui_common.draw_sollumz_warning(layout):
+            return
         if obj is None or obj.type != 'MESH':
             layout.box().label(text="Select a mesh object.", icon='INFO')
             return
@@ -147,9 +150,15 @@ class SETO_PT_surface_painter_panel(bpy.types.Panel):
         row.operator("seto.surface_refresh_library", text="", icon='FILE_REFRESH')
 
         if not library.has_textures():
+            # No textures ship with the add-on, so this is the normal first
+            # run, not a fault. Say what to do about it - "No textures found"
+            # on its own reads as broken.
             box = layout.box()
             box.scale_y = 0.8
-            box.label(text="No textures found.", icon='ERROR')
+            col = box.column(align=True)
+            col.label(text="No textures yet.", icon='INFO')
+            col.label(text="Set your own folder under")
+            col.label(text="Library Folder below.")
             return
 
         # Only ever holds the selected category, so picking Graffiti shows
