@@ -2,7 +2,7 @@
 
 Deliberately free of bpy.data knowledge - this module only knows about folders
 and image files on disk. Nothing is loaded into Blender here; an image only
-enters the file when it is assigned into a terrain layer slot.
+enters the file when it is actually painted with.
 
 The library is a folder of category subfolders:
 
@@ -11,10 +11,14 @@ The library is a folder of category subfolders:
         grunge/
         mold/
 
-The add-on ships its own copy of that tree, so the tool works the moment it is
-installed. Pointing Custom Library at a folder replaces the bundled one wholesale
-rather than merging: a half-and-half library where you cannot tell which Dirt
-folder a texture came from is worse than picking one.
+The add-on ships that tree empty - the folders are there to drop files into,
+and each one carries a README saying so. No textures are bundled: dirt sheets
+are large, they would be most of the download, and anyone using this already
+has a library of their own. Point **Custom Library** at it.
+
+A custom library replaces the bundled tree wholesale rather than merging with
+it: a half-and-half library where you cannot tell which Dirt folder a texture
+came from is worse than picking one.
 
 Scanning is NOT done on UI redraw. The cache is refilled from exactly three
 places: registration, the Custom Library path's update callback, and the Refresh
@@ -23,13 +27,11 @@ operator. The enum callbacks below only ever read the cache.
 
 import os
 
-# Folder names the bundled library ships, in the order they are offered, with
-# the labels the panel shows. A folder only appears as a category once it
-# actually contains textures, and a folder that is not listed here still works -
-# it just gets a title-cased version of its own name.
-#
-# These live here rather than in layers.py because they are library folders, not
-# shader layers: any category can be assigned to any of the four terrain layers.
+# Folder names the bundled tree ships, in the order they are offered, with the
+# labels the panel shows. A folder only appears as a category once it actually
+# contains textures, and a folder that is not listed here still works - it just
+# gets a title-cased version of its own name, which is what makes an arbitrary
+# custom library work without being registered anywhere.
 CATEGORY_LABELS = {
     "dirt": "Dirt",
     "grunge": "Grunge",

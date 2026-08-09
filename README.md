@@ -86,10 +86,12 @@ Surface Painter is the exception, because it is the one tool that is not
   tool files into its own collection, created on first use: `fake_ao`,
   `fake_dmg`, `smooth_edge`, and `decals` with one child per decal-library
   category.
-- **Bundled textures.** Fake AO, Fake Damage and Smooth Edge each ship their
-  texture in the tool's own `textures/` folder and wire it in automatically —
-  drop a file there and it is picked up. The Decal Tool instead reads a library
-  folder you point it at.
+- **Bundled textures, where they are small.** Fake AO, Fake Damage and Smooth
+  Edge each ship their one texture in the tool's own `textures/` folder and
+  wire it in automatically — drop a file there and it is picked up. The Decal
+  Tool and Surface Painter instead read a library folder you point them at:
+  their textures are whole sheets, they would be most of the download, and
+  anyone doing this work already has a library of their own.
 - **One vertex colour.** Every tool writes the same `Color 1`: RGB `#00B200`,
   alpha 1.0 at the centre of a strip fading to 0.0 at its outer edge. The alpha
   is what the decal shaders use as their blend factor; the RGB is not read by

@@ -96,10 +96,16 @@ are what the tool reports.
 
 ## The texture library
 
-Point the tool at a folder and its subfolders become categories. The browser in
-the panel lists the textures in the selected category with a large preview
-under the list. Browsing loads nothing into your file — thumbnails are read
-from disk — so only textures you actually paint with end up in the .blend.
+**No textures are bundled.** The add-on ships the category folders empty, with
+a README in each saying what goes there — dirt sheets are large enough that
+they would be most of the download, and anyone doing this work already has a
+library. Set **Library Folder > Custom Library** to yours and press Refresh.
+
+Its subfolders become the categories; a folder name the add-on does not know
+still works and simply gets a title-cased label. The browser lists the textures
+in the selected category with a large preview under the list. Browsing loads
+nothing into your file — thumbnails are read from disk — so only textures you
+actually paint with end up in the .blend.
 
 ## Install
 

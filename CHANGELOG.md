@@ -43,7 +43,11 @@ node wiring, so painting alpha is painting visibility: the brush works in
   stroke does not need are dissolved. Then the origin moves to the middle of
   what is left. Measured: **1024 triangles down to 91**, UVs bit-identical.
 - **Texture library** with categories, an in-panel browser and disk-backed
-  thumbnails, so browsing loads nothing into your file.
+  thumbnails, so browsing loads nothing into your file. No textures are
+  bundled — the category folders ship empty, each with a README saying what
+  goes there. Dirt sheets are large enough to have been most of the download,
+  and anyone doing this work already has a library: point **Custom Library**
+  at it.
 
 Baking was built, worked, and was removed. A baked texture is flattened from a
 tiling one and can never be sharper than what it sampled, which on a wall is a

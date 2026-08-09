@@ -29,9 +29,31 @@ import importlib
 from seto_tools.surface_painter import shell
 smod = importlib.import_module("bl_ext.user_default.sollumz.ydr.shader_materials")
 
+# The add-on ships no textures of its own, so the test builds a library: a
+# folder, one category inside it, one image written to disk. That is also the
+# path a real user takes - Custom Library - so it is worth exercising.
+import tempfile
+
+library_root = os.path.join(tempfile.mkdtemp(prefix="seto_sp_"), "library")
+category_dir = os.path.join(library_root, "dirt")
+os.makedirs(category_dir)
+
+image = bpy.data.images.new("Dirt_Test_01", width=64, height=64, alpha=True)
+checker = np.zeros((64, 64, 4), dtype=np.float32)
+checker[..., :3] = 0.35
+checker[..., 3] = (((np.arange(64)[:, None] // 8)
+                    + (np.arange(64)[None, :] // 8)) % 2).astype(np.float32)
+image.pixels.foreach_set(checker.ravel())
+image.filepath_raw = os.path.join(category_dir, "Dirt_Test_01.png")
+image.file_format = 'PNG'
+image.save()
+
 st = bpy.context.scene.seto_surface
+st.custom_library_path = library_root
+bpy.ops.seto.surface_refresh_library()
 st.category = "dirt"
-st.texture = "Dirt_Concrete_01"
+st.texture = "Dirt_Test_01"
+check("the library scan found the texture", st.texture == "Dirt_Test_01", st.texture)
 st.shell_spacing = 0.4
 st.shell_offset = 0.01
 
