@@ -17,12 +17,12 @@ class SETO_PT_smooth_edge_panel(bpy.types.Panel):
     # Shared with the other Seto addons: every panel using this category is
     # merged by Blender into one "Seto Tools" N-panel tab, each tool appearing
     # as its own collapsible section (the way Sollumz Tools is laid out).
-    # Deliberately identical to the Fake AO addon's category - that is what
-    # makes them land in the same tab - even though the two addons are
-    # otherwise fully independent and either can be installed on its own.
+    # Shared with the other Seto tools - that is what makes them land in the
+    # same tab. bl_order 2 keeps it beside the other two edge-strip tools,
+    # Fake AO (0) and Fake Damage (1), above the two surface tools.
     bl_category = "Seto Tools"
     bl_options = {'DEFAULT_CLOSED'}
-    bl_order = 4
+    bl_order = 2
 
     def draw_header(self, context):
         self.layout.label(text="", icon='MOD_EDGESPLIT')

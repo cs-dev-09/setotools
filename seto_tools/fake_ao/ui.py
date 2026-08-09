@@ -14,9 +14,12 @@ class SETO_PT_fake_ao_panel(bpy.types.Panel):
     bl_idname = "SETO_PT_fake_ao_panel"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
-    # Shared with the other Seto addons: every panel using this category is
+    # Shared with the other Seto tools: every panel using this category is
     # merged by Blender into one "Seto Tools" N-panel tab, each tool appearing
     # as its own collapsible section (the way Sollumz Tools is laid out).
+    # The order groups them by what they work on: edge strips first - this (0),
+    # Fake Damage (1), Smooth Edge (2) - then the surface tools, Decal Tool (3)
+    # and Surface Painter (4).
     bl_category = "Seto Tools"
     bl_options = {'DEFAULT_CLOSED'}
     bl_order = 0

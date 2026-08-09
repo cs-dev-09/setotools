@@ -59,15 +59,14 @@ class SETO_PT_decal_tool_panel(bpy.types.Panel):
     bl_idname = "SETO_PT_decal_tool_panel"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
-    # Shared with the other Seto addons: every panel using this category is
+    # Shared with the other Seto tools: every panel using this category is
     # merged by Blender into one "Seto Tools" N-panel tab, each tool appearing
-    # as its own collapsible section. Deliberately identical to the Fake AO and
-    # Fake Damage addons' category - that is what makes them land in the same
-    # tab - even though all three addons are fully independent and any of them
-    # can be installed on its own. bl_order 2 puts this section below them.
+    # as its own collapsible section. The order groups them by what they work
+    # on: the three edge-strip tools first (0-2), then the two that put texture
+    # on a surface - this (3) and Surface Painter (4).
     bl_category = "Seto Tools"
     bl_options = {'DEFAULT_CLOSED'}
-    bl_order = 2
+    bl_order = 3
 
     def draw_header(self, context):
         self.layout.label(text="", icon='TEXTURE')

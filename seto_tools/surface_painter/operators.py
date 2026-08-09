@@ -375,11 +375,14 @@ class SETO_OT_surface_optimize_layer(bpy.types.Operator):
     bl_idname = "seto.surface_optimize_layer"
     bl_label = "Optimize"
     bl_description = (
-        "Remove the vertices the painting does not need, keeping the texture "
-        "exactly as it is. Detail lives at the edge of a stroke; the middle of "
-        "a painted area and the untouched wall around it do not need geometry. "
-        "Pixel-identical to what you painted - unlike baking, which flattens "
-        "the texture and always costs sharpness"
+        "Make this layer cheap without touching the texture. Faces the brush "
+        "never reached are cut away, so the layer ends up the size of the "
+        "decal instead of the size of the wall; the staircase left around it "
+        "is welded down; and inside it, the vertices a stroke does not need "
+        "are dissolved - detail lives at the edge of a stroke, not in its "
+        "middle. The origin is then moved to the middle of what is left. "
+        "Every painted pixel survives, unlike baking, which flattens the "
+        "texture and always costs sharpness"
     )
     bl_options = {'REGISTER', 'UNDO'}
 

@@ -52,19 +52,31 @@ def main():
     else:
         print("       (seto_tools was already enabled in this Blender)")
 
+    # In tab order. The tab is grouped by what each tool works on: the three
+    # that build a strip along selected edges, then the two that put texture on
+    # a surface. The checks below are about that grouping, not about which
+    # number a panel happens to hold - renumbering to insert a tool is fine,
+    # splitting the groups is not.
+    edge_tools = ("SETO_PT_fake_ao_panel", "SETO_PT_fake_damage_panel",
+                  "SETO_PT_smooth_edge_panel")
+    surface_tools = ("SETO_PT_decal_tool_panel", "SETO_PT_surface_painter_panel")
+
     panels = {}
-    for name in ("SETO_PT_fake_ao_panel", "SETO_PT_fake_damage_panel", "SETO_PT_decal_tool_panel"):
+    for name in edge_tools + surface_tools:
         panels[name] = getattr(bpy.types, name, None)
         check(f"{name} is registered", panels[name] is not None)
 
-    check("all three panels share the 'Seto Tools' tab",
+    check("all five panels share the 'Seto Tools' tab",
           all(p is not None and p.bl_category == "Seto Tools" for p in panels.values()),
           str({k: getattr(v, "bl_category", None) for k, v in panels.items()}))
+
     orders = {k: getattr(v, "bl_order", None) for k, v in panels.items()}
-    check("Decal Tool sorts below Fake AO and Fake Damage",
-          orders["SETO_PT_fake_ao_panel"] == 0
-          and orders["SETO_PT_fake_damage_panel"] == 1
-          and orders["SETO_PT_decal_tool_panel"] == 2, str(orders))
+    check("every tool has its own place in the tab",
+          len(set(orders.values())) == len(orders) and None not in orders.values(),
+          str(orders))
+    check("the edge-strip tools stay together, above the surface tools",
+          max(orders[n] for n in edge_tools) < min(orders[n] for n in surface_tools),
+          str(orders))
 
     check("each tool keeps its own scene settings",
           hasattr(bpy.context.scene, "seto_fake_ao")

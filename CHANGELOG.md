@@ -50,6 +50,26 @@ tiling one and can never be sharper than what it sampled, which on a wall is a
 lot worse — so the optimisation removes geometry instead, and the pixels are
 untouched.
 
+### Changed — the N-panel
+
+- **The tab is grouped by what a tool works on.** The three that build a strip
+  along selected edges come first — Fake AO, Fake Damage, **Smooth Edge** —
+  then the two that put texture on a surface: Decal Tool and Surface Painter.
+  Smooth Edge used to sit below the Decal Tool, splitting the strip tools in
+  half, and the ordering had a hole in it.
+- **Surface Painter's section is split into child panels** the way the Decal
+  Tool's is. It has the most controls of the five, and as one column it was
+  long enough that Start Paint scrolled off the bottom while you were choosing
+  a texture. What is left in the main section is the workflow — layers,
+  texture, paint — with **Brush**, **Placement**, **Normal Map**, **Paint
+  Mesh** and **Library Folder** below it. Placement and Normal Map only appear
+  once a layer exists.
+- **Explanations moved out of the panel and into tooltips**, where Blender
+  meant them to live. Several three-line paragraphs of `label()` were spending
+  permanent vertical space on things you read once.
+- **Buttons are Title Case**, matching the other four tools. Surface Painter
+  was the only one shouting `START PAINT`.
+
 ### Verified
 
 `tests/surface_painter.py`, headless against Sollumz on Blender 5.2.0 LTS. The

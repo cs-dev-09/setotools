@@ -13,7 +13,11 @@ and never touches your original mesh.
 | [Surface Painter](seto_tools/surface_painter) | Dirt, grime and graffiti brushed onto a surface | a paint mesh over the whole object |
 
 They all live in the **Seto Tools** N-panel tab, each as its own collapsible
-section, the way Sollumz Tools is laid out.
+section, the way Sollumz Tools is laid out. The sections are grouped by what a
+tool works on — the three that build a strip along selected edges first, then
+the two that put texture on a surface — and inside a section, everything you
+set once and stop thinking about is a child panel, so the top of each one is
+the thing you actually came to press.
 
 ## Install
 

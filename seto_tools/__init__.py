@@ -24,11 +24,13 @@ bl_info = {
 # Color 1 vertex colour they all write.
 from . import fake_ao
 from . import fake_damage
-from . import decal_tool
 from . import smooth_edge
+from . import decal_tool
 from . import surface_painter
 
-_modules = (fake_ao, fake_damage, decal_tool, smooth_edge, surface_painter)
+# Panel order, and grouped by what each tool works on: the three that build a
+# strip along selected edges, then the two that put texture on a surface.
+_modules = (fake_ao, fake_damage, smooth_edge, decal_tool, surface_painter)
 
 
 def register():
