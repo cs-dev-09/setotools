@@ -13,9 +13,11 @@ import textwrap
 
 import bpy
 
+from . import geometry
 from . import library
 from . import preferences
 from . import previews
+from ..shared import addon_prefs
 from ..shared import sollumz_integration as szi
 
 # Height of the texture thumbnail, in UI units.
@@ -106,18 +108,19 @@ class SETO_PT_decal_tool_panel(bpy.types.Panel):
             layout.label(text="Select faces in Edit Mode.", icon='INFO')
 
     def _draw_preview(self, layout, settings):
-        """Thumbnail of the texture that will actually be used."""
+        """The texture that will actually be used, picked visually.
+
+        A plain thumbnail of the current pick, sized by the add-on preference.
+        """
         if settings.random_texture:
             layout.label(text="Random texture from this category.", icon='QUESTION')
             return
 
         path = library.texture_path(settings.category, settings.texture)
         icon_id = previews.get_icon_id(path)
-        if not icon_id:
-            return
-
-        box = layout.box()
-        box.template_icon(icon_value=icon_id, scale=PREVIEW_SCALE)
+        if icon_id:
+            box = layout.box()
+            box.template_icon(icon_value=icon_id, scale=addon_prefs.preview_size() / 2.0)
 
 
 class SETO_PT_decal_placement_panel(_DecalChildPanel, bpy.types.Panel):
@@ -130,6 +133,7 @@ class SETO_PT_decal_placement_panel(_DecalChildPanel, bpy.types.Panel):
         col = self.layout.column(align=True)
         col.prop(settings, "width")
         col.prop(settings, "height")
+        col.prop(settings, "edge_fade")
         col.prop(settings, "surface_offset")
         rotation_row = col.row(align=True)
         rotation_row.enabled = not settings.random_rotation
@@ -226,6 +230,7 @@ class SETO_PT_decal_object_panel(bpy.types.Panel):
         col = layout.column(align=True)
         col.prop(data, "width")
         col.prop(data, "height")
+        col.prop(data, "edge_fade")
         col.prop(data, "surface_offset")
         col.prop(data, "rotation")
 
@@ -234,8 +239,21 @@ class SETO_PT_decal_object_panel(bpy.types.Panel):
         col.prop(data, "offset_v")
 
         layout.separator()
-        layout.label(text="Vertex Color (Color 1)")
-        layout.prop(data, "alpha", slider=True)
+        layout.label(text="Corner Alpha (Color 1)")
+        # Laid out as the decal actually sits: top row above bottom row, so the
+        # sliders map onto the corners you can see in the viewport rather than
+        # onto an index you have to remember.
+        grid = layout.grid_flow(row_major=True, columns=2, align=True)
+        for index in (3, 2, 0, 1):      # top left, top right, bottom left, bottom right
+            grid.prop(data, "corner_alpha", index=index, text="")
+        row = layout.row(align=True)
+        row.operator("seto.decal_alpha_uniform", text="All 1.0", icon='CHECKMARK')
+        row.operator("seto.decal_alpha_fade_down", text="Fade Down", icon='SORT_ASC')
+
+        layout.label(text="Border Alpha (edge ring)")
+        col = layout.column(align=True)
+        for index, side in enumerate(geometry.SIDE_NAMES):
+            col.prop(data, "border_alpha", index=index, text=side)
 
         row = layout.row(align=True)
         row.operator("seto.decal_reset_position", text="Center", icon='PIVOT_BOUNDBOX')

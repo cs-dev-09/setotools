@@ -16,6 +16,25 @@ Tools included:
   generated material's texture slot is left empty on purpose, so the decal
   will look black/blank in the viewport until you assign one yourself.
 
+## The texture
+
+Drop an ambient-occlusion texture into:
+
+```
+seto_tools/fake_ao/textures/
+```
+
+It is wired into `DiffuseSampler` for you, as sRGB (a colour texture, not a
+normal map) and not embedded. The first usable image is used, `.dds` preferred;
+a file named `fake_ao.*` wins if you want to pin one while keeping others
+around.
+
+**The file name matters.** Sollumz exports the texture name from it, so
+`tl_v_office_shadow.dds` becomes the `tl_v_office_shadow` reference in the
+`.ydr` — which then has to exist in the asset's TXD. Leaving the folder empty is
+not an error: the strip and its material are still built, and the tool reports
+that the slot was left for you.
+
 ## Install
 
 1. Install `seto_tools.zip` — this tool ships inside it.

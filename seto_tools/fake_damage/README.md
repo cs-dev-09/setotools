@@ -14,10 +14,57 @@ other and either works installed on its own.
 
 - Blender 4.2+
 - Sollumz installed, enabled, with dependencies already set up.
-- A damage normal map on hand to assign afterward — the generated material's
-  texture slots are left empty on purpose, so the decal will look blank in the
-  viewport until you assign one yourself. Recommended:
-  **`gz_v_ml_wallnormal_n.dds`** (see Material below).
+- A damage normal map in `seto_tools/fake_damage/textures/` — it is wired into
+  the generated material automatically. Recommended:
+  **`gz_v_ml_wallnormal_n.dds`** (see The texture below).
+
+## The texture
+
+Drop a damage normal map into:
+
+```
+seto_tools/fake_damage/textures/
+```
+
+It is wired into both `BumpSampler` and `DiffuseSampler` for you, as Non-Color
+and not embedded. The first usable image is used, `.dds` preferred; a file named
+`fake_damage.*` wins if you want to pin one.
+
+**The file name matters** — Sollumz exports the texture name from it, so
+`gz_v_ml_wallnormal_n.dds` becomes the `gz_v_ml_wallnormal_n` reference in the
+`.ydr`, which then has to exist in the asset's TXD.
+
+**UV Scale / UV Offset** place the finished island on that texture: the island is
+scaled about its own centre, then moved. Both are live-editable per strip.
+
+> The defaults (3.5, and +0.3906 in U) were dialled in against a different
+> texture. Swap the bundled file and they will almost certainly want re-tuning —
+> drag them on one strip until it sits on the band you want, then copy those two
+> numbers into the panel defaults so new strips start there.
+
+## Shader values
+
+The generated `decal_normal_only.sps` material is set to the values GTA's own
+damage strips use (`hn_apt_hall_blk_milo`): the shader's stock numbers with
+`bumpiness` dialled back to `0.5`.
+
+| Parameter | Value |
+| --- | --- |
+| `bumpiness` | 0.50 |
+| `specularIntensityMult` | 0.125 |
+| `specularFalloffMult` | 100.00 |
+| `specularFresnel` | 0.97 |
+
+`specularIntensityMult` is the one that matters. `decal_normal_only` carries no
+colour of its own — it only perturbs the surface normal — so what makes a crease
+readable in game is the light's response to that normal, and most of that
+response is specular. It used to be `0.0` here, which switched the response off
+and left strips nearly invisible on softly lit interior walls no matter how
+strong the normal map was.
+
+A **reused** material is never rewritten, so an existing `seto_fakedamage` in
+your scene keeps its old values. Delete it, or set **Material** to *Always
+Create New*, to pick these up.
 
 ## Install
 
@@ -41,7 +88,7 @@ to hide, select and export as a group.
 ## Live settings
 
 The strip you create keeps its own settings. Select it and the **Selected
-Strip** section appears under Fake Damage: drag **Damage Width** and the mesh
+Strip** section appears under Fake Damage: drag **Width** and the mesh
 regenerates as you drag, the same feel as a Geometry Nodes modifier — except
 the result is real mesh data, so nothing has to be applied before export.
 
@@ -97,37 +144,20 @@ operator is involved, so it is safe to run from a property callback.
 
 ## Material
 
-`decal_normal_only.sps`, render bucket 2 (Decal):
+`decal_normal_only.sps`, render bucket 2 (Decal). Values and textures are set for
+you — see **Shader values** and **The texture** above.
 
-| Parameter | Value |
-| --- | --- |
-| `useTessellation` | disabled |
-| `bumpiness` | 1.00 |
-| `specularIntensityMult` | 0.00 |
-| `specularFalloffMult` | 40.00 |
-| `specularFresnel` | 0.75 |
+Both **DiffuseSampler** and **BumpSampler** get the bundled normal map, as
+**Non-Color** and not embedded. `decal_normal_only.sps` samples `DiffuseSampler`
+for the alpha/shape of the chipping and `BumpSampler` for its surface normals, so
+the same image goes in both.
 
-### Texture
+Non-Color is not optional: left on `sRGB`, Blender gamma-corrects the normal
+vectors and the damage reads as flat, or lit from the wrong direction.
 
-**DiffuseSampler** and **BumpSampler** are left **empty** — you assign the
-texture yourself. No placeholder image is generated, because a generated one
-would silently export as a real (blank) normal map.
-
-Recommended texture, in **both** slots:
-
-| | |
-| --- | --- |
-| Texture | `gz_v_ml_wallnormal_n.dds` |
-| Color Space | **Non-Color** |
-| Embedded | unchecked |
-
-`gz_v_ml_wallnormal_n.dds` is a normal map, so its Color Space **must** be set
-to `Non-Color`. Left on `sRGB`, Blender gamma-corrects the normal vectors and
-the damage reads as flat or lit from the wrong direction in the viewport.
-
-Set the same texture in both slots: `decal_normal_only.sps` samples
-`DiffuseSampler` for the alpha/shape of the chipping and `BumpSampler` for its
-surface normals.
+Sollumz's own `post_create_shader_add_default_images` is never called — it would
+drop a blank generated image into any remaining slot, and that blank exports as a
+real (blank) texture.
 
 Material reuse is restricted to materials this tool created (named
 `seto_fakedamage`), and a reused material is never rewritten, so hand-tweaked
@@ -135,10 +165,10 @@ values survive.
 
 ## Settings
 
-- **Damage Width** — how far the strip extends onto each wall.
+- **Width** — how far the strip extends onto each wall.
 - **Surface Offset** — lift off the surface along the corner bisector, avoids z-fighting.
 - **Merge Distance** — welds chains that meet at a junction into one mesh.
-  Keep it above Surface Offset and well below Damage Width.
+  Keep it above Surface Offset and well below Width.
 - **Alpha Center / Alpha Outer** — Color 1 alpha fade, corner → outer edge.
 - **Invert Fade** — swap which side gets which alpha.
 - **Flip Direction** — flips a single-wall wing to the other side.

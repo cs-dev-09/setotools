@@ -379,6 +379,23 @@ def merge_by_distance(mesh, distance):
     mesh.update()
 
 
+def shade_smooth(mesh):
+    """Mark every face smooth.
+
+    A flat-shaded strip shows a hard band at each quad boundary, which is the
+    seam a decal strip exists to hide. Done through the data API (per-polygon
+    use_smooth) rather than bpy.ops.object.shade_smooth, so it works from the
+    live rebuild's property callback too, where calling an operator is not safe.
+
+    Only the generated strip is ever touched; the source mesh is not shaded,
+    moved or modified in any way.
+    """
+    if not mesh.polygons:
+        return
+    mesh.polygons.foreach_set("use_smooth", [True] * len(mesh.polygons))
+    mesh.update()
+
+
 def normalise_uvs(mesh, size=1.5):
     """Fit the UV island into the 0..1 square, centred, keeping its aspect ratio.
 
@@ -407,5 +424,10 @@ def normalise_uvs(mesh, size=1.5):
     centre_v = (min_v + max_v) * 0.5
     for loop in uv_layer.data:
         u, v = loop.uv
-        loop.uv = (0.5 + (u - centre_u) * scale,
-                   0.5 + (v - centre_v) * scale)
+        # Rotated 90 degrees counter-clockwise, (u, v) -> (-v, u), so the island
+        # stands upright in the 0..1 square: a long run reads as a tall strip,
+        # not a wide one. A real rotation rather than swapping the two axes -
+        # swapping would mirror the island as well, which flips the direction a
+        # normal map or a directional gradient points in.
+        loop.uv = (0.5 - (v - centre_v) * scale,
+                   0.5 + (u - centre_u) * scale)

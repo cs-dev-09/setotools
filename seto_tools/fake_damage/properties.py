@@ -1,6 +1,7 @@
 import bpy
 
 from ..shared import sollumz_integration as szi
+from ..shared import vertex_color
 
 
 def settings_annotations(update=None):
@@ -24,7 +25,7 @@ def settings_annotations(update=None):
     """
     return {
         "width": bpy.props.FloatProperty(
-            name="Damage Width",
+            name="Width",
             description=(
                 "How far the damage strip extends onto each adjacent wall, measured from "
                 "the selected edge. The generated ribbon is this wide on BOTH sides of the "
@@ -54,7 +55,7 @@ def settings_annotations(update=None):
                 "Vertices closer than this are welded to their shared centroid once ALL "
                 "chains have been generated, so separate chains meeting at a junction join "
                 "into one continuous mesh. Must be larger than Surface Offset to close a "
-                "seam, but well below Damage Width or the strip collapses"
+                "seam, but well below Width or the strip collapses"
             ),
             default=0.01,
             min=0.00001,
@@ -65,7 +66,7 @@ def settings_annotations(update=None):
         "alpha_center": bpy.props.FloatProperty(
             name="Alpha Center",
             description="Color 1 alpha at the corner itself, where the damage is strongest",
-            default=1.0,
+            default=vertex_color.DEFAULT_ALPHA_CENTER,
             min=0.0,
             max=1.0,
             update=update,
@@ -73,7 +74,7 @@ def settings_annotations(update=None):
         "alpha_outer": bpy.props.FloatProperty(
             name="Alpha Outer",
             description="Color 1 alpha at the far edge of the strip, so the decal fades out",
-            default=0.0,
+            default=vertex_color.DEFAULT_ALPHA_OUTER,
             min=0.0,
             max=1.0,
             update=update,
@@ -91,13 +92,37 @@ def settings_annotations(update=None):
             size=3,
             min=0.0,
             max=1.0,
-            default=(1.0, 1.0, 1.0),
+            default=vertex_color.DEFAULT_RGB,
             update=update,
         ),
         "flip_direction": bpy.props.BoolProperty(
             name="Flip Direction",
             description="Reverse the direction the wings extend from the selected edge",
             default=False,
+            update=update,
+        ),
+        # The fitted island is generic; these place it on the part of the
+        # bundled damage texture that actually holds the crease. Applied in the
+        # order you would do it by hand in the UV editor: scale about the
+        # island's own centre, then move.
+        "uv_scale": bpy.props.FloatProperty(
+            name="UV Scale",
+            description=(
+                "Scales the finished UV island about its own centre. Above 1 the island "
+                "grows past the 0..1 square, which is how the strip lands on a narrow "
+                "band of the texture instead of stretching the whole image over it"
+            ),
+            default=3.5,
+            min=0.001,
+            soft_max=10.0,
+            update=update,
+        ),
+        "uv_offset": bpy.props.FloatVectorProperty(
+            name="UV Offset",
+            description="Moves the finished UV island across the texture, after scaling",
+            size=2,
+            default=(0.3906, 0.0),
+            subtype='XYZ',
             update=update,
         ),
         "material_mode": bpy.props.EnumProperty(

@@ -9,17 +9,20 @@ a Blender 4.2+ Extension (module name like "bl_ext.<repo>.sollumz"), so the base
 module name is resolved dynamically via bpy.context.preferences.addons instead
 of a hardcoded "import Sollumz".
 
-The three tools used to carry a copy of this each, back when they were three
+Three of the tools used to carry a copy of this each, back when they were
 separate add-ons. The copies were identical apart from their docstrings and the
 one material function each needed, so merging them changed no behaviour - the
-three material builders are simply named apart now:
+material builders are simply named apart now:
 
-    find_or_create_decal_material    Decal Tool   decal.sps + DiffuseSampler
-    find_or_create_damage_material   Fake Damage  decal_normal_only.sps
-    find_or_create_fake_ao_material  Fake AO      decal.sps, no texture
+    find_or_create_decal_material       Decal Tool   decal.sps, library texture
+    find_or_create_damage_material      Fake Damage  decal_normal_only.sps, bundled
+    find_or_create_smooth_edge_material Smooth Edge  decal_normal_only.sps, bundled
+    find_or_create_fake_ao_material     Fake AO      decal.sps, no texture
 
-Each keeps its own reuse rule, which is what stops one tool from adopting - and
-then retexturing - a material another tool (or the user) set up.
+Each keeps its own material name and its own reuse rule, which is what stops one
+tool from adopting - and then retexturing - a material another tool (or the
+user) set up. Fake Damage and Smooth Edge use the same shader, so without that
+separation they would fight over each other's materials.
 
 Shared conventions worth knowing:
 
@@ -155,6 +158,19 @@ def get_color_attr_name(index=0):
         return meshhelper.get_color_attr_name(index)
     except Exception:
         return f"Color {index + 1}"
+
+
+def get_uv_map_name(index=0):
+    """Sollumz's name for a UV map ("UVMap 0" for index 0).
+
+    Falls back to the known name if Sollumz is unavailable, so live editing of an
+    already-generated decal keeps working even without it.
+    """
+    try:
+        meshhelper = _import("tools.meshhelper")
+        return meshhelper.get_uv_map_name(index)
+    except Exception:
+        return f"UVMap {index}"
 
 
 def _is_shader_material(mat):
@@ -308,18 +324,81 @@ def assign_material_to_object(obj, material):
 
 # ------------------------------------------------ Fake Damage material
 
+BUMP_SAMPLER_NODE = "BumpSampler"
+
+
+def _assign_bundled_texture(material, texture_path, node_names, colorspace):
+    """Put a tool's bundled texture into the sampler slots it names.
+
+    Which slots, and which colour space, depend on the shader:
+
+      * decal_normal_only (Fake Damage, Smooth Edge) reads its normal from
+        BumpSampler and still expects something in DiffuseSampler, and both want
+        Non-Color - reading a normal map through sRGB bends the lighting.
+      * decal.sps (Fake AO) has only DiffuseSampler, and that is a colour
+        texture, so sRGB.
+
+    A slot the shader does not have is skipped rather than treated as an error.
+    Returns a warning string, or None when the texture went in cleanly.
+    """
+    if not texture_path:
+        return ("No texture is bundled with this tool - drop one into its "
+                "textures/ folder and the next strip will use it.")
+
+    try:
+        image = load_image(texture_path)
+    except TextureLoadError as e:
+        return str(e)
+
+    try:
+        image.colorspace_settings.name = colorspace
+    except (TypeError, AttributeError):
+        pass
+
+    node_tree = material.node_tree
+    for node_name in node_names:
+        node = node_tree.nodes.get(node_name)
+        if node is not None and isinstance(node, bpy.types.ShaderNodeTexImage):
+            node.image = image
+            # Left non-embedded: the texture is expected to live in the asset's
+            # own TXD, referenced by name, not baked into the .ydr.
+            node.texture_properties.embedded = False
+    return None
+
+
+def _assign_normal_map(material, texture_path):
+    """The decal_normal_only case: both samplers, Non-Color."""
+    return _assign_bundled_texture(
+        material, texture_path,
+        node_names=(BUMP_SAMPLER_NODE, DIFFUSE_SAMPLER_NODE),
+        colorspace='Non-Color',
+    )
+
+
 DAMAGE_SHADER_FILENAME = "decal_normal_only.sps"
 
 
 MATERIAL_NAME = "seto_fakedamage"
 
 
+# Taken from GTA's own damage strips (hn_apt_hall_blk_milo): the shader's stock
+# values, with bumpiness dialled back to 0.5.
+#
+# specularIntensityMult is the one that matters. decal_normal_only carries no
+# colour of its own - it only perturbs the surface normal - so what makes a
+# crease readable is the light's response to that normal, and most of that
+# response is specular. This used to be 0.0, which switched it off entirely and
+# left the strip nearly invisible in game on softly lit interior walls, however
+# strong the normal map was.
+#
+# Smooth Edge deliberately keeps its own set (SMOOTH_EDGE_VALUE_PARAMETERS) - it
+# is a different effect, tuned separately.
 VALUE_PARAMETERS = {
     "useTessellation": 0.0,
-    "bumpiness": 1.00,
-    "specularIntensityMult": 0.00,
-    "specularFalloffMult": 40.00,
-    "specularFresnel": 0.75,
+    "bumpiness": 0.50,
+    "specularIntensityMult": 0.125,
+    "specularFalloffMult": 100.00,
+    "specularFresnel": 0.97,
 }
 
 
@@ -366,21 +445,21 @@ def apply_value_parameters(material, parameters=None):
     return missing
 
 
-def find_or_create_damage_material(reuse=True):
+def find_or_create_damage_material(texture_path=None, reuse=True):
     """Find a Fake Damage material to reuse, or create and configure a new one.
 
     Never invents a shader: decal_normal_only.sps is first confirmed to exist
     in Sollumz's currently mounted ShaderManager (from szio).
 
-    DiffuseSampler / BumpSampler are deliberately left empty - the user picks
-    their own damage normal map in the material properties. This is also why
-    Sollumz's own post_create_shader_add_default_images is never called: it
-    would drop a generated blank image into every slot, which then exports as
-    a real (blank) texture.
+    DiffuseSampler / BumpSampler are filled from the normal map bundled with
+    the add-on (fake_damage/textures/). Sollumz's own
+    post_create_shader_add_default_images is still never called: it would drop a
+    blank generated image into every *other* slot, and that blank exports as a
+    real texture.
 
-    Returns (material, missing_parameters). A reused material is left exactly
-    as the user has it - its parameters are not rewritten - so hand tweaks
-    survive.
+    Returns (material, missing_parameters, texture_warning). A reused material
+    is left exactly as the user has it - neither its parameters nor its textures
+    are rewritten - so hand tweaks survive.
     """
     try:
         shader_module = importlib.import_module("szio.gta5.shader")
@@ -397,44 +476,566 @@ def find_or_create_damage_material(reuse=True):
     if reuse:
         existing = _find_existing_damage_material()
         if existing is not None:
-            return existing, []
+            return existing, [], None
 
     material = shader_materials.create_shader(DAMAGE_SHADER_FILENAME)
     material.name = MATERIAL_NAME
-    return material, apply_value_parameters(material)
+    missing = apply_value_parameters(material)
+    texture_warning = _assign_normal_map(material, texture_path)
+    return material, missing, texture_warning
 
 
 # ----------------------------------------------------- Fake AO material
 
-def find_or_create_fake_ao_material(reuse=True):
-    """Find an existing decal.sps material to reuse, or create a new one via
-    Sollumz's own shader creation function.
+FAKE_AO_MATERIAL_NAME = "seto_fakeao"
+
+
+def _find_existing_fake_ao_material():
+    """A Fake AO material we made earlier, or None.
+
+    Name-scoped rather than shader-scoped. Matching on decal.sps alone - which
+    is what this used to do - would happily adopt one of the Decal Tool's
+    per-texture materials, since those use the same shader.
+    """
+    for mat in bpy.data.materials:
+        if not (mat.name == FAKE_AO_MATERIAL_NAME
+                or mat.name.startswith(FAKE_AO_MATERIAL_NAME + ".")):
+            continue
+        if not _is_shader_material(mat):
+            continue
+        if mat.shader_properties.filename == DECAL_SHADER_FILENAME:
+            return mat
+    return None
+
+
+def find_or_create_fake_ao_material(texture_path=None, reuse=True):
+    """Find a Fake AO material to reuse, or create and texture a new one.
 
     Never invents a shader: first confirms decal.sps exists in Sollumz's
-    currently mounted ShaderManager (from szio), and raises
-    SollumzShaderError with a clear message if not.
+    currently mounted ShaderManager (from szio), and raises SollumzShaderError
+    with a clear message if not.
+
+    DiffuseSampler is filled from the texture bundled with the add-on
+    (fake_ao/textures/). decal.sps has no BumpSampler, so unlike Fake Damage and
+    Smooth Edge only the one slot is set, and as sRGB rather than Non-Color -
+    this is a colour texture, not a normal map.
+
+    Returns (material, texture_warning). A reused material is left exactly as
+    the user has it, so hand tweaks survive.
     """
     try:
         shader_module = importlib.import_module("szio.gta5.shader")
     except ImportError as e:
         raise SollumzShaderError(f"Could not import szio.gta5.shader ({e}).")
 
-    sollumz_properties = _import("sollumz_properties")
     shader_materials = _import("ydr.shader_materials")
 
-    shader_manager = shader_module.ShaderManager
-    material_type = sollumz_properties.MaterialType
-
-    shader_def = shader_manager.find_shader(DECAL_SHADER_FILENAME)
-    if shader_def is None:
+    if shader_module.ShaderManager.find_shader(DECAL_SHADER_FILENAME) is None:
         raise SollumzShaderError(
             f"Shader '{DECAL_SHADER_FILENAME}' was not found by Sollumz's ShaderManager."
         )
 
     if reuse:
-        for mat in bpy.data.materials:
-            if mat.sollum_type == material_type.SHADER and \
-                    mat.shader_properties.filename == DECAL_SHADER_FILENAME:
-                return mat
+        existing = _find_existing_fake_ao_material()
+        if existing is not None:
+            return existing, None
 
-    return shader_materials.create_shader(DECAL_SHADER_FILENAME)
+    material = shader_materials.create_shader(DECAL_SHADER_FILENAME)
+    material.name = FAKE_AO_MATERIAL_NAME
+    texture_warning = _assign_bundled_texture(
+        material, texture_path,
+        node_names=(DIFFUSE_SAMPLER_NODE,),
+        colorspace='sRGB',
+    )
+    return material, texture_warning
+
+
+# ------------------------------------------------------ Smooth Edge material
+
+SMOOTH_EDGE_SHADER_FILENAME = "decal_normal_only.sps"
+
+# Named so it can be recognised for reuse later. Reuse is restricted to our own
+# materials on purpose: matching on the shader filename alone would adopt - and
+# then retexture - a decal_normal_only material the user set up by hand, or the
+# one Fake Damage made.
+SMOOTH_EDGE_MATERIAL_NAME = "seto_smoothedge"
+
+# Same starting point as Fake Damage: this is the same shader doing the same
+# job, a normal-map decal laid over an edge.
+SMOOTH_EDGE_VALUE_PARAMETERS = {
+    "useTessellation": 0.0,
+    "bumpiness": 1.00,
+    "specularIntensityMult": 0.00,
+    "specularFalloffMult": 40.00,
+    "specularFresnel": 0.75,
+}
+
+
+def _find_existing_smooth_edge_material():
+    """A Smooth Edge material we made earlier, or None.
+
+    Name-scoped rather than shader-scoped: Fake Damage uses the same shader, so
+    matching on decal_normal_only.sps alone would let the two tools adopt - and
+    retexture - each other's materials.
+    """
+    for mat in bpy.data.materials:
+        if not (mat.name == SMOOTH_EDGE_MATERIAL_NAME
+                or mat.name.startswith(SMOOTH_EDGE_MATERIAL_NAME + ".")):
+            continue
+        if not _is_shader_material(mat):
+            continue
+        if mat.shader_properties.filename == SMOOTH_EDGE_SHADER_FILENAME:
+            return mat
+    return None
+
+
+def find_or_create_smooth_edge_material(texture_path=None, reuse=True):
+    """Find a Smooth Edge material to reuse, or create and configure a new one.
+
+    Never invents a shader: decal_normal_only.sps is first confirmed to exist in
+    Sollumz's currently mounted ShaderManager (from szio).
+
+    Unlike Fake Damage, the texture slots are filled in automatically from the
+    normal map bundled with the add-on - that is the whole point of this tool
+    being separate. Sollumz's own post_create_shader_add_default_images is still
+    never called: it would drop a blank generated image into every *other* slot,
+    and that blank exports as a real texture.
+
+    Returns (material, missing_parameters, texture_warning). A reused material
+    is left exactly as the user has it - neither its parameters nor its textures
+    are rewritten - so hand tweaks survive.
+    """
+    try:
+        shader_module = importlib.import_module("szio.gta5.shader")
+    except ImportError as e:
+        raise SollumzShaderError(f"Could not import szio.gta5.shader ({e}).")
+
+    shader_materials = _import("ydr.shader_materials")
+
+    if shader_module.ShaderManager.find_shader(SMOOTH_EDGE_SHADER_FILENAME) is None:
+        raise SollumzShaderError(
+            f"Shader '{SMOOTH_EDGE_SHADER_FILENAME}' was not found by Sollumz's ShaderManager."
+        )
+
+    if reuse:
+        existing = _find_existing_smooth_edge_material()
+        if existing is not None:
+            return existing, [], None
+
+    material = shader_materials.create_shader(SMOOTH_EDGE_SHADER_FILENAME)
+    material.name = SMOOTH_EDGE_MATERIAL_NAME
+    missing = apply_value_parameters(material, SMOOTH_EDGE_VALUE_PARAMETERS)
+    texture_warning = _assign_normal_map(material, texture_path)
+    return material, missing, texture_warning
+
+
+# ---------------------------------------------------------------------------
+# GTA lights (Lighting > GTA Light)
+# ---------------------------------------------------------------------------
+#
+# Sollumz's light data model is the source of truth here. Every name below was
+# read from the installed Sollumz source, not invented:
+#
+#   sollumz_properties.py    LightType, SollumType, SOLLUMZ_UI_NAMES
+#   ydr/properties.py        LightProperties / LightFlags / LightTimeFlags,
+#                            registered onto bpy.types.Light
+#   ydr/lights.py            export_light(), which .ydr / .yft / .ytyp export
+#                            actually calls
+#   ydr/operators/lights.py  SOLLUMZ_OT_create_light, mirrored by create_gta_light
+#   ydr/gta5/presets/light.py + shared/presets/store.py   the preset system
+#
+# THE RULE: GTA light values are read and written only through
+# `light_data.light_properties`, `.light_flags`, `.time_flags` and
+# `.sollum_type`. Sollumz stores seven GTA values *inside* Blender-native light
+# fields through get/set wrapper properties:
+#
+#   intensity        <-> energy / 500        falloff          <-> cutoff_distance
+#   falloff_exponent <-> shadow_soft_size*5  volume_intensity <-> volume_factor
+#   cone_outer_angle <-> spot_size / 2       shadow_near_clip <-> shadow_buffer_clip_start
+#   cone_inner_angle <-> spot_blend
+#
+# Writing those native fields directly would silently reinterpret GTA data, so
+# no Seto code ever touches them.
+
+
+def get_light_type_enum():
+    """Sollumz's LightType enum (sollumz_properties.LightType)."""
+    return _import("sollumz_properties").LightType
+
+
+def get_sollum_type_enum():
+    """Sollumz's SollumType enum (sollumz_properties.SollumType)."""
+    return _import("sollumz_properties").SollumType
+
+
+def get_ui_names():
+    """Sollumz's SOLLUMZ_UI_NAMES mapping (enum member -> display name)."""
+    return _import("sollumz_properties").SOLLUMZ_UI_NAMES
+
+
+def is_gta_light(obj):
+    """True if `obj` is a Sollumz GTA light that export will pick up.
+
+    Mirrors the filter Sollumz's exporter uses (ydr/lights.py:export_lights):
+    a LIGHT object whose light data-block has a sollum_type other than NONE.
+    The object-level sollum_type is checked too, since that is what Sollumz's
+    own light panels and gizmos poll on.
+    """
+    if obj is None or obj.type != "LIGHT" or obj.data is None:
+        return False
+    try:
+        SollumType = get_sollum_type_enum()
+        LightType = get_light_type_enum()
+    except Exception:
+        return False
+    return (getattr(obj, "sollum_type", None) == SollumType.LIGHT
+            and getattr(obj.data, "sollum_type", None) != LightType.NONE)
+
+
+def create_gta_light(context, light_type_value, location=None):
+    """Create a Sollumz-compatible GTA light and return the new object.
+
+    Mirrors Sollumz's own SOLLUMZ_OT_create_light.run() step for step, so the
+    result is indistinguishable from a light made with Sollumz's Create Light
+    button:
+
+      1. bpy.data.lights.new() with the Blender light type Sollumz uses ("SPOT"
+         for Spot, "POINT" otherwise - a Capsule is a POINT lamp whose
+         `is_capsule` flag is set by Sollumz's sollum_type setter).
+      2. Assign `sollum_type`, whose Sollumz-side setter derives light.type and
+         light.is_capsule.
+      3. create_blender_object(SollumType.LIGHT, ...) so the object gets the
+         object-level sollum_type and is linked to the right collection.
+      4. Parent into the active Drawable hierarchy when there is one.
+      5. Seed with the "Default" light preset if Sollumz has one.
+
+    `light_type_value` is a LightType *value* string, e.g. "sollumz_light_spot".
+    """
+    LightType = get_light_type_enum()
+    SollumType = get_sollum_type_enum()
+    ui_names = get_ui_names()
+    blenderhelper = _import("tools.blenderhelper")
+
+    light_type = LightType(light_type_value)
+    name = ui_names.get(light_type, "Light")
+
+    blender_light_type = "SPOT" if light_type == LightType.SPOT else "POINT"
+
+    light_data = bpy.data.lights.new(name=name, type=blender_light_type)
+    light_data.sollum_type = light_type
+    light_obj = blenderhelper.create_blender_object(SollumType.LIGHT, name, light_data)
+
+    active_obj = context.active_object
+    target_loc = location if location is not None else context.scene.cursor.location
+
+    if active_obj is not None and getattr(active_obj, "sollum_type", None) in (
+        SollumType.DRAWABLE_MODEL,
+        SollumType.DRAWABLE,
+    ):
+        light_obj.parent = (active_obj.parent
+                            if active_obj.sollum_type == SollumType.DRAWABLE_MODEL
+                            else active_obj)
+        light_obj.matrix_world.translation = target_loc
+    else:
+        light_obj.location = target_loc
+
+    apply_default_light_preset(light_data)
+
+    return light_obj
+
+
+def _get_light_preset_modules():
+    """Return (preset light module, preset store module), or (None, None) when
+    the installed Sollumz has no preset system."""
+    try:
+        light_presets = _import("ydr.gta5.presets.light")
+        store = _import("shared.presets.store")
+    except Exception:
+        return None, None
+    if not hasattr(light_presets, "LIGHT_PRESET_CATEGORY"):
+        return None, None
+    return light_presets, store
+
+
+def apply_default_light_preset(light_data):
+    """Apply Sollumz's "Default" light preset, exactly as Sollumz's own create
+    operator does. No-op when the preset system or that preset is missing."""
+    light_presets, store = _get_light_preset_modules()
+    if light_presets is None:
+        return False
+    category = light_presets.LIGHT_PRESET_CATEGORY
+    try:
+        preset = store.find_preset(category, "Default")
+        if preset is None:
+            return False
+        category.apply(light_data, preset.get("data", {}))
+    except Exception:
+        return False
+    return True
+
+
+def has_light_property(light_data, prop_name):
+    """True if Sollumz's LightProperties on this light really has `prop_name`.
+
+    Lets the panel degrade gracefully instead of raising if a future Sollumz
+    renames or drops a property.
+    """
+    light_props = getattr(light_data, "light_properties", None)
+    if light_props is None:
+        return False
+    return prop_name in light_props.bl_rna.properties
+
+
+def get_flag_names(flags_group):
+    """Flag property names of a Sollumz FlagPropertyGroup, in Sollumz's order."""
+    try:
+        return list(flags_group.get_flag_names())[:flags_group.size]
+    except Exception:
+        return []
+
+
+# ---------------------------------------------------------------------------
+# YTYP archetype extensions (Lighting > God Rays)
+# ---------------------------------------------------------------------------
+#
+# A god ray is three pieces of data living in two different export files, which
+# is the single most important thing to understand about this section:
+#
+#   Spot Light    a real Blender LIGHT object inside the Drawable hierarchy.
+#                 Exported to .ydr by ydr/lights.py:export_lights(), which walks
+#                 parent_obj.children_recursive. Handled by create_gta_light()
+#                 above.
+#
+#   Light Shaft   a CExtensionDefLightShaft, and
+#   Particle      a CExtensionDefParticleEffect,
+#                 both of which are NOT scene objects. They are entries in
+#                 scene.ytyps[i].archetypes[j].extensions[k] and are exported to
+#                 .ytyp by ytyp/ytypexport.py:create_extension(). What you see in
+#                 the viewport is a gizmo (ytyp/gizmos/extensions.py), not an
+#                 object you can select or parent.
+#
+# Everything below was read from the installed Sollumz source:
+#
+#   ytyp/properties/extensions.py  ExtensionType, ExtensionsContainer,
+#                                  LightShaftExtensionProperties,
+#                                  ParticleExtensionProperties
+#   ytyp/properties/ytyp.py        CMapTypesProperties, ArchetypeProperties.asset
+#   ytyp/operators/extensions.py   the corner/direction update operators whose
+#                                  maths the god ray sync mirrors
+#   ytyp/ytypexport.py             get_extension_props(), which is annotation
+#                                  driven - it reads the *szio* class annotations
+#                                  and pulls same-named attributes off the
+#                                  Blender PropertyGroup
+#
+# TWO RULES follow from that exporter being annotation driven:
+#
+#   1. Only values written onto Sollumz's own PropertyGroups are exported.
+#      A property Seto invents is invisible to the exporter.
+#   2. Extension coordinates (offset_position, cornerA..D, direction) are in the
+#      archetype ASSET's local space, not world space and not light space. Every
+#      write here expects caller-supplied asset-local vectors.
+#
+# One Blender quirk this section defends against throughout: adding to a
+# CollectionProperty can re-allocate it, invalidating any PropertyGroup
+# reference taken beforehand. Sollumz notes this in duplicate_selected_extension
+# and it can crash Blender, so extensions are always re-fetched by index after a
+# structural change and are looked up by name rather than by a cached reference.
+
+
+class ArchetypeNotFoundError(Exception):
+    """The object has no YTYP archetype to attach extensions to.
+
+    Carries `drawable` (the object that was checked, or None) so the caller can
+    name the offender in its error message.
+    """
+
+    def __init__(self, message, drawable=None):
+        super().__init__(message)
+        self.drawable = drawable
+
+
+def get_extension_type_enum():
+    """Sollumz's ExtensionType enum (ytyp.properties.extensions.ExtensionType)."""
+    return _import("ytyp.properties.extensions").ExtensionType
+
+
+def get_light_shaft_enums():
+    """(LightShaftDensityType, LightShaftVolumeType) from Sollumz."""
+    extensions = _import("ytyp.properties.extensions")
+    return extensions.LightShaftDensityType, extensions.LightShaftVolumeType
+
+
+def get_particle_fx_type_enum():
+    """Sollumz's ParticleFxType enum (AMBIENT is 0, the god ray default)."""
+    return _import("ytyp.properties.extensions").ParticleFxType
+
+
+def find_archetypes_for_object(obj):
+    """Every (ytyp, archetype) pair in the scene whose asset is `obj`.
+
+    Searches all YTYPs, not just the selected one: which YTYP happens to be
+    selected in Sollumz's panel is a UI detail and must not change what the
+    god ray tool attaches to. Returns a list so the caller can distinguish
+    "none" from "ambiguous".
+    """
+    matches = []
+    for ytyp in bpy.context.scene.ytyps:
+        for archetype in ytyp.archetypes:
+            if archetype.asset is not None and archetype.asset == obj:
+                matches.append((ytyp, archetype))
+    return matches
+
+
+def resolve_archetype_target(obj):
+    """Resolve the (drawable, ytyp, archetype) a god ray on `obj` belongs to.
+
+    Raises ArchetypeNotFoundError with a message written for the user - not a
+    stack trace - for each of the three distinct ways this can fail. The
+    operator is all-or-nothing, so it calls this *before* creating anything and
+    cancels cleanly on failure rather than leaving a half-built setup behind.
+    """
+    drawable = find_drawable_parent(obj)
+    if drawable is None:
+        raise ArchetypeNotFoundError(
+            f"'{obj.name}' is not inside a Sollumz Drawable. God Ray extensions are "
+            f"YTYP archetype data, so the geometry must belong to a Drawable that an "
+            f"archetype points at. Put it in a Drawable first, then run Create God Rays "
+            f"again.",
+            drawable=None,
+        )
+
+    matches = find_archetypes_for_object(drawable)
+
+    if not matches:
+        raise ArchetypeNotFoundError(
+            f"Drawable '{drawable.name}' has no valid archetype/YTYP. God Ray extensions "
+            f"cannot be created safely. Create or assign an archetype first, then run "
+            f"Create God Rays again.",
+            drawable=drawable,
+        )
+
+    if len(matches) > 1:
+        where = ", ".join(f"{y.name}/{a.name}" for y, a in matches)
+        raise ArchetypeNotFoundError(
+            f"Drawable '{drawable.name}' is the asset of {len(matches)} archetypes "
+            f"({where}). Seto cannot tell which one the God Ray belongs to. Leave it "
+            f"assigned to a single archetype and run Create God Rays again.",
+            drawable=drawable,
+        )
+
+    ytyp, archetype = matches[0]
+    return drawable, ytyp, archetype
+
+
+def find_extension_by_name(archetype, name):
+    """(index, extension) of the archetype extension called `name`, else (None, None).
+
+    Lookup is by name on every access rather than by a stored index, because an
+    index goes stale as soon as any extension is added or removed - including by
+    the user, in Sollumz's own panel.
+    """
+    for i, ext in enumerate(archetype.extensions):
+        if ext.name == name:
+            return i, ext
+    return None, None
+
+
+def _add_extension(archetype, name, ext_type):
+    """Add an extension of `ext_type` named `name`, and return (index, extension).
+
+    Uses Sollumz's ExtensionsContainer.new_extension(), which is also what seeds
+    a new light shaft's corners, length and direction so its gizmo is visible
+    immediately.
+    """
+    archetype.new_extension(ext_type)
+    index = len(archetype.extensions) - 1
+    # Re-fetch by index: new_extension() may have re-allocated the collection.
+    ext = archetype.extensions[index]
+    ext.name = name
+    return index, ext
+
+
+def add_light_shaft_extension(archetype, name):
+    """Create a CExtensionDefLightShaft on `archetype`. Returns (index, extension).
+
+    Only creates and names it; the god ray's geometry (corners, direction,
+    length) and look (colour, intensity, flags) are written by the caller, which
+    is the only place that knows the opening it was built from.
+    """
+    ExtensionType = get_extension_type_enum()
+    return _add_extension(archetype, name, ExtensionType.LIGHT_SHAFT)
+
+
+def add_particle_extension(archetype, name, fx_name="amb_dust_motes"):
+    """Create a CExtensionDefParticleEffect on `archetype`. Returns (index, extension).
+
+    `fx_name` must exist in the ENTITYFX_AMBIENT_PTFX block of entityfx.dat for
+    the target build. Neither Sollumz nor Seto can validate that - a name that is
+    not there exports fine and simply does nothing in game.
+    """
+    ExtensionType = get_extension_type_enum()
+    ParticleFxType = get_particle_fx_type_enum()
+    index, ext = _add_extension(archetype, name, ExtensionType.PARTICLE)
+    props = ext.get_properties()
+    props.fx_name = fx_name
+    props.fx_type = ParticleFxType.AMBIENT.value
+    return index, ext
+
+
+def duplicate_extension(archetype, source_name, new_name):
+    """Deep-copy the extension called `source_name` and rename the copy.
+
+    Returns (index, extension), or (None, None) if the source is missing.
+
+    Wraps Sollumz's ExtensionsContainer.duplicate_selected_extension(), which
+    copies nested PropertyGroups properly. That method works on the *selected*
+    extension, so the selection index is moved to the source first and restored
+    afterwards, leaving the user's selection where they left it.
+    """
+    index, _ = find_extension_by_name(archetype, source_name)
+    if index is None:
+        return None, None
+
+    previous_index = archetype.extension_index
+    archetype.extension_index = index
+    try:
+        archetype.duplicate_selected_extension()
+        new_index = len(archetype.extensions) - 1
+        # Re-fetch by index: the collection was just re-allocated.
+        new_ext = archetype.extensions[new_index]
+        new_ext.name = new_name
+    finally:
+        archetype.extension_index = min(previous_index, len(archetype.extensions) - 1)
+
+    return new_index, new_ext
+
+
+def remove_extension_by_name(archetype, name):
+    """Remove the extension called `name`. Returns True if one was removed.
+
+    This is what makes Create God Rays all-or-nothing: if a later step fails,
+    the operator removes whatever it already added so the user is never left
+    with a partial setup to clean up by hand.
+    """
+    index, _ = find_extension_by_name(archetype, name)
+    if index is None:
+        return False
+    archetype.extensions.remove(index)
+    if archetype.extension_index >= len(archetype.extensions):
+        archetype.extension_index = max(len(archetype.extensions) - 1, 0)
+    return True
+
+
+def tag_redraw_ytyp(context):
+    """Redraw the panels that show archetype extensions.
+
+    Writing to scene.ytyps does not dirty the UI on its own, so Sollumz's own
+    extension operators call this; without it the new god ray extension does not
+    appear in Sollumz's list until the user clicks something.
+    """
+    try:
+        blenderhelper = _import("tools.blenderhelper")
+    except SollumzUnavailableError:
+        return
+    for region_type in ("UI", "TOOL_PROPS", "TOOL_HEADER"):
+        blenderhelper.tag_redraw(context, space_type="VIEW_3D", region_type=region_type)

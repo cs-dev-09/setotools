@@ -62,17 +62,29 @@ def _get_or_create_collection(context, name, parent=None):
     return collection
 
 
-def _decal_collection(context, category):
-    """"decals", or the category's child collection inside it.
+def _decal_collection(context, category, drawable_root=None):
+    """Where a generated decal is filed.
 
+    Inside a Sollumz Drawable, the decal is part of that asset, so it goes
+    beside the rest of it - parenting alone is not enough, an object parented to
+    the Drawable but linked elsewhere shows up greyed out under it in the
+    outliner and gets left behind by anything working on the Drawable's
+    collection.
+
+    Otherwise it goes into "decals", in the category's own child collection.
     Images that sit loose in the library root have no real category, so those
-    decals go straight into "decals" rather than into a folder named after the
+    go straight into "decals" rather than into a folder named after the
     "(root)" placeholder.
     """
+    if drawable_root is not None:
+        drawable_collections = list(drawable_root.users_collection)
+        if drawable_collections:
+            return drawable_collections
+
     root = _get_or_create_collection(context, DECAL_COLLECTION_NAME)
     if not category or category in (library.ROOT_CATEGORY, library.NO_CATEGORY):
-        return root
-    return _get_or_create_collection(context, category, parent=root)
+        return [root]
+    return [_get_or_create_collection(context, category, parent=root)]
 
 
 def _parent_keep_transform(child, parent):
@@ -179,8 +191,8 @@ class SETO_OT_create_decal(bpy.types.Operator):
 
         materials, failures = self._resolve_materials(settings, placements)
 
-        collection = _decal_collection(context, settings.category)
         drawable_root = szi.find_drawable_parent(source_obj)
+        collections = _decal_collection(context, settings.category, drawable_root)
 
         created = 0
         drawable_warnings = []
@@ -190,8 +202,8 @@ class SETO_OT_create_decal(bpy.types.Operator):
                 # Its texture already failed in _resolve_materials; skipping here
                 # means no object is ever created for it.
                 continue
-            if self._create_one(placement, material, collection, drawable_root,
-                                failures, drawable_warnings, source_obj):
+            if self._create_one(placement, material, collections, drawable_root,
+                                failures, drawable_warnings, source_obj, settings):
                 created += 1
 
         return self._report_result(created, failures, skipped, drawable_root,
@@ -261,8 +273,8 @@ class SETO_OT_create_decal(bpy.types.Operator):
 
         return materials, failures
 
-    def _create_one(self, placement, material, collection, drawable_root,
-                    failures, drawable_warnings, source_obj):
+    def _create_one(self, placement, material, collections, drawable_root,
+                    failures, drawable_warnings, source_obj, settings):
         """Build one decal object. Returns True on success.
 
         Everything that can fail is inside the try: on any failure the
@@ -275,12 +287,17 @@ class SETO_OT_create_decal(bpy.types.Operator):
         try:
             # Created fully opaque; the vertex colour alpha is dialled in live
             # afterwards in the Selected Decal section.
-            mesh = geometry.build_quad_mesh(name, placement.width, placement.height)
-            szi.write_uv_and_color(mesh, geometry.quad_loop_uv(),
-                                   geometry.quad_loop_color())
+            fade = settings.edge_fade
+            mesh = geometry.build_decal_mesh(name, placement.width, placement.height, fade)
+            szi.write_uv_and_color(
+                mesh,
+                geometry.decal_loop_uv(placement.width, placement.height, fade),
+                geometry.decal_loop_color(placement.width, placement.height, fade),
+            )
 
             obj = bpy.data.objects.new(name, mesh)
-            collection.objects.link(obj)
+            for collection in collections:
+                collection.objects.link(obj)
             obj.matrix_world = placement.matrix
 
             szi.assign_material_to_object(obj, material)
@@ -289,7 +306,8 @@ class SETO_OT_create_decal(bpy.types.Operator):
             # panel can slide, spin and resize it live afterwards.
             object_settings.store_placement(obj, placement, source_obj,
                                             placement.texture_stem,
-                                            texture_path=placement.texture_path)
+                                            texture_path=placement.texture_path,
+                                            edge_fade=fade)
         except _PLACEMENT_ERRORS as e:
             _rollback(obj, mesh)
             failures.append((os.path.basename(placement.texture_path), str(e)))

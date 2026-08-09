@@ -6,6 +6,7 @@ import bmesh
 from . import geometry
 from . import object_settings
 from . import properties
+from . import textures
 from ..shared import sollumz_integration as szi
 
 _NAME_PATTERN = re.compile(r"^fake_dmg_(\d{3,})$")
@@ -48,6 +49,21 @@ def _get_or_create_collection(context, name, parent=None):
     collection = bpy.data.collections.new(name)
     parent.children.link(collection)
     return collection
+
+
+def _drawable_collections(drawable_root):
+    """The collections the Drawable itself lives in, or None.
+
+    When the source belongs to a Sollumz Drawable, what this tool generates is
+    part of that asset, so it belongs beside the rest of it rather than in a
+    tool-named collection off to the side. Parenting alone is not enough: an
+    object parented to the Drawable but linked somewhere else shows up greyed
+    out under it in the outliner, and gets left behind by anything that works
+    on the Drawable's collection.
+    """
+    if drawable_root is None:
+        return None
+    return list(drawable_root.users_collection) or None
 
 
 def _next_fake_damage_name():
@@ -193,7 +209,14 @@ class SETO_OT_create_fake_damage(bpy.types.Operator):
 
         # The UVs geometry.py authored are already a straight rectangle in
         # metres; this only fits them into the 0..1 square, aspect intact.
-        geometry.normalise_uvs(new_mesh, _UV_SIZE)
+        geometry.normalise_uvs(new_mesh, _UV_SIZE,
+                               uv_scale=settings.uv_scale,
+                               uv_offset=tuple(settings.uv_offset))
+
+        # Re-applied after the merge: bmesh.ops can leave faces it rebuilt
+        # flat, and a hard band at a quad boundary is exactly what a decal
+        # strip exists to hide.
+        geometry.shade_smooth(new_mesh)
 
         new_obj = bpy.data.objects.new(new_name, new_mesh)
 
@@ -205,7 +228,12 @@ class SETO_OT_create_fake_damage(bpy.types.Operator):
         # Generated strips are gathered in their own collection rather than
         # dropped next to the source, so they stay easy to hide, select and
         # export as a group.
-        _get_or_create_collection(context, COLLECTION_NAME).objects.link(new_obj)
+        drawable_root = szi.find_drawable_parent(source_obj)
+        target_collections = _drawable_collections(drawable_root) or [
+            _get_or_create_collection(context, COLLECTION_NAME)
+        ]
+        for collection in target_collections:
+            collection.objects.link(new_obj)
 
         # Select only the new object so every subsequent bpy.ops call below
         # unambiguously targets it, not the source object.
@@ -214,7 +242,6 @@ class SETO_OT_create_fake_damage(bpy.types.Operator):
         # Only parent into a Sollumz Drawable hierarchy if the source object
         # already belongs to one; otherwise the strip stays an independent
         # object, still placed correctly via the matrix_world copy above.
-        drawable_root = szi.find_drawable_parent(source_obj)
         if drawable_root is not None:
             _parent_keep_transform(new_obj, drawable_root)
             try:
@@ -226,8 +253,10 @@ class SETO_OT_create_fake_damage(bpy.types.Operator):
         # function of this tool, so a shader failure must not remove the mesh.
         shader_warning = None
         missing_params = []
+        texture_warning = None
         try:
-            material, missing_params = szi.find_or_create_damage_material(
+            material, missing_params, texture_warning = szi.find_or_create_damage_material(
+                texture_path=textures.bundled_texture_path(),
                 reuse=(settings.material_mode == 'AUTO'),
             )
             szi.assign_material_to_object(new_obj, material)
@@ -270,6 +299,9 @@ class SETO_OT_create_fake_damage(bpy.types.Operator):
             self.report({'WARNING'}, f"Fake Damage mesh created, but {szi.DAMAGE_SHADER_FILENAME} assignment failed: {shader_warning}")
         elif missing_params:
             self.report({'WARNING'}, f"Shader parameter(s) not found on {szi.DAMAGE_SHADER_FILENAME}: {', '.join(missing_params)}.")
+
+        if texture_warning:
+            self.report({'WARNING'}, texture_warning)
 
         return {'FINISHED'}
 

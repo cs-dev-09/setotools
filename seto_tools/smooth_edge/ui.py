@@ -9,9 +9,9 @@ def _wrap(text, width):
     return textwrap.wrap(text, width) or [""]
 
 
-class SETO_PT_fake_damage_panel(bpy.types.Panel):
-    bl_label = "Fake Damage"
-    bl_idname = "SETO_PT_fake_damage_panel"
+class SETO_PT_smooth_edge_panel(bpy.types.Panel):
+    bl_label = "Smooth Edge"
+    bl_idname = "SETO_PT_smooth_edge_panel"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     # Shared with the other Seto addons: every panel using this category is
@@ -22,14 +22,14 @@ class SETO_PT_fake_damage_panel(bpy.types.Panel):
     # otherwise fully independent and either can be installed on its own.
     bl_category = "Seto Tools"
     bl_options = {'DEFAULT_CLOSED'}
-    bl_order = 1
+    bl_order = 4
 
     def draw_header(self, context):
         self.layout.label(text="", icon='MOD_EDGESPLIT')
 
     def draw(self, context):
         layout = self.layout
-        settings = context.scene.seto_fake_damage
+        settings = context.scene.seto_smooth_edge
 
         available, status_msg = szi.get_status_message()
         if not available:
@@ -53,15 +53,10 @@ class SETO_PT_fake_damage_panel(bpy.types.Panel):
 
         layout.separator()
         layout.prop(settings, "flip_direction")
-
-        col = layout.column(align=True)
-        col.prop(settings, "uv_scale")
-        col.prop(settings, "uv_offset")
-
         layout.prop(settings, "material_mode")
 
         layout.separator()
-        layout.operator("seto.create_fake_damage", text="Create Fake Damage", icon='MOD_EDGESPLIT')
+        layout.operator("seto.create_smooth_edge", text="Create Smooth Edge", icon='MOD_EDGESPLIT')
 
         if context.mode != 'EDIT_MESH':
             layout.label(text="Enter Edit Mode and select edges first.", icon='INFO')
@@ -69,24 +64,24 @@ class SETO_PT_fake_damage_panel(bpy.types.Panel):
             layout.label(text="Settings stay live on the created strip.", icon='INFO')
 
 
-class SETO_PT_fake_damage_object_panel(bpy.types.Panel):
-    """Settings of the selected Fake Damage strip, editable after the fact.
+class SETO_PT_smooth_edge_object_panel(bpy.types.Panel):
+    """Settings of the selected Smooth Edge strip, editable after the fact.
 
-    Nested under the Fake Damage section rather than given its own tab, and
+    Nested under the Smooth Edge section rather than given its own tab, and
     only drawn when the active object is actually one of our strips.
     """
-    bl_label = "Selected Strip"
-    bl_idname = "SETO_PT_fake_damage_object_panel"
+    bl_label = "Selected Edge"
+    bl_idname = "SETO_PT_smooth_edge_object_panel"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_category = "Seto Tools"
-    bl_parent_id = "SETO_PT_fake_damage_panel"
+    bl_parent_id = "SETO_PT_smooth_edge_panel"
 
     @classmethod
     def poll(cls, context):
         obj = context.active_object
         return (obj is not None and obj.type == 'MESH'
-                and obj.seto_fake_damage_data.is_fake_damage)
+                and obj.seto_smooth_edge_data.is_smooth_edge)
 
     def draw_header(self, context):
         self.layout.label(text="", icon='MODIFIER')
@@ -94,7 +89,7 @@ class SETO_PT_fake_damage_object_panel(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         obj = context.active_object
-        data = obj.seto_fake_damage_data
+        data = obj.seto_smooth_edge_data
 
         box = layout.box()
         row = box.row()
@@ -126,17 +121,12 @@ class SETO_PT_fake_damage_object_panel(bpy.types.Panel):
         layout.prop(data, "invert_fade")
         layout.prop(data, "flip_direction")
 
-        layout.separator()
-        col = layout.column(align=True)
-        col.prop(data, "uv_scale")
-        col.prop(data, "uv_offset")
-
         if not data.live_update:
             layout.separator()
-            layout.operator("seto.fake_damage_rebuild", icon='FILE_REFRESH')
+            layout.operator("seto.smooth_edge_rebuild", icon='FILE_REFRESH')
 
 
-_classes = (SETO_PT_fake_damage_panel, SETO_PT_fake_damage_object_panel)
+_classes = (SETO_PT_smooth_edge_panel, SETO_PT_smooth_edge_object_panel)
 
 
 def register():

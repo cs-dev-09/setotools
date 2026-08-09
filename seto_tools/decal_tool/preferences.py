@@ -86,9 +86,24 @@ class SETO_AP_decal_tool(bpy.types.AddonPreferences):
         update=_on_library_path_changed,
     )
 
+    # Shared by every Seto tool that shows a texture picker. It lives here
+    # because Blender allows one AddonPreferences per add-on and this is it;
+    # the other tools read it through shared/addon_prefs.py rather than
+    # importing this module.
+    preview_size: bpy.props.FloatProperty(
+        name="Texture Preview Size",
+        description=(
+            "How large texture thumbnails are drawn, in UI units - both in the "
+            "panel and in the browser popup. Blender cannot show a preview on "
+            "hover, so making the browser tiles big is what replaces it"
+        ),
+        default=12.0, min=4.0, max=40.0, subtype='FACTOR',
+    )
+
     def draw(self, context):
         layout = self.layout
         layout.prop(self, "library_path")
+        layout.prop(self, "preview_size")
         if self.library_path:
             layout.label(
                 text=f"{len(library.get_categories())} category/categories loaded.",

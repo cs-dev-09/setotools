@@ -12,6 +12,8 @@ tilts every decal off the surface under non-uniform scale.
 
 from mathutils import Matrix, Vector
 
+from ..shared import vertex_color
+
 # Faces smaller than this are skipped: their normal and tangent are numerically
 # meaningless, so they would produce a garbage basis.
 MIN_FACE_AREA = 1e-9
@@ -344,21 +346,136 @@ def build_placement(sample, width, height, surface_offset, rotation,
     )
 
 
-def build_quad_mesh(name, width, height):
-    """A 4-vertex quad centered on its own origin, in local space.
+# The decal is a 4x4 grid of vertices - 9 quads - rather than a single one: an
+# inner rectangle carrying the corner alphas, ringed by a border inset by
+# `edge_fade` whose vertices are all alpha 0. That border is what dissolves the
+# decal's rectangular outline into the wall; without it the quad ends on a hard
+# straight edge no matter what the texture does.
+_GRID = 4
+_INNER_CORNERS = ((1, 1), (1, 2), (2, 2), (2, 1))   # BL, BR, TR, TL - matches CORNER_NAMES
 
-    Authoring the vertices around the local origin is what puts the object
-    origin at the center of the decal geometry for free, and lets the object
-    keep a clean (1, 1, 1) scale even when random scaling is on.
+# The border can never eat more than this fraction of the decal, so a fade wider
+# than the decal itself blunts instead of turning the inner rectangle inside out.
+_MAX_FADE_FRACTION = 0.49
+
+
+def _grid_index(row, col):
+    return row * _GRID + col
+
+
+# Vertex counts and indices of the finished grid, so callers (and tests) can
+# talk about "the inner corners" without re-deriving the layout.
+GRID_VERTEX_COUNT = _GRID * _GRID
+GRID_FACE_COUNT = (_GRID - 1) ** 2
+INNER_CORNER_VERTS = tuple(_grid_index(row, col) for row, col in _INNER_CORNERS)
+
+
+def decal_grid(width, height, edge_fade):
+    """Vertices, faces, UVs and an is-border flag for one decal.
+
+    Everything is in local space, centred on the origin - which is what puts the
+    object origin at the centre of the decal for free, and lets the object keep a
+    clean (1, 1, 1) scale even when random scaling is on.
+
+    UVs run 0..1 across the *outer* boundary, so the texture is laid over the
+    whole decal undistorted and the border simply fades the edge of it out.
     """
-    import bpy
-
     half_w = width * 0.5
     half_h = height * 0.5
-    verts = [(sx * half_w, sy * half_h, 0.0) for sx, sy in _CORNER_SIGNS]
+    fade_x = min(max(edge_fade, 0.0), width * _MAX_FADE_FRACTION)
+    fade_y = min(max(edge_fade, 0.0), height * _MAX_FADE_FRACTION)
+
+    xs = (-half_w, -half_w + fade_x, half_w - fade_x, half_w)
+    ys = (-half_h, -half_h + fade_y, half_h - fade_y, half_h)
+
+    verts, uvs, is_border = [], [], []
+    for row in range(_GRID):
+        for col in range(_GRID):
+            x, y = xs[col], ys[row]
+            verts.append((x, y, 0.0))
+            uvs.append(((x + half_w) / width, (y + half_h) / height))
+            is_border.append(row in (0, _GRID - 1) or col in (0, _GRID - 1))
+
+    faces = []
+    for row in range(_GRID - 1):
+        for col in range(_GRID - 1):
+            # Counter-clockwise seen from +Z, so every face normal points out of
+            # the wall, same as the single quad this replaced.
+            faces.append((
+                _grid_index(row, col),
+                _grid_index(row, col + 1),
+                _grid_index(row + 1, col + 1),
+                _grid_index(row + 1, col),
+            ))
+
+    return verts, faces, uvs, is_border
+
+
+DEFAULT_BORDER_ALPHA = (0.0, 0.0, 0.0, 0.0)
+
+
+def _side_alphas_for(row, col, border_alphas):
+    """The border values that apply to one ring vertex.
+
+    A vertex on the ring belongs to one side, or to two if it is a corner of the
+    ring.
+    """
+    applicable = []
+    if row == 0:
+        applicable.append(border_alphas[0])              # bottom
+    if col == _GRID - 1:
+        applicable.append(border_alphas[1])              # right
+    if row == _GRID - 1:
+        applicable.append(border_alphas[2])              # top
+    if col == 0:
+        applicable.append(border_alphas[3])              # left
+    return applicable
+
+
+def vertex_alphas(is_border, corner_alphas, border_alphas=DEFAULT_BORDER_ALPHA):
+    """Alpha per vertex: the corner values on the inner rectangle, the per-side
+    values around the border ring.
+
+    Where two sides meet, the ring corner takes the LOWER of the two. That way a
+    side set to 0 is genuinely transparent along its whole length - if the corner
+    took the higher value instead, a faded side sitting next to a hard one would
+    stay opaque at its ends and the fade would look broken.
+    """
+    if isinstance(corner_alphas, (int, float)):
+        corner_alphas = (float(corner_alphas),) * 4
+    if isinstance(border_alphas, (int, float)):
+        border_alphas = (float(border_alphas),) * 4
+
+    alphas = [1.0] * len(is_border)
+    for row in range(_GRID):
+        for col in range(_GRID):
+            index = _grid_index(row, col)
+            if not is_border[index]:
+                continue
+            sides = _side_alphas_for(row, col, border_alphas)
+            alphas[index] = min(sides) if sides else 0.0
+
+    for index, (row, col) in enumerate(_INNER_CORNERS):
+        alphas[_grid_index(row, col)] = corner_alphas[index]
+    return alphas
+
+
+def per_loop(faces, per_vertex):
+    """Expand per-vertex values to per-loop, in the loop order from_pydata
+    produces (faces in order, corners in the order they were given)."""
+    return [per_vertex[index] for face in faces for index in face]
+
+
+def build_decal_mesh(name, width, height, edge_fade):
+    """The decal mesh: 16 vertices, 9 quads, shaded smooth."""
+    import bpy
+
+    verts, faces, _uvs, _is_border = decal_grid(width, height, edge_fade)
 
     mesh = bpy.data.meshes.new(name)
-    mesh.from_pydata(verts, [], [(0, 1, 2, 3)])
+    mesh.from_pydata(verts, [], faces)
+    mesh.update()
+    mesh.polygons.foreach_set("use_smooth", [True] * len(mesh.polygons))
     mesh.update()
     return mesh
 
@@ -512,52 +629,86 @@ def face_frame(bm, matrix_world, face_index):
     return center, normal, base_x, base_y, face_extent(verts, center, base_x, base_y)
 
 
-def set_quad_size(mesh, width, height):
-    """Resize an existing decal quad in place.
+def set_decal_size(mesh, width, height, edge_fade, uv_attr_name=None):
+    """Resize an existing decal in place, border and all.
 
-    A live resize only has to move four vertices - the mesh keeps its UVs, its
-    Color 1 attribute and its material, so nothing has to be rebuilt or
-    reassigned. Returns False if `mesh` is not one of our 4-vertex quads.
+    Moves sixteen vertices and, because the border inset moves with them,
+    rewrites the UVs to match - the mesh keeps its Color 1 attribute and its
+    material, so nothing has to be rebuilt or reassigned and no live edit can
+    leave a decal without a texture. Returns False if `mesh` is not one of ours.
     """
-    if len(mesh.vertices) != 4:
+    verts, faces, uvs, _is_border = decal_grid(width, height, edge_fade)
+    if len(mesh.vertices) != len(verts):
         return False
 
-    half_w = width * 0.5
-    half_h = height * 0.5
-    for vertex, (sx, sy) in zip(mesh.vertices, _CORNER_SIGNS):
-        vertex.co = (sx * half_w, sy * half_h, 0.0)
+    for vertex, position in zip(mesh.vertices, verts):
+        vertex.co = position
+
+    if uv_attr_name:
+        attr = mesh.attributes.get(uv_attr_name)
+        if attr is not None and len(attr.data) == len(faces) * 4:
+            for element, uv in zip(attr.data, per_loop(faces, uvs)):
+                element.vector = uv
+
     mesh.update()
     return True
 
 
-def quad_loop_uv():
-    """Per-loop UVs for build_quad_mesh's single quad, in loop order."""
-    return [list(uv) for uv in QUAD_UVS]
+def decal_loop_uv(width, height, edge_fade):
+    """Per-loop UVs for build_decal_mesh's grid, in loop order."""
+    _verts, faces, uvs, _is_border = decal_grid(width, height, edge_fade)
+    return [list(uv) for uv in per_loop(faces, uvs)]
 
 
-def quad_loop_color(alpha=1.0, rgb=(1.0, 1.0, 1.0)):
-    """Per-loop Color 1 values.
+# One alpha per corner, in the same order as _CORNER_SIGNS and QUAD_UVS - which
+# is also the loop order of the single quad build_quad_mesh() produces.
+CORNER_NAMES = ("Bottom Left", "Bottom Right", "Top Right", "Top Left")
 
-    Sollumz wires decal.sps as `alpha = Color 1 alpha * texture alpha`, so this
-    alpha is a multiplier on top of the texture's own transparency: 1.0 is as
-    opaque as the texture allows (the default, and the only value that shows the
-    texture exactly as authored), and lower values fade the whole decal out.
+# Border ring sides, in the same counter-clockwise order the corners use.
+SIDE_NAMES = ("Bottom", "Right", "Top", "Left")
+
+UNIFORM_ALPHA = (vertex_color.DEFAULT_ALPHA_CENTER,) * 4
+
+
+def decal_loop_color(width, height, edge_fade, alphas=UNIFORM_ALPHA,
+                     border_alphas=DEFAULT_BORDER_ALPHA,
+                     rgb=vertex_color.DEFAULT_RGB):
+    """Per-loop Color 1 values, one alpha per corner.
+
+    Sollumz wires decal.sps as `alpha = Color 1 alpha * texture alpha`, so these
+    are multipliers on top of the texture's own transparency: 1.0 is as opaque as
+    the texture allows, and lower values fade that corner out. Because Blender
+    interpolates the colour attribute across the face, four corner values give
+    any linear gradient across the decal - top to bottom, side to side, or
+    diagonally - while the quad stays four vertices.
+
+    Accepts a single float too, for a flat alpha across the whole decal.
     """
-    return [[rgb[0], rgb[1], rgb[2], alpha] for _ in QUAD_UVS]
+    _verts, faces, _uvs, is_border = decal_grid(width, height, edge_fade)
+    per_vertex = vertex_alphas(is_border, alphas, border_alphas)
+    return [[rgb[0], rgb[1], rgb[2], a] for a in per_loop(faces, per_vertex)]
 
 
-def set_quad_alpha(mesh, alpha, color_attr_name):
-    """Rewrite the alpha of an existing decal's colour attribute in place.
+def set_decal_alpha(mesh, width, height, edge_fade, alphas, color_attr_name,
+                    border_alphas=DEFAULT_BORDER_ALPHA):
+    """Rewrite a decal's per-vertex alpha in place.
 
-    Four loops, no mesh rebuild - which is what lets Opacity be dragged live
-    without touching the UVs, the material or anything else. Returns False if
-    the attribute is missing or not the expected type.
+    The inner rectangle takes the four corner values and the border ring takes the
+    four per-side values, so both sets are always rewritten together and neither
+    can drift. No mesh rebuild: the UVs, the material and the geometry are
+    untouched. Returns False if the attribute is missing, not the expected type,
+    or the mesh is not the grid these values are indexed against.
     """
     attr = mesh.attributes.get(color_attr_name)
     if attr is None or attr.data_type != 'BYTE_COLOR':
         return False
 
-    for element in attr.data:
+    _verts, faces, _uvs, is_border = decal_grid(width, height, edge_fade)
+    loop_alphas = per_loop(faces, vertex_alphas(is_border, alphas, border_alphas))
+    if len(attr.data) != len(loop_alphas):
+        return False
+
+    for element, alpha in zip(attr.data, loop_alphas):
         colour = list(element.color_srgb)
         colour[3] = alpha
         element.color_srgb = colour

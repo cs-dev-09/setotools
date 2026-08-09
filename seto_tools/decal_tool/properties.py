@@ -48,6 +48,20 @@ class SETO_PG_decal_settings(bpy.types.PropertyGroup):
         soft_max=10.0,
         subtype='DISTANCE',
     )
+    edge_fade: bpy.props.FloatProperty(
+        name="Edge Fade",
+        description=(
+            "Width of the border ring around the decal. Its vertices are held at "
+            "alpha 0, so the decal dissolves into the surface instead of ending on a "
+            "hard rectangular outline. Capped at just under half the decal, so a fade "
+            "wider than the decal blunts rather than turning it inside out"
+        ),
+        default=0.1,
+        min=0.0,
+        soft_max=1.0,
+        subtype='DISTANCE',
+    )
+
     surface_offset: bpy.props.FloatProperty(
         name="Surface Offset",
         description=(

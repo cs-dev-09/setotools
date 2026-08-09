@@ -1,4 +1,4 @@
-"""Pure mesh-generation logic for the Fake Damage strip.
+"""Pure mesh-generation logic for the Smooth Edge strip.
 
 This module has no knowledge of Sollumz. It only knows how to turn a set of
 selected BMesh edges (in the source object's local space) into a lightweight
@@ -396,7 +396,7 @@ def _cross_sections(points, slots, width, surface_offset, closed=False):
 
 def build_damage_mesh_data(edges, chains, coords, width, surface_offset,
                            alpha_center, alpha_outer, invert_fade, flip_direction):
-    """Generate the full Fake Damage ribbon for every chain.
+    """Generate the full Smooth Edge ribbon for every chain.
 
     Geometry within a chain is continuous by construction: consecutive
     segments reference the same cross-section vertices, so there is nothing to
@@ -480,7 +480,26 @@ def create_mesh_from_strip_data(name, strip_data):
     verts = [tuple(v) for v in strip_data.verts]
     mesh.from_pydata(verts, [], strip_data.faces)
     mesh.update()
+    shade_smooth(mesh)
     return mesh
+
+
+def shade_smooth(mesh):
+    """Mark every face smooth - the point of this tool.
+
+    A flat-shaded strip shows a hard band at each quad boundary, which is
+    exactly the seam a smooth-edge decal exists to hide. Done through the data
+    API (per-polygon use_smooth) rather than bpy.ops.object.shade_smooth, so it
+    works from the live rebuild's property callback too, where calling an
+    operator is not safe.
+
+    Only the generated strip is ever touched; the source mesh is not shaded,
+    moved or modified in any way.
+    """
+    if not mesh.polygons:
+        return
+    mesh.polygons.foreach_set("use_smooth", [True] * len(mesh.polygons))
+    mesh.update()
 
 
 def compute_loop_uv_and_alpha(mesh, strip_data, color_rgb=(1.0, 1.0, 1.0)):
@@ -502,24 +521,7 @@ def compute_loop_uv_and_alpha(mesh, strip_data, color_rgb=(1.0, 1.0, 1.0)):
     return loop_uv, loop_rgba
 
 
-def shade_smooth(mesh):
-    """Mark every face smooth.
-
-    A flat-shaded strip shows a hard band at each quad boundary, which is the
-    seam a decal strip exists to hide. Done through the data API (per-polygon
-    use_smooth) rather than bpy.ops.object.shade_smooth, so it works from the
-    live rebuild's property callback too, where calling an operator is not safe.
-
-    Only the generated strip is ever touched; the source mesh is not shaded,
-    moved or modified in any way.
-    """
-    if not mesh.polygons:
-        return
-    mesh.polygons.foreach_set("use_smooth", [True] * len(mesh.polygons))
-    mesh.update()
-
-
-def normalise_uvs(mesh, size=1.5, uv_scale=1.0, uv_offset=(0.0, 0.0)):
+def normalise_uvs(mesh, size=1.5):
     """Fit the UV island into the 0..1 square, centred, keeping its aspect ratio.
 
     The authored UVs are in metres, so a long run would otherwise sprawl far
@@ -529,13 +531,6 @@ def normalise_uvs(mesh, size=1.5, uv_scale=1.0, uv_offset=(0.0, 0.0)):
 
     `size` is the span of the longer axis once fitted; 1.5 matches what the
     tool has always produced.
-
-    `uv_scale` and `uv_offset` then place that island on the texture, in the
-    order a person would do it by hand in the UV editor: scale about the
-    island's own centre, then move. They exist because the fitted island is
-    generic, while a real damage texture has the usable strip somewhere
-    specific in it - the defaults in properties.py land on the one this tool
-    ships with.
     """
     uv_layer = mesh.uv_layers.active
     if uv_layer is None or len(uv_layer.data) == 0:
@@ -549,13 +544,10 @@ def normalise_uvs(mesh, size=1.5, uv_scale=1.0, uv_offset=(0.0, 0.0)):
     longest = max(max_u - min_u, max_v - min_v)
     if longest < 1e-9:
         return
-    # Folded together so the island is only walked once: fitting to `size` and
-    # the user's own scale are both just multipliers about the same centre.
-    scale = (size / longest) * uv_scale
+    scale = size / longest
 
     centre_u = (min_u + max_u) * 0.5
     centre_v = (min_v + max_v) * 0.5
-    offset_u, offset_v = uv_offset
     for loop in uv_layer.data:
         u, v = loop.uv
         # Rotated 90 degrees counter-clockwise, (u, v) -> (-v, u), so the island
@@ -563,8 +555,8 @@ def normalise_uvs(mesh, size=1.5, uv_scale=1.0, uv_offset=(0.0, 0.0)):
         # not a wide one. A real rotation rather than swapping the two axes -
         # swapping would mirror the island as well, which flips the direction a
         # normal map or a directional gradient points in.
-        loop.uv = (0.5 - (v - centre_v) * scale + offset_u,
-                   0.5 + (u - centre_u) * scale + offset_v)
+        loop.uv = (0.5 - (v - centre_v) * scale,
+                   0.5 + (u - centre_u) * scale)
 
 
 def _snap_clusters_to_centroid(bm, distance):

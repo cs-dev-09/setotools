@@ -203,13 +203,24 @@ def category_items(self, context):
 
 
 def texture_items(self, context):
-    """EnumProperty items callback - reads the cache only, never the disk."""
-    items = [
-        (stem, stem, os.path.basename(path))
-        for stem, path in get_textures(self.category)
-    ]
+    """EnumProperty items callback - reads the cache only, never the disk.
+
+    Five-element items, so every row in the dropdown carries the decal's own
+    thumbnail instead of a generic icon. Blender has no way to put an image in a
+    tooltip, so showing it on the row itself is the closest thing to previewing
+    on hover.
+
+    Previews are loaded lazily by previews.get_icon_id - a library with hundreds
+    of decals still only decodes the rows that are actually on screen.
+    """
+    from . import previews
+
+    items = []
+    for number, (stem, path) in enumerate(get_textures(self.category)):
+        items.append((stem, stem, os.path.basename(path),
+                      previews.get_icon_id(path), number))
     if not items:
         items = [(NO_TEXTURE, "<no textures>",
-                  "This category has no usable image files")]
+                  "This category has no usable image files", 'ERROR', 0)]
     _enum_items_ref["texture"] = items
     return items

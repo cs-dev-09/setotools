@@ -63,8 +63,13 @@ One `seto_decal_<texture>` object is created per selected face, each with:
   geometry all work, including on source objects with unapplied rotation and
   non-uniform scale,
 - a **Surface Offset** lift along the face normal so it does not z-fight,
-- a full 0–1 `UVMap 0` and a `Color 1` attribute with alpha 1.0 (required — Sollumz
-  renders `decal.sps` as `Color 1 alpha × texture alpha`),
+- a **border ring**: the decal is a 4×4 grid (16 vertices, 9 quads) whose outer
+  ring starts at alpha 0, so it dissolves into the surface instead of ending on a
+  hard rectangular outline. **Edge Fade** sets how wide that ring is, and
+  **Border Alpha** lets you raise any of its four sides afterwards,
+- a full 0–1 `UVMap 0` across the outer boundary — the texture covers the whole
+  decal undistorted — and a `Color 1` attribute (Sollumz renders `decal.sps` as
+  `Color 1 alpha × texture alpha`),
 - a `decal.sps` material with your image in `DiffuseSampler`,
 - its origin at the center of the decal,
 - placement in **`decals/<category>`** — a `decals` collection with one child per
@@ -79,8 +84,8 @@ texture and fire again.
 
 Select a generated decal and the **Selected Decal** section appears under Decal Tool,
 with its thumbnail so you can tell decals apart at a glance. Width, Height, Surface
-Offset, Rotation, **Offset U / Offset V** and the vertex-colour **Alpha** all update
-the decal as you drag them — it slides, spins, resizes and fades *on its surface* and
+Offset, Rotation, **Offset U / Offset V** and the four **Corner Alpha** values all
+update the decal as you drag them — it slides, spins, resizes and fades *on its surface* and
 cannot come off it, because the decal stores the surface frame it was placed on.
 
 - **Rotation** spins in place; it never slides the decal.
@@ -89,10 +94,20 @@ cannot come off it, because the decal stores the surface frame it was placed on.
   and the leftover travel continues there, so it turns corners instead of hanging off
   into space. It can cross several faces in one drag, and dragging back retraces the
   path exactly. An open boundary edge (nothing on the other side) stops it at the edge.
-- **Alpha** is the `Color 1` vertex-colour alpha, applied evenly to all four corners.
+- **Border Alpha** sets the alpha along each side of the border ring — bottom,
+  right, top, left — all 0 by default. Raise one to keep that edge hard, for
+  instance where a decal meets a floor, while the rest still fade out. Where two
+  sides meet, the ring corner takes the **lower** of the two, so a faded side stays
+  faded all the way into its corners instead of ending opaque.
+- **Corner Alpha** sets the alpha on the four corners of the *inner* rectangle.
+  One value per corner, laid
+  out in the panel the way the decal sits (top row above bottom row). Blender
+  interpolates between them, so four values give any linear gradient across the
+  decal — top to bottom, side to side, or diagonal — while the quad stays four
+  vertices. **Fade Down** and **All 1.0** are one-click shortcuts.
   `decal.sps` renders as `Color 1 α × texture α`, so **1.0 is as opaque as the
-  texture allows** — decals are created at 1.0 and you fade them from there. If one
-  looks too faint at 1.0, the transparency is in the PNG itself, not in this setting.
+  texture allows** — decals are created fully opaque and you fade them from there.
+  If one looks too faint at 1.0, the transparency is in the PNG itself, not here.
 - **Center** puts it back at the middle of the face it came from.
 - **Live Update** off + **Update** if you'd rather apply changes in one go.
 
@@ -109,7 +124,10 @@ it a little further and it settles onto one side.
   as one surface, so a wall split into two (or twenty) quads takes a **single** decal
   centred on the whole wall. Faces in different planes, and faces that do not touch,
   still get their own. Turn it off for one decal per selected face.
-- **Width / Height** — decal size in metres.
+- **Width / Height** — decal size in metres, measured across the outer boundary.
+- **Edge Fade** — width of the alpha-0 border ring. Capped at just under half the
+  decal, so a fade wider than the decal blunts rather than turning the inner
+  rectangle inside out. Live-editable per decal.
 - **Surface Offset** — lift off the surface, avoids z-fighting. Default 0.003 m.
 - **Rotation** — spin around the *face normal*, so 45° looks the same on a floor and
   on a wall.
@@ -122,8 +140,8 @@ it a little further and it settles onto one side.
 - **Material** — reuse an existing decal material for the same texture file, or
   always create a new one.
 
-Decals are always generated fully opaque; fading is done afterwards with the
-vertex-colour **Alpha** in Selected Decal, where you can see the result as you drag.
+Decals are always generated fully opaque; fading is done afterwards with **Corner
+Alpha** in Selected Decal, where you can see the result as you drag.
 
 Decals on walls and slanted surfaces are oriented visually upright (world Z projected
 onto the face); floors and ceilings, where "upright" means nothing, fall back to the

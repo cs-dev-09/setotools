@@ -132,11 +132,15 @@ def rebuild(obj):
 
     _rebuilding = True
     try:
-        if not geometry.set_quad_size(obj.data, data.width, data.height):
-            return "Mesh is no longer a 4-vertex decal quad - it cannot be resized."
+        if not geometry.set_decal_size(obj.data, data.width, data.height,
+                                       data.edge_fade, szi.get_uv_map_name(0)):
+            return "Mesh is no longer a Seto decal grid - it cannot be resized."
 
-        if not geometry.set_quad_alpha(obj.data, data.alpha, szi.get_color_attr_name(0)):
-            return "Mesh has no 'Color 1' attribute - opacity cannot be applied."
+        if not geometry.set_decal_alpha(obj.data, data.width, data.height,
+                                        data.edge_fade, tuple(data.corner_alpha),
+                                        szi.get_color_attr_name(0),
+                                        border_alphas=tuple(data.border_alpha)):
+            return "Mesh has no usable 'Color 1' attribute - corner alpha cannot be applied."
 
         # Offset U/V are folded into `position` here, and into the walk below, so
         # compose_matrix is always handed a final point and zero offsets - never
@@ -173,8 +177,9 @@ def _on_setting_changed(self, context):
     self.status = rebuild(obj) or ""
 
 
-def store_placement(obj, placement, source_object, texture_stem, alpha=1.0,
-                    texture_path=""):
+def store_placement(obj, placement, source_object, texture_stem,
+                    corner_alpha=geometry.UNIFORM_ALPHA, texture_path="",
+                    edge_fade=0.1):
     """Stamp a freshly created decal with everything it needs to edit itself."""
     with suppress_rebuild():
         data = obj.seto_decal_data
@@ -182,7 +187,8 @@ def store_placement(obj, placement, source_object, texture_stem, alpha=1.0,
         data.source_object = source_object
         data.texture_stem = texture_stem
         data.texture_path = texture_path
-        data.alpha = alpha
+        data.corner_alpha = corner_alpha
+        data.edge_fade = edge_fade
 
         data.frame_center = placement.center
         data.frame_normal = placement.normal
@@ -268,6 +274,15 @@ class SETO_PG_decal_object(bpy.types.PropertyGroup):
         default=1.0, min=0.0001, soft_max=10.0, subtype='DISTANCE',
         update=_on_setting_changed,
     )
+    edge_fade: bpy.props.FloatProperty(
+        name="Edge Fade",
+        description=(
+            "Width of the alpha-0 border ring that dissolves the decal's outline "
+            "into the surface"
+        ),
+        default=0.1, min=0.0, soft_max=1.0, subtype='DISTANCE',
+        update=_on_setting_changed,
+    )
     surface_offset: bpy.props.FloatProperty(
         name="Surface Offset",
         description="How far the decal is lifted off the surface along its normal, to stop z-fighting",
@@ -292,14 +307,32 @@ class SETO_PG_decal_object(bpy.types.PropertyGroup):
         default=0.0, subtype='DISTANCE',
         update=_on_setting_changed,
     )
-    alpha: bpy.props.FloatProperty(
-        name="Alpha",
+    border_alpha: bpy.props.FloatVectorProperty(
+        name="Border Alpha",
         description=(
-            "Alpha of the Color 1 vertex colour, applied evenly to all four corners. "
-            "decal.sps renders as 'Color 1 alpha x texture alpha', so 1.0 is as opaque "
-            "as the texture allows and lower values fade the whole decal out"
+            "Color 1 alpha along each side of the decal's border ring, in the order "
+            "bottom, right, top, left. 0 fades that side into the surface; raise one "
+            "to keep that edge hard, for instance where a decal meets a floor. Where "
+            "two sides meet, the lower of the two wins, so a faded side stays faded "
+            "all the way into its corners"
         ),
-        default=1.0, min=0.0, max=1.0, subtype='FACTOR',
+        size=4,
+        default=geometry.DEFAULT_BORDER_ALPHA,
+        min=0.0, max=1.0, subtype='NONE',
+        update=_on_setting_changed,
+    )
+    corner_alpha: bpy.props.FloatVectorProperty(
+        name="Corner Alpha",
+        description=(
+            "Color 1 alpha at each corner of the decal, in the order bottom left, "
+            "bottom right, top right, top left. decal.sps renders as "
+            "'Color 1 alpha x texture alpha', so 1.0 is as opaque as the texture "
+            "allows and lower values fade that corner out. Blender interpolates "
+            "between them, so any linear gradient across the decal is possible"
+        ),
+        size=4,
+        default=geometry.UNIFORM_ALPHA,
+        min=0.0, max=1.0, subtype='NONE',
         update=_on_setting_changed,
     )
 
@@ -347,10 +380,55 @@ class SETO_OT_decal_reset_position(bpy.types.Operator):
         return {'FINISHED'}
 
 
+
+class SETO_OT_decal_alpha_uniform(bpy.types.Operator):
+    """Set every corner of this decal back to fully opaque"""
+    bl_idname = "seto.decal_alpha_uniform"
+    bl_label = "All 1.0"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def poll(cls, context):
+        obj = context.active_object
+        return obj is not None and obj.type == 'MESH' and obj.seto_decal_data.is_seto_decal
+
+    def execute(self, context):
+        obj = context.active_object
+        data = obj.seto_decal_data
+        with suppress_rebuild():
+            data.corner_alpha = geometry.UNIFORM_ALPHA
+        data.status = rebuild(obj) or ""
+        return {'FINISHED'}
+
+
+class SETO_OT_decal_alpha_fade_down(bpy.types.Operator):
+    """Fade this decal out towards its bottom edge"""
+    bl_idname = "seto.decal_alpha_fade_down"
+    bl_label = "Fade Down"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def poll(cls, context):
+        obj = context.active_object
+        return obj is not None and obj.type == 'MESH' and obj.seto_decal_data.is_seto_decal
+
+    def execute(self, context):
+        obj = context.active_object
+        data = obj.seto_decal_data
+        # Corner order is bottom left, bottom right, top right, top left - so
+        # this is 0 along the bottom edge and 1 along the top.
+        with suppress_rebuild():
+            data.corner_alpha = (0.0, 0.0, 1.0, 1.0)
+        data.status = rebuild(obj) or ""
+        return {'FINISHED'}
+
+
 _classes = (
     SETO_PG_decal_object,
     SETO_OT_decal_rebuild,
     SETO_OT_decal_reset_position,
+    SETO_OT_decal_alpha_uniform,
+    SETO_OT_decal_alpha_fade_down,
 )
 
 

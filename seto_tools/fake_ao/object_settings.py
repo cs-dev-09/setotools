@@ -206,6 +206,7 @@ def rebuild(obj):
             pass
         geometry.merge_by_distance(new_mesh, data.merge_distance)
         geometry.normalise_uvs(new_mesh, UV_SIZE)
+        geometry.shade_smooth(new_mesh)
 
         for mat in materials:
             new_mesh.materials.append(mat)

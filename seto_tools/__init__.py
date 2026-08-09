@@ -6,24 +6,28 @@ bl_info = {
     "location": "View3D > N-Panel > Seto Tools",
     "description": (
         "GTA V / FiveM asset authoring tools that integrate with Sollumz. "
-        "Fake AO corner decals, Fake Damage chipped-edge strips, and a Decal Tool "
-        "that places library decals on selected faces."
+        "Fake AO corner decals, Fake Damage chipped-edge strips, Smooth Edge "
+        "normal-map strips, a Decal Tool that places library decals on "
+        "selected faces, and a Surface Painter for brushing dirt onto an asset "
+        "through a non-destructive mask."
     ),
     "category": "Object",
 }
 
-# One add-on, three tools. Each lives in its own subpackage and registers
-# itself, so they stay as independent as they were when they shipped as three
+# One add-on, five tools. Each lives in its own subpackage and registers itself,
+# so they stay as independent as the first three were when they shipped as
 # separate add-ons - this top-level __init__ only aggregates their
 # register()/unregister() calls, in panel order.
 #
-# The one thing they genuinely share is shared/sollumz_integration.py, which
-# used to be copy-pasted into all three.
+# What they genuinely share lives in shared/: the Sollumz integration, which
+# used to be copy-pasted into each of them, the bundled-texture lookup, and the
+# Color 1 vertex colour they all write.
 from . import fake_ao
 from . import fake_damage
 from . import decal_tool
+from . import smooth_edge
 
-_modules = (fake_ao, fake_damage, decal_tool)
+_modules = (fake_ao, fake_damage, decal_tool, smooth_edge)
 
 
 def register():
