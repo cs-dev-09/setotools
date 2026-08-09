@@ -16,6 +16,7 @@ from . import library
 from . import preferences
 from . import previews
 from ..shared import addon_prefs
+from ..shared import groups
 from ..shared import sollumz_integration as szi
 from ..shared import ui_common
 
@@ -44,14 +45,12 @@ class SETO_PT_decal_tool_panel(bpy.types.Panel):
     bl_idname = "SETO_PT_decal_tool_panel"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
-    # Shared with the other Seto tools: every panel using this category is
-    # merged by Blender into one "Seto Tools" N-panel tab, each tool appearing
-    # as its own collapsible section. The order groups them by what they work
-    # on: the three edge-strip tools first (0-2), then the two that put texture
-    # on a surface - this (3) and Surface Painter (4).
+    # Second of the three Surface tools, between Fake AO (0) and Surface
+    # Painter (2). Both of those shade a surface; this one puts an image on it.
     bl_category = "Seto Tools"
+    bl_parent_id = groups.SURFACE
     bl_options = {'DEFAULT_CLOSED'}
-    bl_order = 3
+    bl_order = 1
 
     def draw_header(self, context):
         self.layout.label(text="", icon='TEXTURE')

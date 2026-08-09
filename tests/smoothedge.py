@@ -16,13 +16,17 @@ check("it is in the Seto Tools tab", panel and panel.bl_category == "Seto Tools"
 fake_ao_panel = getattr(bpy.types, "SETO_PT_fake_ao_panel", None)
 damage_panel = getattr(bpy.types, "SETO_PT_fake_damage_panel", None)
 decal_panel = getattr(bpy.types, "SETO_PT_decal_tool_panel", None)
-# The tab is grouped by what a tool works on, so what matters is that this
-# stays with the other two edge-strip tools and above the surface ones - not
-# which number it happens to hold.
-check("it sits with the other edge-strip tools, above the surface tools",
-      panel and damage_panel and decal_panel
-      and damage_panel.bl_order < panel.bl_order < decal_panel.bl_order,
-      {c.__name__: c.bl_order for c in (fake_ao_panel, damage_panel, panel, decal_panel) if c})
+# The tab is two sections, and a tool is nested under the one matching what it
+# produces. What matters is that this stays in Geometry, below Fake Damage -
+# not which number it happens to hold. A tool whose parent section is missing
+# is dropped by Blender entirely, so the parent is checked, not just the order.
+check("it is nested under Geometry, below Fake Damage",
+      panel and damage_panel
+      and panel.bl_parent_id == "SETO_PT_geometry_group"
+      and damage_panel.bl_parent_id == "SETO_PT_geometry_group"
+      and damage_panel.bl_order < panel.bl_order,
+      {c.__name__: (getattr(c, "bl_parent_id", None), c.bl_order)
+       for c in (fake_ao_panel, damage_panel, panel, decal_panel) if c})
 check("its operator exists", "create_smooth_edge" in dir(bpy.ops.seto))
 check("its scene settings exist", hasattr(bpy.context.scene, "seto_smooth_edge"))
 check("Fake Damage is untouched and still registered",

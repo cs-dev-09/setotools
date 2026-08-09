@@ -1,6 +1,6 @@
 import bpy
 
-from ..shared import ui_common
+from ..shared import groups, ui_common
 
 
 class SETO_PT_smooth_edge_panel(bpy.types.Panel):
@@ -8,15 +8,15 @@ class SETO_PT_smooth_edge_panel(bpy.types.Panel):
     bl_idname = "SETO_PT_smooth_edge_panel"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
-    # Shared with the other Seto tools - that is what makes them land in the
-    # same tab. bl_order 2 keeps it beside the other two edge-strip tools,
-    # Fake AO (0) and Fake Damage (1), above the two surface tools.
+    # Second of the two Geometry tools, under Fake Damage (0). Same strip, the
+    # opposite intent: this one rounds the edge off instead of chipping it.
     bl_category = "Seto Tools"
+    bl_parent_id = groups.GEOMETRY
     bl_options = {'DEFAULT_CLOSED'}
-    bl_order = 2
+    bl_order = 1
 
     def draw_header(self, context):
-        self.layout.label(text="", icon='MOD_EDGESPLIT')
+        self.layout.label(text="", icon='MOD_SMOOTH')
 
     def draw(self, context):
         layout = self.layout

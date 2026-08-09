@@ -24,8 +24,12 @@ def settings_annotations(update=None):
     return {
         "width": bpy.props.FloatProperty(
             name="Width",
-            description="Length of the flat shelf, from the riser out onto the wall surface",
-            default=0.1,
+            description=(
+                "Length of the flat shelf, from the riser out onto the wall surface. Keep it "
+                "clear of Bevel Width: the round eats into it, and what is left is what the "
+                "AO has to fade out across"
+            ),
+            default=0.25,
             min=0.0001,
             soft_max=1.0,
             subtype='DISTANCE',
@@ -36,21 +40,7 @@ def settings_annotations(update=None):
             description="Height of the riser - how far the shelf is lifted off the wall along its normal",
             default=0.0003,
             min=0.0002,
-            soft_max=0.05,
-            subtype='DISTANCE',
-            update=update,
-        ),
-        "merge_distance": bpy.props.FloatProperty(
-            name="Merge Distance",
-            description=(
-                "Vertices closer than this are welded to their shared centroid after all "
-                "selected edges have been generated, so neighbouring sections join into one "
-                "continuous mesh. Must be larger than Surface Offset to close a corner seam, "
-                "but well below Width or the strip collapses"
-            ),
-            default=0.01,
-            min=0.00001,
-            soft_max=0.1,
+            max=0.05,
             subtype='DISTANCE',
             update=update,
         ),
@@ -92,14 +82,67 @@ def settings_annotations(update=None):
             default=False,
             update=update,
         ),
+        "bevel_enabled": bpy.props.BoolProperty(
+            name="Bevel",
+            description=(
+                "Round the corner off as well as decal it. A razor-sharp corner reads as "
+                "sharp under the best AO there is, so this is on by default"
+            ),
+            default=True,
+            update=update,
+        ),
+        "bevel_target": bpy.props.EnumProperty(
+            name="Bevel",
+            description="What gets rounded off",
+            items=[
+                ('BOTH', "Source + Strip",
+                 "Round the source edge, and build the strip so it follows that round with "
+                 "the same Width and Segments. Both meshes end up the same shape, which is "
+                 "the only way the decal sits ON the rounded corner instead of across it"),
+                ('STRIP', "Strip Only",
+                 "Round off the generated strip's own seam and leave the source mesh sharp. "
+                 "The round hides the sharp corner underneath it"),
+                ('SOURCE', "Source Only",
+                 "Round the source edge, then run a flat strip along the chamfer's rim onto "
+                 "each wall, leaving the round itself bare"),
+            ],
+            default='BOTH',
+            update=update,
+        ),
+        "bevel_width": bpy.props.FloatProperty(
+            name="Bevel Width",
+            description="Offset of the round, the same measure as Width in Blender's own Bevel",
+            default=0.0833,
+            min=0.0,
+            soft_max=0.5,
+            subtype='DISTANCE',
+            update=update,
+        ),
+        "bevel_segments": bpy.props.IntProperty(
+            name="Segments",
+            description="1 is a flat chamfer; higher rounds the corner off",
+            default=4,
+            min=1,
+            soft_max=8,
+            max=32,
+            update=update,
+        ),
+        "bevel_profile": bpy.props.FloatProperty(
+            name="Profile Shape",
+            description="Superellipse profile: 0.5 is a circular round, below concave, above convex",
+            default=0.5,
+            min=0.0,
+            max=1.0,
+            update=update,
+        ),
         "material_mode": bpy.props.EnumProperty(
             name="Material",
             description="How to obtain the decal.sps Sollumz material",
             items=[
-                ('AUTO', "Reuse if Exists",
+                ('AUTO', "Reuse",
                  "Reuse an existing decal.sps material in this file if one is found, "
                  "otherwise create a new one"),
-                ('NEW', "Always Create New",
+                ('NEW', "Create",
                  "Always create a new decal.sps material"),
             ],
             default='AUTO',

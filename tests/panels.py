@@ -143,14 +143,52 @@ def draw_panel(cls, label):
 
 
 panels = seto_panels()
-check("all five tools registered a top-level panel",
-      len([c for c in panels if not getattr(c, "bl_parent_id", "")]) == 5,
+# The tab is two sections and nothing else at the top level; every tool hangs
+# off one of them. A tool whose parent failed to register is not merely
+# misplaced - Blender drops it, and the tab silently loses a tool.
+check("the tab's top level is the two sections",
+      [c.bl_idname for c in panels if not getattr(c, "bl_parent_id", "")]
+      == ["SETO_PT_geometry_group", "SETO_PT_surface_group"],
       [c.__name__ for c in panels if not getattr(c, "bl_parent_id", "")])
+
+for parent, expected in (
+        ("SETO_PT_geometry_group",
+         ["SETO_PT_fake_damage_panel", "SETO_PT_smooth_edge_panel"]),
+        ("SETO_PT_surface_group",
+         ["SETO_PT_fake_ao_panel", "SETO_PT_decal_tool_panel",
+          "SETO_PT_surface_painter_panel"])):
+    got = [c.bl_idname for c in panels
+           if getattr(c, "bl_parent_id", "") == parent]
+    check(f"{parent} holds its tools, in order", got == expected, got)
 
 print("=== every panel draws, with Sollumz available ===")
 bpy.ops.mesh.primitive_cube_add(size=2)
 for cls in panels:
     draw_panel(cls, "sollumz ok")
+
+print("=== Fake AO's Bevel block, in every state ===")
+# The pass above only saw the default (on, Source + Strip). Each target draws
+# its own warnings, and switching the block off greys out a different branch.
+fake_ao = bpy.context.scene.seto_fake_ao
+try:
+    for target in ('STRIP', 'SOURCE', 'BOTH'):
+        fake_ao.bevel_target = target
+        for cls in panels:
+            if "fake_ao" in cls.bl_idname:
+                draw_panel(cls, f"bevel {target}")
+    # Bevel Width at or above Width - the "raise Width" warning.
+    fake_ao.bevel_width = fake_ao.width
+    for cls in panels:
+        if "fake_ao" in cls.bl_idname:
+            draw_panel(cls, "bevel too wide")
+    fake_ao.bevel_enabled = False
+    for cls in panels:
+        if "fake_ao" in cls.bl_idname:
+            draw_panel(cls, "bevel off")
+finally:
+    fake_ao.property_unset("bevel_enabled")
+    fake_ao.property_unset("bevel_target")
+    fake_ao.property_unset("bevel_width")
 
 print("=== every panel draws when Sollumz is missing ===")
 # The tester's state. Every tool must say so rather than drawing buttons that

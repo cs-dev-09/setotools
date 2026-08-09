@@ -89,14 +89,82 @@ from a perfect axis-aligned grid.
 
 ## Settings
 
-- **Width** — how far the decal extends onto the wall.
-- **Surface Offset** — lift off the wall, avoids z-fighting.
+- **Width** — how far the decal extends onto the wall. Keep it clear of Bevel
+  Width; see below.
+- **Surface Offset** — lift off the wall, avoids z-fighting. Capped at 0.05 m;
+  past that the strip is not on the wall any more.
 - **Alpha Center / Alpha Outer** — Color 1 alpha fade, corner → edge.
 - **Invert Fade** — swap which side gets which alpha.
 - **Flip Direction** — flips a single-wall wing to the other side.
 - **Material** — reuse an existing `decal.sps` material, or always create new.
 
 All of these stay editable on the created strip, not just at creation time.
+
+## Bevel
+
+A sharp corner still reads as sharp under the best AO there is, so the **Bevel**
+block rounds it off for you. It is **on by default**, at **Width 0.0833 m, 4
+segments, profile 0.5** — Blender's own bevel settings, under their own names.
+
+**Target** decides what gets rounded:
+
+- **Source + Strip** (default) — rounds the selected edge on **your** mesh, and
+  builds the strip so it follows that round with the same Width and Segments.
+  Both meshes end up the same shape, which is the only way the decal sits *on*
+  the rounded corner instead of flat across it. The strip's round is generated
+  by beveling the strip's own seam with the same settings rather than by
+  approximating the source's, so the two match by construction — the strip
+  lands exactly Surface Offset outside the source.
+- **Strip Only** — rounds off the strip's own seam and leaves the source sharp.
+  The round hides the sharp corner underneath it, and nothing you started from
+  is modified. A wing with no partner (a boundary edge like a door frame) has
+  no seam and is left as it is.
+- **Source Only** — rounds the source and runs a *flat* strip along the
+  chamfer's rim onto each wall, leaving the round itself bare. The short cap
+  edges at either end of a run are skipped, so nothing decals the end of the
+  chamfer.
+
+**Width matters here.** The round eats into the shelf, and what is left is what
+the AO has to fade out across — which is why the default Width is 0.25 m, not
+the 0.1 m it used to be. The panel warns when Bevel Width is no longer below
+Width.
+
+**The source bevel runs once, at creation.** Live rebuilds only re-apply the
+strip's; re-running the source one on every slider drag would round the round.
+So the strip's own panel offers a plain Bevel toggle with no target to pick, and
+a strip created with Source Only starts with it off.
+
+A **Source + Strip** strip cannot store its corner as vertex indices — the edge
+it was built from was beveled away — so it stores the corner geometry itself and
+rebuilds from that. It still follows the source object being moved, rotated or
+scaled; what it cannot follow is the source's vertices being edited, which is
+the same limit the index path has.
+
+Bevel Width is clamped the way Blender's own **Clamp Overlap** clamps it, so an
+oversized value cannot eat the strip.
+
+### The round keeps the wall's material
+
+The bevel is asked to inherit each new face's material from the wall it came
+from — `material=-1`, exactly what Blender's own Bevel does with its Material
+Index. `bmesh.ops.bevel` defaults that to **0** instead, which puts the whole
+chamfer on material slot 0 whatever that happens to be: on a wall whose brick
+lives in another slot, a corner's worth of the wrong material, in a stripe.
+
+The UVs are left to Blender's own interpolation, the same as beveling by hand.
+It blends between the two rims, so the chamfer can only land inside the span
+the walls already occupied — it cannot run off the end of the wall's island,
+even when the wall is one cell of an atlas.
+
+## Merge Distance is not a setting
+
+Sections generated from neighbouring edges are welded together so they form one
+continuous mesh. The distance used to be a slider with exactly one correct
+answer: large enough to close the seam where two wings meet — they are lifted
+off their own walls, so at a right angle their inner edges sit
+`Surface Offset × √2` apart, and further on a shallower corner — and far enough
+below Width not to collapse the strip. It is now `Surface Offset × 4`, floored,
+and capped at a quarter of Width.
 
 Texture is left empty on purpose — assign your own normal/diffuse map manually.
 

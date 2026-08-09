@@ -69,14 +69,53 @@ def _oriented_quad_indices(p0_i0, p1_i1, p2_i2, p3_i3, desired_normal):
     return (i0, i1, i2, i3)
 
 
-def gather_selected_edge_segments(bm):
+def auto_merge_distance(width, surface_offset):
+    """How close two vertices have to be before they are welded together.
+
+    Used to be a slider, and it was a slider with exactly one correct answer:
+    big enough to close the seam where two wings meet, small enough not to
+    collapse the strip. Both bounds come from the other two settings, so it is
+    worked out rather than asked for.
+
+    The seam is the wide end of it. Each wing is lifted off its own wall by
+    Surface Offset along that wall's normal, so at a right-angled corner the
+    two wings' inner edges end up `surface_offset * sqrt(2)` apart - and more
+    than that on a shallower corner. Four times Surface Offset covers a corner
+    down to about 30 degrees, and is still two orders of magnitude below Width
+    at the defaults.
+
+    The floor keeps float noise between wings generated from different edges
+    weldable when Surface Offset is at its smallest; the Width ceiling is the
+    backstop that stops the weld eating a strip that is narrower than the
+    offset it sits on.
+    """
+    return min(max(surface_offset * 4.0, 1e-4), width * 0.25)
+
+
+def faces_for_edge(edge, exclude_faces=None):
+    """The up-to-2 adjacent faces that get a wing, in a deterministic order.
+
+    Sorted by lowest face.index so the same pair of faces always resolves in
+    the same order across every edge that borders them (e.g. a subdivided
+    corner edge).
+
+    `exclude_faces` is a set of BMFaces that must never receive a wing - used
+    by the source bevel, whose chamfer faces are the highlight and are
+    deliberately left bare.
+    """
+    faces = edge.link_faces
+    if exclude_faces:
+        faces = [f for f in faces if f not in exclude_faces]
+    return sorted(faces, key=lambda f: f.index)[:2]
+
+
+def gather_selected_edge_segments(bm, exclude_faces=None):
     """Read selected edges from an edit-mode BMesh.
 
-    For each selected edge, collects up to 2 adjacent faces (sorted by a
-    deterministic key - lowest face.index - so the same pair of faces always
-    resolves in the same order across every edge that borders them, e.g. a
-    subdivided corner edge). Edges with no linked face at all (e.g. fully
-    detached edges) are skipped and counted.
+    For each selected edge, collects up to 2 adjacent faces (see
+    faces_for_edge). Edges left with no usable face - no linked face at all
+    (a fully detached edge), or every linked face excluded - are skipped and
+    counted.
 
     All values are copied out as plain Vectors so the result stays valid
     after the BMesh/edit-mode goes away.
@@ -90,7 +129,7 @@ def gather_selected_edge_segments(bm):
         if not edge.select:
             continue
 
-        faces = sorted(edge.link_faces, key=lambda f: f.index)[:2]
+        faces = faces_for_edge(edge, exclude_faces)
         if not faces:
             skipped += 1
             continue
@@ -249,6 +288,169 @@ def _miter_vector(tangent_a, tangent_b, normal, width):
         return matrix.inverted() @ Vector((width, width, 0.0))
     except ValueError:
         return None
+
+
+# How far off parallel a chamfer edge may be and still count as running along
+# the original edge. Generous, so a chamfer over a curved rim still qualifies.
+_ALONG_TOLERANCE = 0.9
+
+
+def _runs_along_any(edge, directions):
+    vec = edge.verts[1].co - edge.verts[0].co
+    if vec.length < 1e-8:
+        return False
+    vec.normalize()
+    return any(abs(vec.dot(d)) >= _ALONG_TOLERANCE for d in directions)
+
+
+def bevel_source_edges(bm, width, segments, profile):
+    """Chamfer the selected edges of the SOURCE mesh, in place.
+
+    This is the one thing in the tool that modifies the object you started
+    from, which is why it is opt-in. It is the manual workflow it replaces:
+    bevel the razor-sharp corner so it catches a highlight, then run the decal
+    along it.
+
+    Afterwards the selection is moved onto the chamfer's **rim** edges - the
+    ones where the chamfer meets each original wall - because those, not the
+    edge that no longer exists, are where the AO now has to start.
+
+    Returns the set of faces the bevel created. They are handed to
+    gather_selected_edge_segments as `exclude_faces`: each rim edge then has
+    exactly one usable face (its wall), so the strip fades outward onto both
+    walls and leaves the chamfer itself clean. Two rim edges each growing a
+    wing onto the shared chamfer would just overlap.
+
+    Returns an empty set when there is nothing to bevel, leaving the selection
+    untouched.
+    """
+    edges = [edge for edge in bm.edges if edge.select]
+    if not edges or width <= 0.0:
+        return set()
+
+    # Read before the bevel deletes the originals: which way each selected
+    # edge ran. Used below to tell the chamfer's long sides apart from the
+    # caps at either end of it.
+    directions = []
+    for edge in edges:
+        vec = edge.verts[1].co - edge.verts[0].co
+        if vec.length > 1e-8:
+            directions.append(vec.normalized())
+
+    result = bmesh.ops.bevel(
+        bm,
+        geom=edges,
+        offset=width,
+        offset_type='OFFSET',
+        profile_type='SUPERELLIPSE',
+        segments=max(1, int(segments)),
+        profile=profile,
+        affect='EDGES',
+        # Inherit the material of the wall each face came from. bmesh defaults
+        # this to 0, which is NOT what Blender's own Bevel does - its Material
+        # Index defaults to -1, "same as the adjacent face". Left at the bmesh
+        # default the chamfer is dragged onto slot 0 whatever that happens to
+        # be, and a corner beveled through a wall whose brick is in slot 1 comes
+        # out as a band of the wrong material running the length of the corner.
+        material=-1,
+        # Never let a bevel eat past a neighbouring edge, the way ticking
+        # Clamp Overlap in Blender's own bevel keeps it sane on thin walls.
+        clamp_overlap=True,
+        loop_slide=True,
+    )
+    new_faces = set(result.get("faces", ()))
+    if not new_faces:
+        return set()
+
+    bm.normal_update()
+
+    for vert in bm.verts:
+        vert.select = False
+    for edge in bm.edges:
+        edge.select = False
+    for face in bm.faces:
+        face.select = False
+    for face in new_faces:
+        for edge in face.edges:
+            if all(linked in new_faces for linked in edge.link_faces):
+                continue  # inside the chamfer, on a multi-segment round
+            if not _runs_along_any(edge, directions):
+                # A cap: the short edge closing the chamfer off at the end of
+                # the run. It borders a wall too, but running the AO along it
+                # would decal the end cap, not the corner.
+                continue
+            edge.select_set(True)
+
+    # Deliberately no select_flush(True): flushing selection up from the
+    # vertices would pull the caps straight back in, since both of their
+    # vertices belong to rim edges. Everything was cleared before the rim was
+    # selected, and nothing is cleared after - assigning `select` on a face
+    # flushes DOWN, and would deselect the rim edges again.
+    bm.verts.index_update()
+    bm.faces.index_update()
+    bm.normal_update()
+
+    return new_faces
+
+
+def bevel_strip_corners(mesh, corner_points, width, segments, profile, tolerance):
+    """Chamfer the strip's own corner - the seam where its two wings meet.
+
+    Run on the finished, welded strip, so the two wings are already one
+    continuous mesh and the seam is a real edge with a face on either side.
+    A wing that never got a partner (a boundary edge like a door frame) has
+    only one face along that edge and is left alone: there is no corner there
+    to round.
+
+    The seam is found by position rather than by dihedral angle: an edge whose
+    two ends sit on `corner_points` - the original selected-edge endpoints -
+    within `tolerance`. Angle would misread a curved rim, where the joints
+    between consecutive wings are bent too.
+
+    Called after the UV/Color attributes are written, so bmesh interpolates
+    them onto the new chamfer. Both sides of the seam carry the same values
+    (they are the same conceptual point), so the chamfer comes out at a
+    constant corner alpha - which is what an AO corner wants anyway.
+
+    Returns the number of seams beveled.
+    """
+    if width <= 0.0 or not corner_points:
+        return 0
+
+    bm = bmesh.new()
+    bm.from_mesh(mesh)
+
+    limit = tolerance * tolerance
+    targets = []
+    for edge in bm.edges:
+        if len(edge.link_faces) != 2:
+            continue
+        a, b = edge.verts[0].co, edge.verts[1].co
+        for p, q in corner_points:
+            if ((a - p).length_squared <= limit and (b - q).length_squared <= limit) or \
+                    ((a - q).length_squared <= limit and (b - p).length_squared <= limit):
+                targets.append(edge)
+                break
+
+    if targets:
+        bmesh.ops.bevel(
+            bm,
+            geom=targets,
+            offset=width,
+            offset_type='OFFSET',
+            profile_type='SUPERELLIPSE',
+            segments=max(1, int(segments)),
+            profile=profile,
+            affect='EDGES',
+            material=-1,      # inherit, like Blender's own Bevel - see bevel_source_edges
+            clamp_overlap=True,
+            loop_slide=True,
+        )
+
+    bm.to_mesh(mesh)
+    bm.free()
+    mesh.update()
+    return len(targets)
 
 
 def create_mesh_from_strip_data(name, strip_data):

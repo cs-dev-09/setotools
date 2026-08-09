@@ -1,6 +1,6 @@
 import bpy
 
-from ..shared import ui_common
+from ..shared import groups, ui_common
 
 
 class SETO_PT_fake_damage_panel(bpy.types.Panel):
@@ -8,15 +8,15 @@ class SETO_PT_fake_damage_panel(bpy.types.Panel):
     bl_idname = "SETO_PT_fake_damage_panel"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
-    # Shared with the other Seto tools - that is what makes them land in the
-    # same tab. bl_order 1 keeps it beside the other two edge-strip tools,
-    # Fake AO (0) and Smooth Edge (2), above the two surface tools.
+    # First of the two Geometry tools, above Smooth Edge (1). Both build mesh
+    # along the selected edges; this is the one that breaks the edge up.
     bl_category = "Seto Tools"
+    bl_parent_id = groups.GEOMETRY
     bl_options = {'DEFAULT_CLOSED'}
-    bl_order = 1
+    bl_order = 0
 
     def draw_header(self, context):
-        self.layout.label(text="", icon='MOD_EDGESPLIT')
+        self.layout.label(text="", icon='MOD_EXPLODE')
 
     def draw(self, context):
         layout = self.layout

@@ -1,6 +1,42 @@
 import bpy
 
-from ..shared import ui_common
+from ..shared import groups, ui_common
+
+
+def _draw_bevel(layout, settings, show_target):
+    """The optional chamfer block, drawn the same way in the create panel and
+    on a finished strip.
+
+    `show_target` is off on a finished strip: the source bevel already
+    happened once, at creation, and cannot be re-run from there.
+    """
+    box = layout.box()
+    header = box.row()
+    header.prop(settings, "bevel_enabled", text="")
+    header.label(text="Bevel", icon='MOD_BEVEL')
+
+    body = box.column(align=True)
+    body.enabled = settings.bevel_enabled
+    if show_target:
+        body.prop(settings, "bevel_target", text="")
+    body.prop(settings, "bevel_width", text="Width")
+    body.prop(settings, "bevel_segments", text="Segments")
+    body.prop(settings, "bevel_profile", text="Profile Shape")
+
+    if not settings.bevel_enabled:
+        return
+
+    if show_target and settings.bevel_target in {'SOURCE', 'BOTH'}:
+        box.label(text="Modifies the source mesh.", icon='ERROR')
+
+    if settings.bevel_width >= settings.width:
+        # The round eats the shelf: there is nothing flat left for the AO to
+        # fade out across, and Blender clamps the bevel, so the strip's round
+        # stops matching the source's.
+        note = box.column(align=True)
+        note.alert = True
+        note.label(text="Bevel Width is not below Width.", icon='ERROR')
+        note.label(text="Raise Width to leave room to fade.")
 
 
 class SETO_PT_fake_ao_panel(bpy.types.Panel):
@@ -8,18 +44,16 @@ class SETO_PT_fake_ao_panel(bpy.types.Panel):
     bl_idname = "SETO_PT_fake_ao_panel"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
-    # Shared with the other Seto tools: every panel using this category is
-    # merged by Blender into one "Seto Tools" N-panel tab, each tool appearing
-    # as its own collapsible section (the way Sollumz Tools is laid out).
-    # The order groups them by what they work on: edge strips first - this (0),
-    # Fake Damage (1), Smooth Edge (2) - then the surface tools, Decal Tool (3)
-    # and Surface Painter (4).
+    # Under the Surface section, first of its three (Decal Tool 1, Surface
+    # Painter 2). It builds a strip like the two Geometry tools do, but what it
+    # is for is shading a surface - which is how it gets reached for.
     bl_category = "Seto Tools"
+    bl_parent_id = groups.SURFACE
     bl_options = {'DEFAULT_CLOSED'}
     bl_order = 0
 
     def draw_header(self, context):
-        self.layout.label(text="", icon='MOD_SOLIDIFY')
+        self.layout.label(text="", icon='SHADING_RENDERED')
 
     def draw(self, context):
         layout = self.layout
@@ -31,13 +65,15 @@ class SETO_PT_fake_ao_panel(bpy.types.Panel):
         col = layout.column(align=True)
         col.prop(settings, "width")
         col.prop(settings, "surface_offset")
-        col.prop(settings, "merge_distance")
 
         layout.separator()
         col = layout.column(align=True)
         col.prop(settings, "alpha_center")
         col.prop(settings, "alpha_outer")
         layout.prop(settings, "invert_fade")
+
+        layout.separator()
+        _draw_bevel(layout, settings, show_target=True)
 
         layout.separator()
         layout.prop(settings, "flip_direction")
@@ -98,7 +134,6 @@ class SETO_PT_fake_ao_object_panel(bpy.types.Panel):
         col = layout.column(align=True)
         col.prop(data, "width")
         col.prop(data, "surface_offset")
-        col.prop(data, "merge_distance")
 
         layout.separator()
         col = layout.column(align=True)
@@ -106,6 +141,9 @@ class SETO_PT_fake_ao_object_panel(bpy.types.Panel):
         col.prop(data, "alpha_outer")
         layout.prop(data, "invert_fade")
         layout.prop(data, "flip_direction")
+
+        layout.separator()
+        _draw_bevel(layout, data, show_target=False)
 
         if not data.live_update:
             layout.separator()

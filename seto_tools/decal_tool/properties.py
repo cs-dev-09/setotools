@@ -146,10 +146,10 @@ class SETO_PG_decal_settings(bpy.types.PropertyGroup):
         name="Material",
         description=f"How to obtain the {szi.DECAL_SHADER_FILENAME} Sollumz material",
         items=[
-            ('AUTO', "Reuse if Exists",
+            ('AUTO', "Reuse",
              "Reuse a decal material previously created by this tool for the same "
              "texture file if one is found, otherwise create a new one"),
-            ('NEW', "Always Create New",
+            ('NEW', "Create",
              f"Always create a new {szi.DECAL_SHADER_FILENAME} material (still one per "
              "distinct texture within a single Create Decal run)"),
         ],

@@ -151,8 +151,41 @@ class SETO_OT_create_fake_ao(bpy.types.Operator):
         # are copied out as plain Vectors (local space), so they stay valid
         # after we leave edit mode below.
         bm = bmesh.from_edit_mesh(source_mesh)
-        segments, skipped = geometry.gather_selected_edge_segments(bm)
-        edge_keys = object_settings.serialise_edge_keys(bm)
+
+        # The bevel is the only thing in this tool that writes to the source
+        # mesh, so it happens up front and everything below reads whatever it
+        # left behind.
+        bevel_source = settings.bevel_enabled and settings.bevel_target in {'SOURCE', 'BOTH'}
+        # 'Source + Strip' builds the strip from the SHARP corner and then
+        # rounds it with the same Width/Segments, so the two rounds coincide
+        # and the decal lands on the rounded corner instead of across it. That
+        # means reading the corner before the bevel removes it.
+        follow_round = bevel_source and settings.bevel_target == 'BOTH'
+
+        segments = skipped = None
+        if follow_round:
+            segments, skipped = geometry.gather_selected_edge_segments(bm)
+
+        excluded_faces = set()
+        if bevel_source:
+            excluded_faces = geometry.bevel_source_edges(
+                bm,
+                width=settings.bevel_width,
+                segments=settings.bevel_segments,
+                profile=settings.bevel_profile,
+            )
+            if excluded_faces:
+                bmesh.update_edit_mesh(source_mesh)
+
+        if follow_round:
+            # Vertex indices cannot describe an edge that no longer exists;
+            # the corner itself is stored instead - see serialise_segments().
+            edge_keys = ""
+            frozen_segments = object_settings.serialise_segments(segments)
+        else:
+            segments, skipped = geometry.gather_selected_edge_segments(bm, excluded_faces)
+            edge_keys = object_settings.serialise_edge_keys(bm, excluded_faces)
+            frozen_segments = ""
 
         if not segments:
             self.report({'WARNING'}, "No usable selected edges found (an edge needs at least one adjacent face).")
@@ -193,7 +226,12 @@ class SETO_OT_create_fake_ao(bpy.types.Operator):
         # Weld near-duplicate vertices (e.g. the two wings of an L-shaped
         # corner meeting at the same edge) - safe to do now since both wings
         # already carry matching UV/Color data at their shared inner edge.
-        geometry.merge_by_distance(new_mesh, settings.merge_distance)
+        geometry.merge_by_distance(
+            new_mesh, geometry.auto_merge_distance(settings.width, settings.surface_offset))
+
+        # Round off the strip's own seam, now that the two wings are welded
+        # into one mesh and there is a real edge there to bevel.
+        object_settings.apply_strip_bevel(new_mesh, segments, settings)
 
         # The UVs geometry.py authored are already a straight rectangle in
         # metres; this only fits them into the 0..1 square, aspect intact.
@@ -268,7 +306,15 @@ class SETO_OT_create_fake_ao(bpy.types.Operator):
             obj_data.is_fake_ao = True
             obj_data.source_object = source_obj
             obj_data.edge_keys = edge_keys
+            obj_data.frozen_segments = frozen_segments
             properties.copy_settings(self, obj_data)
+            # The source bevel is a one-shot: it already happened, and the
+            # stored settings exist to rebuild the STRIP. Collapsing the
+            # target here is what lets the strip's panel offer a plain Bevel
+            # toggle with no target to pick - and stops a later rebuild from
+            # reading 'SOURCE' and silently doing nothing.
+            obj_data.bevel_enabled = settings.bevel_enabled and settings.bevel_target != 'SOURCE'
+            obj_data.bevel_target = 'STRIP'
             obj_data.status = ""
 
         # Push the values that actually produced this result back onto the
@@ -277,6 +323,9 @@ class SETO_OT_create_fake_ao(bpy.types.Operator):
         properties.copy_settings(self, context.scene.seto_fake_ao)
 
         msg = f"Created '{new_name}' with {len(strip_data.faces)} strip quad(s)."
+        if bevel_source:
+            msg += (f" Beveled {len(excluded_faces)} face(s) onto the source mesh."
+                    if excluded_faces else " Source bevel produced nothing.")
         if skipped:
             msg += f" Skipped {skipped} edge(s) with no adjacent face."
         self.report({'INFO'}, msg)

@@ -52,31 +52,40 @@ def main():
     else:
         print("       (seto_tools was already enabled in this Blender)")
 
-    # In tab order. The tab is grouped by what each tool works on: the three
-    # that build a strip along selected edges, then the two that put texture on
-    # a surface. The checks below are about that grouping, not about which
-    # number a panel happens to hold - renumbering to insert a tool is fine,
-    # splitting the groups is not.
-    edge_tools = ("SETO_PT_fake_ao_panel", "SETO_PT_fake_damage_panel",
-                  "SETO_PT_smooth_edge_panel")
-    surface_tools = ("SETO_PT_decal_tool_panel", "SETO_PT_surface_painter_panel")
+    # The tab is two sections, and each tool nests inside the one that matches
+    # what it produces: Geometry builds new mesh along the selected edges,
+    # Surface puts texture on a surface that is already there. The checks below
+    # are about that grouping, not about which number a panel happens to hold -
+    # renumbering to insert a tool is fine, moving one out of its section is
+    # not. A tool parented to a section that failed to register is not merely
+    # misplaced: Blender drops the panel and the tab loses the tool.
+    groups = ("SETO_PT_geometry_group", "SETO_PT_surface_group")
+    geometry_tools = ("SETO_PT_fake_damage_panel", "SETO_PT_smooth_edge_panel")
+    surface_tools = ("SETO_PT_fake_ao_panel", "SETO_PT_decal_tool_panel",
+                     "SETO_PT_surface_painter_panel")
 
     panels = {}
-    for name in edge_tools + surface_tools:
+    for name in groups + geometry_tools + surface_tools:
         panels[name] = getattr(bpy.types, name, None)
         check(f"{name} is registered", panels[name] is not None)
 
-    check("all five panels share the 'Seto Tools' tab",
+    check("every panel shares the 'Seto Tools' tab",
           all(p is not None and p.bl_category == "Seto Tools" for p in panels.values()),
           str({k: getattr(v, "bl_category", None) for k, v in panels.items()}))
 
-    orders = {k: getattr(v, "bl_order", None) for k, v in panels.items()}
-    check("every tool has its own place in the tab",
-          len(set(orders.values())) == len(orders) and None not in orders.values(),
-          str(orders))
-    check("the edge-strip tools stay together, above the surface tools",
-          max(orders[n] for n in edge_tools) < min(orders[n] for n in surface_tools),
-          str(orders))
+    check("the two sections are the tab's top level",
+          all(not getattr(panels[n], "bl_parent_id", "") for n in groups)
+          and panels[groups[0]].bl_order < panels[groups[1]].bl_order,
+          str({n: getattr(panels[n], "bl_order", None) for n in groups}))
+
+    for group, tools in ((groups[0], geometry_tools), (groups[1], surface_tools)):
+        parents = {n: getattr(panels[n], "bl_parent_id", None) for n in tools}
+        check(f"every {group} tool is nested under it",
+              all(p == group for p in parents.values()), str(parents))
+        orders = {n: getattr(panels[n], "bl_order", None) for n in tools}
+        check(f"every {group} tool has its own place in the section",
+              len(set(orders.values())) == len(orders) and None not in orders.values(),
+              str(orders))
 
     check("each tool keeps its own scene settings",
           hasattr(bpy.context.scene, "seto_fake_ao")

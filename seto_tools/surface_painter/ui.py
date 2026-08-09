@@ -21,6 +21,7 @@ stays reachable without scrolling.
 import bpy
 
 from ..shared import addon_prefs
+from ..shared import groups
 from ..shared import ui_common
 from . import brush
 from . import library
@@ -89,13 +90,12 @@ class SETO_PT_surface_painter_panel(bpy.types.Panel):
     bl_idname = "SETO_PT_surface_painter_panel"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
-    # Shared with the other Seto tools: every panel using this category is
-    # merged by Blender into one "Seto Tools" tab. The order groups them by what
-    # they work on - the three edge-strip tools first (0-2), then the two that
-    # put texture on a surface: Decal Tool (3) and this (4).
+    # Last of the three Surface tools, under Fake AO (0) and Decal Tool (1).
+    # The other two place what they make; this one is painted by hand.
     bl_category = "Seto Tools"
+    bl_parent_id = groups.SURFACE
     bl_options = {'DEFAULT_CLOSED'}
-    bl_order = 4
+    bl_order = 2
 
     def draw_header(self, context):
         self.layout.label(text="", icon='BRUSH_DATA')

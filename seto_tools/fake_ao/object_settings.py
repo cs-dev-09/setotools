@@ -23,6 +23,7 @@ a placeholder to be fixed up afterwards.
 """
 
 import contextlib
+import json
 
 import bmesh
 import bpy
@@ -59,29 +60,103 @@ def suppress_rebuild():
         _rebuilding = previous
 
 
-def serialise_edge_keys(bm):
+def serialise_segments(segments):
+    """Freeze EdgeSegments onto the strip, as JSON in the source's local space.
+
+    The fallback for the one case stored vertex indices cannot survive: a
+    'Source + Strip' bevel builds the strip from the SHARP corner and then
+    rounds it to match, so by the time the strip exists the edge it was built
+    from has been beveled away and its indices mean nothing.
+
+    Local space, so this still follows the source object being moved, rotated
+    or scaled - the strip copies its world matrix either way. What it cannot
+    follow is the source's vertices being edited afterwards, which is the same
+    limit the index path has.
+    """
+    return json.dumps([{
+        "v0": list(seg.v0), "v1": list(seg.v1),
+        "n": [list(n) for n in seg.normals],
+        "c": [list(c) for c in seg.face_centers],
+    } for seg in segments], separators=(",", ":"))
+
+
+def parse_segments(text):
+    """Read serialise_segments() back. Returns [] on anything unreadable, so a
+    hand-edited or truncated value degrades into "cannot rebuild" rather than a
+    traceback on every mouse move."""
+    try:
+        entries = json.loads(text)
+    except (ValueError, TypeError):
+        return []
+    segments = []
+    for entry in entries:
+        try:
+            segments.append(geometry.EdgeSegment(
+                v0=Vector(entry["v0"]),
+                v1=Vector(entry["v1"]),
+                normals=[Vector(n) for n in entry["n"]],
+                face_centers=[Vector(c) for c in entry["c"]],
+            ))
+        except (KeyError, TypeError, ValueError):
+            continue
+    return segments
+
+
+def _face_key(face):
+    """A face as its sorted vertex indices - stable for as long as the stored
+    edge indices are, which is the same contract the whole rebuild runs on."""
+    return "/".join(str(i) for i in sorted(v.index for v in face.verts))
+
+
+def serialise_edge_keys(bm, exclude_faces=None):
     """Store the selected edges as "va,vb va,vb ..." source-mesh vertex indices.
 
     Indices rather than positions, so the strip still rebuilds correctly after
     the source mesh is moved, rotated or scaled. Editing the source topology
     invalidates them, which is what `rebuild` reports on.
+
+    When faces were excluded (the source bevel's chamfer - see
+    geometry.bevel_source_edges), the surviving faces are recorded alongside
+    the edge as "va,vb:i/j/k;i/j/k". Without that, a rebuild would read the
+    source again, find the chamfer face perfectly usable, and quietly grow a
+    wing onto it that the original strip never had.
     """
     bm.verts.index_update()
     keys = []
     for edge in bm.edges:
-        if edge.select and edge.link_faces:
-            keys.append(f"{edge.verts[0].index},{edge.verts[1].index}")
+        if not edge.select or not edge.link_faces:
+            continue
+        faces = geometry.faces_for_edge(edge, exclude_faces)
+        if not faces:
+            continue
+        token = f"{edge.verts[0].index},{edge.verts[1].index}"
+        if len(faces) != len(edge.link_faces):
+            token += ":" + ";".join(_face_key(f) for f in faces)
+        keys.append(token)
     return " ".join(keys)
 
 
 def parse_edge_keys(text):
+    """Returns [(va, vb, face_keys)], face_keys being None when every adjacent
+    face is allowed - which is what strips created before the bevel option
+    existed store."""
     keys = []
     for token in text.split():
-        va, _, vb = token.partition(",")
+        edge_part, _, face_part = token.partition(":")
+        va, _, vb = edge_part.partition(",")
         try:
-            keys.append((int(va), int(vb)))
+            va, vb = int(va), int(vb)
         except ValueError:
             continue
+        face_keys = None
+        if face_part:
+            face_keys = set()
+            for spec in face_part.split(";"):
+                try:
+                    face_keys.add(frozenset(int(i) for i in spec.split("/")))
+                except ValueError:
+                    continue
+        keys.append((va, vb, face_keys))
     return keys
 
 
@@ -108,12 +183,19 @@ def segments_from_keys(mesh, keys):
 
     segments = []
     missing = 0
-    for key in keys:
-        edge = by_key.get(key)
+    for va, vb, face_keys in keys:
+        edge = by_key.get((va, vb))
         if edge is None:
             missing += 1
             continue
-        faces = sorted(edge.link_faces, key=lambda f: f.index)[:2]
+        if face_keys is None:
+            faces = geometry.faces_for_edge(edge)
+        else:
+            # Same filtering the strip was created with, expressed as the faces
+            # that survived rather than the ones that were excluded.
+            excluded = {f for f in edge.link_faces
+                        if frozenset(v.index for v in f.verts) not in face_keys}
+            faces = geometry.faces_for_edge(edge, excluded)
         if not faces:
             missing += 1
             continue
@@ -126,6 +208,32 @@ def segments_from_keys(mesh, keys):
 
     bm.free()
     return segments, missing
+
+
+def apply_strip_bevel(mesh, segments, settings):
+    """Round off the strip's seam, if the settings ask for it.
+
+    Shared by the create operator and the live rebuild so both produce the
+    same mesh; `settings` is whichever of the three carriers of the tool's
+    settings is in play (see properties.settings_annotations).
+
+    The tolerance for finding the seam has to cover how far the welded corner
+    ends up from the original edge: each wing is lifted off its wall by
+    Surface Offset before welding, and the weld itself moves vertices up to
+    the merge distance.
+    """
+    if not settings.bevel_enabled or settings.bevel_target == 'SOURCE':
+        return 0
+    corner_points = [(seg.v0, seg.v1) for seg in segments]
+    merge = geometry.auto_merge_distance(settings.width, settings.surface_offset)
+    tolerance = max(merge, settings.surface_offset) * 2.0 + 1e-6
+    return geometry.bevel_strip_corners(
+        mesh, corner_points,
+        width=settings.bevel_width,
+        segments=settings.bevel_segments,
+        profile=settings.bevel_profile,
+        tolerance=tolerance,
+    )
 
 
 def _centre_origin(obj, mesh):
@@ -170,12 +278,18 @@ def rebuild(obj):
         return "Source is in Edit Mode - leave it to rebuild."
 
     keys = parse_edge_keys(data.edge_keys)
-    if not keys:
+    frozen = data.frozen_segments
+    if not keys and not frozen:
         return "No stored edge selection."
 
     _rebuilding = True
     try:
-        segments, missing = segments_from_keys(source.data, keys)
+        if frozen:
+            # The corner this was built from no longer exists in the source -
+            # see serialise_segments().
+            segments, missing = parse_segments(frozen), 0
+        else:
+            segments, missing = segments_from_keys(source.data, keys)
         if not segments:
             return "Stored edges are gone from the source mesh (was it edited?)."
 
@@ -204,7 +318,12 @@ def rebuild(obj):
             # Sollumz went away; the geometry is still worth keeping, and the
             # attributes come back the next time it is available.
             pass
-        geometry.merge_by_distance(new_mesh, data.merge_distance)
+        geometry.merge_by_distance(
+            new_mesh, geometry.auto_merge_distance(data.width, data.surface_offset))
+        # Strip bevel only. The source bevel physically altered the source
+        # mesh once, at creation - re-running it here would chamfer the
+        # chamfer, every time a slider moved.
+        apply_strip_bevel(new_mesh, segments, data)
         geometry.normalise_uvs(new_mesh, UV_SIZE)
         geometry.shade_smooth(new_mesh)
 
@@ -254,6 +373,14 @@ def _object_annotations():
         "edge_keys": bpy.props.StringProperty(
             name="Edge Keys",
             description="Source-mesh vertex index pairs of the edges this strip was built along",
+            default="",
+        ),
+        "frozen_segments": bpy.props.StringProperty(
+            name="Frozen Segments",
+            description=(
+                "The corner geometry this strip was built from, kept verbatim for the case "
+                "where the source edge was beveled away and its indices no longer mean anything"
+            ),
             default="",
         ),
         "live_update": bpy.props.BoolProperty(

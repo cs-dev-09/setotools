@@ -129,10 +129,10 @@ def settings_annotations(update=None):
             name="Material",
             description=f"How to obtain the {szi.DAMAGE_SHADER_FILENAME} Sollumz material",
             items=[
-                ('AUTO', "Reuse if Exists",
+                ('AUTO', "Reuse",
                  "Reuse a Fake Damage material previously created by this tool if one is "
                  "found, otherwise create a new one"),
-                ('NEW', "Always Create New",
+                ('NEW', "Create",
                  f"Always create a new {szi.DAMAGE_SHADER_FILENAME} material"),
             ],
             default='AUTO',

@@ -23,6 +23,7 @@ Each script prints one `[PASS]`/`[FAIL]` line per check, ends with
 | `vcolor.py` | the shared `Color 1` and shade-smooth, across all four tools |
 | `panels.py` | **every** Seto panel's `draw()`, driven by hand against a validating stub layout, with Sollumz both available and missing. Blender only draws from the UI thread, so nothing else here would catch a panel that explodes on first redraw |
 | `smoothedge.py` | Smooth Edge specifically |
+| `fake_ao_bevel.py` | Fake AO's Bevel: that the strip's round lands on the source's round, that the chamfer inherits the wall's material rather than slot 0, that its UVs stay inside the wall's atlas island, that the source is beveled exactly once, and that a rebuild neither re-bevels the source nor adopts the chamfer face creation left bare |
 | `surface_painter.py` | Surface Painter: that the paint mesh's UVs are one planar projection (an island would draw the decal twice), that dragging and wheel-resizing leave what you grabbed under the pointer at any size and rotation, and that Optimize crops and welds without moving the image |
 | `drawable_uv.py` | Drawable-collection placement, and Fake Damage's UV scale/offset |
 | `verify_coexist_export.py` | all tools registered together, their collections, and a real Sollumz YDR export |
