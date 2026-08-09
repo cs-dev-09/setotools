@@ -17,6 +17,7 @@ from . import preferences
 from . import previews
 from ..shared import addon_prefs
 from ..shared import groups
+from ..shared import icons
 from ..shared import sollumz_integration as szi
 from ..shared import ui_common
 
@@ -53,7 +54,7 @@ class SETO_PT_decal_tool_panel(bpy.types.Panel):
     bl_order = 1
 
     def draw_header(self, context):
-        self.layout.label(text="", icon='TEXTURE')
+        icons.draw_header(self.layout, "decal_tool", 'TEXTURE')
 
     def draw(self, context):
         layout = self.layout
@@ -72,12 +73,20 @@ class SETO_PT_decal_tool_panel(bpy.types.Panel):
             row.label(text="Add-on preferences unavailable", icon='ERROR')
         row.operator("seto.refresh_decal_library", text="", icon='FILE_REFRESH')
 
+        # A dropdown whose only entry is "<no categories>" still opens, and
+        # picking the placeholder out of a list of one reads as though it did
+        # something. Both enums are greyed out until there is a real choice
+        # behind them - the placeholder stays visible, because it says what to
+        # do about it, but it is no longer a control.
         col = layout.column(align=True)
-        col.prop(settings, "category", text="")
+        category_row = col.row(align=True)
+        category_row.enabled = bool(library.get_categories())
+        category_row.prop(settings, "category", text="")
         texture_row = col.row(align=True)
         # With Random Texture on, the chosen texture is ignored, so the enum is
         # greyed out rather than hidden - the panel height stays stable.
-        texture_row.enabled = not settings.random_texture
+        texture_row.enabled = (bool(library.get_textures(settings.category))
+                               and not settings.random_texture)
         texture_row.prop(settings, "texture", text="")
 
         if not library.get_categories():

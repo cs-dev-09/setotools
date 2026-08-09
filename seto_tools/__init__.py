@@ -22,6 +22,7 @@ bl_info = {
 # What they genuinely share lives in shared/: the Sollumz integration, which
 # used to be copy-pasted into each of them, the bundled-texture lookup, and the
 # Color 1 vertex colour they all write.
+from .shared import icons
 from .shared import groups
 from . import fake_ao
 from . import fake_damage
@@ -29,10 +30,11 @@ from . import smooth_edge
 from . import decal_tool
 from . import surface_painter
 
-# Panel order. groups first, and not only for tidiness: every tool panel now
-# hangs off one of its two sections, and Blender drops a panel whose
-# bl_parent_id is not registered yet.
-_modules = (groups, fake_damage, smooth_edge, fake_ao, decal_tool,
+# Panel order. icons first because every panel header asks it for an icon id,
+# then groups - and that one is not merely tidiness: every tool panel hangs off
+# one of its two sections, and Blender drops a panel whose bl_parent_id is not
+# registered yet.
+_modules = (icons, groups, fake_damage, smooth_edge, fake_ao, decal_tool,
             surface_painter)
 
 

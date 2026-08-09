@@ -1,6 +1,6 @@
 import bpy
 
-from ..shared import groups, ui_common
+from ..shared import groups, icons, ui_common
 
 
 def _draw_bevel(layout, settings, show_target):
@@ -53,7 +53,7 @@ class SETO_PT_fake_ao_panel(bpy.types.Panel):
     bl_order = 0
 
     def draw_header(self, context):
-        self.layout.label(text="", icon='SHADING_RENDERED')
+        icons.draw_header(self.layout, "fake_ao", 'SHADING_RENDERED')
 
     def draw(self, context):
         layout = self.layout

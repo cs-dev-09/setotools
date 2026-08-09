@@ -22,6 +22,7 @@ import bpy
 
 from ..shared import addon_prefs
 from ..shared import groups
+from ..shared import icons
 from ..shared import ui_common
 from . import brush
 from . import library
@@ -98,7 +99,7 @@ class SETO_PT_surface_painter_panel(bpy.types.Panel):
     bl_order = 2
 
     def draw_header(self, context):
-        self.layout.label(text="", icon='BRUSH_DATA')
+        icons.draw_header(self.layout, "surface_painter", 'BRUSH_DATA')
 
     def draw(self, context):
         layout = self.layout
@@ -146,7 +147,13 @@ class SETO_PT_surface_painter_panel(bpy.types.Panel):
     def _draw_library(self, layout, settings):
         layout.label(text="Dirt Texture")
         row = layout.row(align=True)
-        row.prop(settings, "category", text="")
+        # Greyed out while the only entry is "<no categories>": a dropdown you
+        # can open onto a single placeholder looks like a control that does
+        # nothing. Refresh stays live - it is the way out of this state, so it
+        # gets its own sub-row rather than being disabled along with the enum.
+        category = row.row(align=True)
+        category.enabled = bool(library.get_categories())
+        category.prop(settings, "category", text="")
         row.operator("seto.surface_refresh_library", text="", icon='FILE_REFRESH')
 
         if not library.has_textures():
@@ -188,7 +195,9 @@ class SETO_PT_surface_painter_panel(bpy.types.Panel):
             box = layout.box()
             box.template_icon(icon_value=icon_id,
                               scale=addon_prefs.preview_size() / 2.0)
-        layout.prop(settings, "texture", text="")
+        texture_row = layout.row(align=True)
+        texture_row.enabled = bool(library.get_textures(settings.category))
+        texture_row.prop(settings, "texture", text="")
 
     # --------------------------------------------------------------- painting
     def _draw_painting(self, context, layout, settings, dirt_shell):

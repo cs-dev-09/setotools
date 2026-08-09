@@ -2,6 +2,31 @@
 
 All notable changes to Seto Tools.
 
+## Unreleased
+
+### Changed — the tab has its own icons
+
+All seven panel headers — both sections and all five tools — now draw a PNG
+that ships with the add-on, in `seto_tools/icons/`, loaded through the same
+preview mechanism the decal and dirt thumbnails use. Blender's built-in set has
+nothing for "chipped corner" or "dirt brushed onto a wall", and two tools were
+sharing an icon because of it.
+
+They are 32×32, which is the size Blender draws an icon at, and mid-grey with
+one warm accent rather than near-white: a custom icon is **not** tinted by the
+theme, so a near-white one disappears on a light theme. A missing or unreadable
+file costs that one icon — the header falls back to the built-in it used
+before.
+
+### Fixed — dropdowns you could open onto nothing
+
+With no library set, **Category** and **Texture** in the Decal Tool and Surface
+Painter still opened as dropdowns, onto a single `<no categories>` placeholder.
+Picking it did nothing, which made the tool look broken rather than unset. Both
+are greyed out until there is something behind them. The placeholder text stays
+— it says what to do about it — and **Refresh** stays live, since it is the way
+out of that state.
+
 ## 1.2.0
 
 ### Removed — the lighting module is gone

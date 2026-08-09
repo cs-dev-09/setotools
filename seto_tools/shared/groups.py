@@ -21,6 +21,8 @@ the user reaches for it.
 
 import bpy
 
+from . import icons
+
 
 class SETO_PT_geometry_group(bpy.types.Panel):
     bl_label = "Geometry"
@@ -31,7 +33,7 @@ class SETO_PT_geometry_group(bpy.types.Panel):
     bl_order = 0
 
     def draw_header(self, context):
-        self.layout.label(text="", icon='MESH_DATA')
+        icons.draw_header(self.layout, "geometry", 'MESH_DATA')
 
     def draw(self, context):
         pass
@@ -46,7 +48,7 @@ class SETO_PT_surface_group(bpy.types.Panel):
     bl_order = 1
 
     def draw_header(self, context):
-        self.layout.label(text="", icon='MATERIAL')
+        icons.draw_header(self.layout, "surface", 'MATERIAL')
 
     def draw(self, context):
         pass

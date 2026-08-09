@@ -22,6 +22,7 @@ Each script prints one `[PASS]`/`[FAIL]` line per check, ends with
 | `bundled.py` | each tool's `textures/` folder, colour space, embedded flag, and material separation |
 | `vcolor.py` | the shared `Color 1` and shade-smooth, across all four tools |
 | `panels.py` | **every** Seto panel's `draw()`, driven by hand against a validating stub layout, with Sollumz both available and missing. Blender only draws from the UI thread, so nothing else here would catch a panel that explodes on first redraw |
+| `icons.py` | the add-on's own panel icons — that the PNGs ship, decode at 32×32, and that each header asks for its own rather than a built-in; plus the enums that must be greyed out when the library behind them is empty. `preview.icon_id` is always 0 in background mode, so the id itself cannot be checked here |
 | `smoothedge.py` | Smooth Edge specifically |
 | `fake_ao_bevel.py` | Fake AO's Bevel: that the strip's round lands on the source's round, that the chamfer inherits the wall's material rather than slot 0, that its UVs stay inside the wall's atlas island, that the source is beveled exactly once, and that a rebuild neither re-bevels the source nor adopts the chamfer face creation left bare |
 | `surface_painter.py` | Surface Painter: that the paint mesh's UVs are one planar projection (an island would draw the decal twice), that dragging and wheel-resizing leave what you grabbed under the pointer at any size and rotation, and that Optimize crops and welds without moving the image |

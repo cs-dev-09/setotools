@@ -1,6 +1,6 @@
 import bpy
 
-from ..shared import groups, ui_common
+from ..shared import groups, icons, ui_common
 
 
 class SETO_PT_fake_damage_panel(bpy.types.Panel):
@@ -16,7 +16,7 @@ class SETO_PT_fake_damage_panel(bpy.types.Panel):
     bl_order = 0
 
     def draw_header(self, context):
-        self.layout.label(text="", icon='MOD_EXPLODE')
+        icons.draw_header(self.layout, "fake_damage", 'MOD_EXPLODE')
 
     def draw(self, context):
         layout = self.layout
