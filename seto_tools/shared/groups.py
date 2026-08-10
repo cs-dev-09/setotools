@@ -1,15 +1,17 @@
-"""The two sections the "Seto Tools" tab is split into.
+"""The sections the "Seto Tools" tab is split into.
 
 Six tools side by side in one tab is a wall of collapsible headers with no
 hint of which one to reach for. They divide cleanly by what they actually
-produce, so the tab now opens on two sections and the tools nest inside them:
+produce, so the tab opens on sections and the tools nest inside them:
 
     Geometry   builds new mesh along the selected edges
       Edge Wear, Smooth Edge
     Surface    puts texture on a surface that already exists
       Ambient Occlusion, Decal Tool, Surface Painter, Edge Dirt
+    Analysis   reads the scene and reports, builds nothing
+      Density Check
 
-These two panels are the only top-level panels in the add-on. They own no
+These panels are the only top-level panels in the add-on. They own no
 settings and draw nothing - a group header is all they are - but they have to
 be **registered before** any tool, because Blender resolves `bl_parent_id` at
 registration time and drops a child whose parent is not there yet.
@@ -62,10 +64,27 @@ class SETO_PT_surface_group(bpy.types.Panel):
         pass
 
 
+class SETO_PT_analysis_group(bpy.types.Panel):
+    bl_label = "Analysis"
+    bl_idname = "SETO_PT_analysis_group"
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    bl_category = "Seto Tools"
+    bl_order = 2
+
+    def draw_header(self, context):
+        icons.draw_header(self.layout, "analysis", 'VIEWZOOM')
+
+    def draw(self, context):
+        pass
+
+
 GEOMETRY = SETO_PT_geometry_group.bl_idname
 SURFACE = SETO_PT_surface_group.bl_idname
+ANALYSIS = SETO_PT_analysis_group.bl_idname
 
-_classes = (SETO_PT_geometry_group, SETO_PT_surface_group)
+_classes = (SETO_PT_geometry_group, SETO_PT_surface_group,
+            SETO_PT_analysis_group)
 
 
 def register():

@@ -143,12 +143,13 @@ def draw_panel(cls, label):
 
 
 panels = seto_panels()
-# The tab is two sections and nothing else at the top level; every tool hangs
-# off one of them. A tool whose parent failed to register is not merely
+# The tab is three sections and nothing else at the top level; every tool
+# hangs off one of them. A tool whose parent failed to register is not merely
 # misplaced - Blender drops it, and the tab silently loses a tool.
-check("the tab's top level is the two sections",
+check("the tab's top level is the three sections",
       [c.bl_idname for c in panels if not getattr(c, "bl_parent_id", "")]
-      == ["SETO_PT_geometry_group", "SETO_PT_surface_group"],
+      == ["SETO_PT_geometry_group", "SETO_PT_surface_group",
+          "SETO_PT_analysis_group"],
       [c.__name__ for c in panels if not getattr(c, "bl_parent_id", "")])
 
 for parent, expected in (
@@ -156,7 +157,9 @@ for parent, expected in (
          ["SETO_PT_fake_damage_panel", "SETO_PT_smooth_edge_panel"]),
         ("SETO_PT_surface_group",
          ["SETO_PT_fake_ao_panel", "SETO_PT_decal_tool_panel",
-          "SETO_PT_surface_painter_panel", "SETO_PT_edge_dirt_panel"])):
+          "SETO_PT_surface_painter_panel", "SETO_PT_edge_dirt_panel"]),
+        ("SETO_PT_analysis_group",
+         ["SETO_PT_density_checker_panel"])):
     got = [c.bl_idname for c in panels
            if getattr(c, "bl_parent_id", "") == parent]
     check(f"{parent} holds its tools, in order", got == expected, got)
@@ -168,7 +171,9 @@ from seto_tools.shared import panel_layout
 
 for cls in panels:
     parent = getattr(cls, "bl_parent_id", "")
-    if not parent or parent in ("SETO_PT_geometry_group", "SETO_PT_surface_group"):
+    if not parent or parent in ("SETO_PT_geometry_group",
+                                "SETO_PT_surface_group",
+                                "SETO_PT_analysis_group"):
         continue          # sections and tools, not the settings children
     name = cls.__name__
     selected = cls.bl_label.startswith("Selected")
@@ -218,6 +223,18 @@ finally:
     fake_ao.property_unset("bevel_enabled")
     fake_ao.property_unset("bevel_target")
     fake_ao.property_unset("bevel_width")
+
+print("=== Density Check, mid-analysis ===")
+# The pass above drew it idle. With an analysis on screen the panel changes
+# shape entirely: Finish Analysis, the viewport-colour note, the verdict line.
+density = bpy.context.scene.seto_density_checker
+try:
+    density.active = True
+    for cls in panels:
+        if "density" in cls.bl_idname:
+            draw_panel(cls, "analysis active")
+finally:
+    density.property_unset("active")
 
 print("=== every panel draws when Sollumz is missing ===")
 # The tester's state. Every tool must say so rather than drawing buttons that

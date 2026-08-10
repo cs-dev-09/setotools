@@ -2,7 +2,38 @@
 
 All notable changes to Seto Tools.
 
-## 1.6.2
+## 1.7.0
+
+### Added — Density Check, a triangle-budget heatmap
+
+A third section in the tab, **Analysis**, and the first tool that builds
+nothing. **Analyze Density** grades every mesh in scope — the visible view
+layer or the selection — and shows the verdict as the object's viewport
+colour, green through yellow to red, flipping the viewport to Object colour
+so the answer is visible the moment the button is pressed. **Finish
+Analysis** restores every colour and the shading mode exactly as they were.
+The active object's line grades itself too: triangles, tris/m², how many
+times its budget it spends, and a one-line verdict from "leave it" to
+"decimate or retopo".
+
+The budget is calibrated against **vanilla GTA V**, not against any one
+class of asset. A flat per-m² threshold cannot grade a bottle and a room
+shell at once, so the entitlement grows with the square root of surface
+area — `1000 × √area`, one editable number. The constant is measured, not
+guessed: run over **Franklin's house**, three quarters of its 261 render
+meshes sit under 1× and only four — a hero tequila bottle, two controllers
+and an ashtray — pass 4×. The panel says so, next to the scale, so a
+colour reads as information rather than as a telling-off: 1× is what
+Rockstar spends on a mesh that size, and a hero prop is *meant* to be over
+it. Every doubling is one equal visual step.
+
+The measurement is taken from the **evaluated** mesh in **world** space: a
+live modifier or a scaled object grades as what Sollumz would actually
+export, not as its base mesh. A mesh with triangles but no measurable
+surface is flagged as the worst case rather than divided by zero.
+
+Density Check is also the one tool that works without Sollumz installed:
+counting triangles needs nothing beyond Blender.
 
 ### Fixed — Edge Dirt's Bevel Mesh did nothing
 

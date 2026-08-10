@@ -1,8 +1,9 @@
 # Seto Tools
 
 One Blender add-on for GTA V / FiveM asset authoring, built on
-[Sollumz](https://docs.sollumz.org). Every tool builds separate decal geometry
-and never touches your original mesh.
+[Sollumz](https://docs.sollumz.org). Every authoring tool builds separate decal
+geometry and never touches your original mesh — and the one analysis tool only
+reads.
 
 | Tool | What it makes | Built from |
 | --- | --- | --- |
@@ -12,13 +13,14 @@ and never touches your original mesh.
 | [Decal Tool](seto_tools/decal_tool) | Surface-aligned decal planes from your own decal library | selected faces |
 | [Smooth Edge](seto_tools/smooth_edge) | Normal-map strips that make a hard edge read as rounded | selected edges |
 | [Surface Painter](seto_tools/surface_painter) | Dirt, grime and graffiti brushed onto a surface | a paint mesh over the whole object |
+| [Density Check](seto_tools/density_checker) | A triangle-budget heatmap graded against vanilla GTA | the whole scene, read-only |
 
 They all live in the **Seto Tools** N-panel tab, each as its own collapsible
 section, the way Sollumz Tools is laid out. The sections are grouped by what a
 tool works on — the ones that build a strip along selected edges first, then
-the ones that put texture on a surface — and inside a section, everything you
-set once and stop thinking about is a child panel, so the top of each one is
-the thing you actually came to press.
+the ones that put texture on a surface, then the analysis that only reads —
+and inside a section, everything you set once and stop thinking about is a
+child panel, so the top of each one is the thing you actually came to press.
 
 ## Install
 
@@ -50,6 +52,7 @@ seto_tools/
     decal_tool/
     smooth_edge/
     surface_painter/
+    density_checker/ the read-only triangle-budget heatmap
 ```
 
 Blender allows exactly one `AddonPreferences` class per add-on, and that class
@@ -81,7 +84,9 @@ Surface Painter is the exception, because it is the one tool that is not
 "select, press Create": it has no `geometry.py`, and its work lives in
 `shell.py` (the paint mesh — building, masking, placement, optimising),
 `library.py` (folder scanning, which knows nothing of `bpy.data`),
-`previews.py` and `brush.py`.
+`previews.py` and `brush.py`. Density Check is the other: it builds nothing,
+so it has no `object_settings.py` — its `geometry.py` is the budget maths and
+its operators only read the scene.
 
 ## What they have in common
 
@@ -145,3 +150,27 @@ blender -b --python tests/verify_decal_tool.py
 Every script exits non-zero on failure and prints a `RESULT: n/n` line. Run them
 against each Blender you support: Sollumz's own API differs between versions, and
 so does its exporter.
+
+## Roadmap
+
+Seto Tools is in active development. What is coming, in order:
+
+- **Trash Scatter** — select a floor, pick a preset, and litter (paper,
+  cigarette butts, small stones, debris) scatters across it with seed, density
+  and scale control.
+- **Leak / Grime Generator** — pick a start point and a gravity-following
+  decal strip grows from it: water stains from a ceiling, rust runs under a
+  pipe, damp along a wall–floor junction.
+- **Floor Contact Dirt** — detect where props and walls meet the floor and lay
+  contact dirt along the junction automatically.
+- **Interior Dressing** — select an MLO shell, pick a preset (Warehouse,
+  Restaurant, Hospital, …) and have fitting decals distributed over walls,
+  floors, corners and ceilings, with seed, density and material filters. Ships
+  one preset at a time.
+
+Follow the [releases](../../releases) — each of these lands as its own version.
+
+## Support
+
+Seto Tools is free and stays free. If it saves you time, you can support its
+development through **GitHub Sponsors** — the button at the top of this repo.
