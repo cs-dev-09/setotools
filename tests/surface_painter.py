@@ -280,16 +280,16 @@ def _imports(dotted):
 for name in ("Sollumz", "sollumz", "bl_ext.user_default.sollumz",
              "bl_ext.somerepo.sollumz", "Sollumz-main", "Sollumz-master",
              "Sollumz-2.9.0", "sollumz_2_9"):
-    check(f"recognised: {name}", szi._looks_like_sollumz(name))
+    check(f"tried first: {name}", szi._looks_like_sollumz_name(name))
 
-# Names that are not Sollumz at all are not even candidates.
+# The name no longer excludes anything - every enabled add-on is tried, and a
+# name like this only means "try that one later". tests/sollumz_detect.py
+# covers the resolution itself.
 for name in ("solid", "my_bridge", "bl_ext.user_default.decal_helper"):
-    check(f"not a candidate: {name}", not szi._looks_like_sollumz(name))
+    check(f"tried later: {name}", not szi._looks_like_sollumz_name(name))
 
-# A candidate is not a verdict. Something like "sollumz_extras" passes the name
-# filter on purpose - guessing which separators are legitimate is what broke
-# Sollumz-main - and is then rejected by importing a module only Sollumz has.
-# That is the check that must do the work.
+# Whichever order they are tried in, the verdict comes from importing a module
+# only Sollumz has - which is what stops "sollumz_extras" being adopted.
 check("an unrelated add-on fails verification",
       not _imports(f"sollumz_extras.{szi._SOLLUMZ_MARKER_MODULE}"))
 
@@ -314,6 +314,9 @@ real_status = szi.get_status_message
 drawn = []
 
 
+operators = []
+
+
 class _Box:
     def __init__(self, sink):
         self.sink = sink
@@ -328,12 +331,21 @@ class _Box:
     def box(self):
         return self
 
+    def operator(self, idname, **kwargs):
+        # The warning offers a way out: a button straight to this add-on's
+        # preferences, where Sollumz can be pointed at by hand.
+        operators.append(idname)
+        return type("OpProps", (), {"__setattr__": lambda s, k, v: None})()
+
 
 szi.get_status_message = lambda: (False, "Sollumz addon is not installed/enabled.")
 try:
     warned = ui_common.draw_sollumz_warning(_Box(drawn))
 finally:
     szi.get_status_message = real_status
+
+check("the warning offers a way to point at Sollumz by hand",
+      "preferences.addon_show" in operators, operators)
 
 check("it warns instead of drawing the tool", warned)
 check("the warning names Sollumz",

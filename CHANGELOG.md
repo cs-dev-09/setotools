@@ -2,6 +2,37 @@
 
 All notable changes to Seto Tools.
 
+## 1.3.1
+
+### Fixed — Sollumz Development was reported as not installed
+
+From a tester running it: every tool claimed Sollumz was unavailable on a
+machine that plainly had it working.
+
+Two things were wrong, and both are now gone.
+
+**Detection only ever looked at add-ons whose name began with "sollumz".** It
+now tries **every enabled add-on** and lets an import decide — the name only
+chooses what to try first, so a fork, a rename or a build nobody anticipated is
+found rather than declared missing. The answer is cached, so this costs nothing
+per redraw.
+
+**A missing `dependencies` module was treated as fatal.** That module is
+Sollumz's own, and a fork is free to move or drop it. What is checked now is
+what these tools actually need — that Sollumz's shader module imports. Its
+dependency check still counts, but only when it exists *and* answers no.
+
+### Added — you can point Seto Tools at Sollumz by hand
+
+Also the tester's suggestion, for the case where detection still fails.
+**Preferences → Add-ons → Seto Tools → Sollumz Module** takes either the module
+name as Blender knows it (`Sollumz`, `Sollumz-main`,
+`bl_ext.user_default.sollumz`) or the folder Sollumz is installed in. Leave it
+empty and nothing changes.
+
+The preferences now show what was detected, and the "Sollumz not available"
+warning in every panel has a button that opens them.
+
 ## 1.3.0
 
 ### Changed — a redrawn icon set

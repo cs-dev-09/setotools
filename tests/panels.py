@@ -218,6 +218,52 @@ try:
 finally:
     szi.get_status_message = real_status
 
+print("=== the add-on preferences draw too ===")
+# Not a Panel, so nothing above reaches it - and it is where someone whose
+# Sollumz was not detected has to go, which makes it the worst place for a
+# traceback. Driven in both Sollumz states, because it reports that status.
+# Taken from the module, not from bpy.types: like a PropertyGroup, an
+# AddonPreferences subclass never appears there in Blender 5.x even when it is
+# registered, so `getattr(bpy.types, ...)` is not the test for it.
+from seto_tools.decal_tool import preferences as decal_preferences
+prefs_cls = getattr(decal_preferences, "SETO_AP_decal_tool", None)
+check("the add-on preferences class exists", prefs_cls is not None)
+if prefs_cls is not None:
+    for label, status in (("sollumz ok", None),
+                          ("no sollumz",
+                           lambda: (False, "No enabled Sollumz add-on found."))):
+        real_status = szi.get_status_message
+        if status is not None:
+            szi.get_status_message = status
+        try:
+            # The shim stands in for the preferences instance, so it has to
+            # answer for its properties too - draw() reads them, and the stub
+            # layout validates every name against bl_rna. Anything it is asked
+            # for goes to the real preferences.
+            from seto_tools.shared import addon_prefs
+            real_prefs = addon_prefs.get()
+            if real_prefs is None:
+                check("preferences are available to draw", False,
+                      "seto_tools is not enabled in this Blender")
+                break
+
+            class PrefsShim:
+                def __init__(self):
+                    object.__setattr__(self, "layout", StubLayout())
+
+                def __getattr__(self, name):
+                    return getattr(real_prefs, name)
+
+            shim = PrefsShim()
+            try:
+                prefs_cls.draw.__get__(shim)(bpy.context)
+                check(f"SETO_AP_decal_tool.draw [{label}]", True)
+            except Exception as error:
+                import traceback; traceback.print_exc()
+                check(f"SETO_AP_decal_tool.draw [{label}]", False, error)
+        finally:
+            szi.get_status_message = real_status
+
 failed = [r for r in RESULTS if not r[0]]
 print("\n" + "="*60)
 print(f"RESULT: {len(RESULTS)-len(failed)}/{len(RESULTS)} checks passed")

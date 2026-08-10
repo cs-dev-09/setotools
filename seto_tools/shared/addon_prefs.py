@@ -33,3 +33,14 @@ def preview_size(context=None):
     """How large texture thumbnails are drawn, in UI units."""
     prefs = get(context)
     return getattr(prefs, "preview_size", DEFAULT_PREVIEW_SIZE)
+
+
+def sollumz_override(context=None):
+    """The Sollumz module name or folder the user pinned, or "".
+
+    Empty is the normal case - detection finds it on its own. This exists for
+    the machine where it does not, so the answer is "tell it where" rather than
+    "wait for a release".
+    """
+    prefs = get(context)
+    return getattr(prefs, "sollumz_module", "")

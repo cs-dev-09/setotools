@@ -60,6 +60,36 @@ def set_library_path(path):
 _fallback = {"library_path": ""}
 
 
+def _sollumz_status():
+    """(available, message) for the preferences box. Never raises: this is
+    drawn from a UI callback, and an exception there is swallowed by Blender
+    and shows as a panel that simply stops drawing."""
+    try:
+        from ..shared import sollumz_integration as szi
+        return szi.get_status_message()
+    except Exception as error:
+        return False, f"Could not check: {error}"
+
+
+def _wrap(text, width):
+    from ..shared import ui_common
+    return ui_common.wrap(text, width)
+
+
+def _on_sollumz_module_changed(self, context):
+    """Forget the cached detection so the new value takes effect immediately.
+
+    Without this the box would still report the old answer until something
+    else changed the set of enabled add-ons - which reads as the field doing
+    nothing.
+    """
+    try:
+        from ..shared import sollumz_integration as szi
+        szi.forget_sollumz()
+    except Exception:
+        pass
+
+
 def _on_library_path_changed(self, context):
     """Rescan when the folder changes, so Category/Texture are usable without
     having to press Refresh Library first.
@@ -100,10 +130,37 @@ class SETO_AP_decal_tool(bpy.types.AddonPreferences):
         default=12.0, min=4.0, max=40.0, subtype='FACTOR',
     )
 
+    # Normally empty: every tool finds Sollumz by itself. This is the escape
+    # hatch for the machine where it does not - a fork, a dev build, a folder
+    # named something nobody anticipated - so the answer there is "point at it"
+    # rather than "wait for the next release".
+    sollumz_module: bpy.props.StringProperty(
+        name="Sollumz Module",
+        description=(
+            "Leave empty unless Sollumz is not being detected. Accepts either "
+            "the add-on's module name as Blender knows it (e.g. 'Sollumz', "
+            "'Sollumz-main', 'bl_ext.user_default.sollumz') or the folder "
+            "Sollumz is installed in"
+        ),
+        default="",
+        update=_on_sollumz_module_changed,
+    )
+
     def draw(self, context):
         layout = self.layout
         layout.prop(self, "library_path")
         layout.prop(self, "preview_size")
+
+        box = layout.box()
+        box.label(text="Sollumz", icon='PLUGIN')
+        available, message = _sollumz_status()
+        box.prop(self, "sollumz_module")
+        col = box.column(align=True)
+        for line in _wrap(message, 70):
+            col.label(text=line, icon='CHECKMARK' if available else 'ERROR')
+            break
+        for line in _wrap(message, 70)[1:]:
+            col.label(text=line)
         if self.library_path:
             layout.label(
                 text=f"{len(library.get_categories())} category/categories loaded.",

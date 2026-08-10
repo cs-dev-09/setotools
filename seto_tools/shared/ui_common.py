@@ -14,6 +14,7 @@ the line count suggests.
 
 import textwrap
 
+from . import addon_prefs
 from . import sollumz_integration as szi
 
 
@@ -44,4 +45,10 @@ def draw_sollumz_warning(layout):
     col = box.column(align=True)
     for line in wrap(message, 40):
         col.label(text=line)
+    # The one thing a user can do about it without leaving Blender. Detection
+    # tries every enabled add-on, so reaching this at all means either it is
+    # not enabled or it is somewhere unusual - and the second case is fixable
+    # right here.
+    box.operator("preferences.addon_show", text="Open Seto Tools Preferences",
+                 icon='PREFERENCES').module = addon_prefs.ADDON_PACKAGE
     return True

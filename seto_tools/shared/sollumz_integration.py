@@ -35,6 +35,7 @@ Shared conventions worth knowing:
 
 import importlib
 import os
+import sys
 
 import bpy
 import numpy as np
@@ -81,7 +82,7 @@ def _addon_leaf_name(module_name):
     return module_name
 
 
-def _looks_like_sollumz(module_name):
+def _looks_like_sollumz_name(module_name):
     """Could this registered add-on be Sollumz? A CANDIDATE test, not a verdict.
 
     Deliberately loose, because the module name depends entirely on how Sollumz
@@ -97,42 +98,109 @@ def _looks_like_sollumz(module_name):
         "Sollumz-main", "Sollumz-master" or "Sollumz-2.9.0". This is the case
         that was being missed, and it is a completely normal way to install it.
 
-    Guessing which separators are legitimate is a losing game, so this does not
-    try: anything starting with "sollumz" is a candidate, and
-    _get_sollumz_base_module_name() decides by importing. That way an unrelated
-    "sollumz_extras" is rejected because it is not Sollumz, not because its
-    name was spelled in a way this function failed to anticipate.
+    The name is only ever used to *order* the search, never to exclude: a
+    tester running "Sollumz Development" reported every tool saying Sollumz was
+    not available, and no amount of guessing at name shapes fixes the general
+    case. resolve() tries every enabled add-on, and this decides which ones to
+    try first.
     """
     return _addon_leaf_name(module_name).lower().startswith("sollumz")
 
 
-def _get_sollumz_base_module_name():
-    """Resolve Sollumz's registered add-on module name, or None.
+def _verify(module_name):
+    """Is this add-on actually Sollumz? Decided by importing, not by name."""
+    try:
+        importlib.import_module(f"{module_name}.{_SOLLUMZ_MARKER_MODULE}")
+        return True
+    except Exception:
+        return False
 
-    A name that looks right is not proof, so each candidate is confirmed by
-    importing a module only Sollumz has. If none confirm, the best-looking
-    candidate is still returned - get_status_message() can then say what was
-    found and why it did not work, which is far more useful than "not
-    installed" when it plainly is.
+
+def resolve(names, verify, override=""):
+    """Pick Sollumz out of the enabled add-ons. Pure, so it can be tested.
+
+    `names` is every enabled add-on module name, `verify` decides whether one
+    of them really is Sollumz, `override` is whatever the user typed in
+    preferences.
+
+    Every add-on is tried, not only the ones whose name starts with "sollumz".
+    The name still decides the order - a fork called "Sollumz Development" is
+    reached before something unrelated - but a build that registers under a
+    name nobody anticipated is now found rather than declared missing. Trying
+    the rest costs an ImportError each, which is why the answer is cached.
+
+    Returns (module_name, verified). An unverified best guess still comes back,
+    so the panel can name what it found and say why it did not work - far more
+    use than "not installed" when something calling itself Sollumz plainly is.
     """
-    candidates = [name for name in bpy.context.preferences.addons.keys()
-                  if _looks_like_sollumz(name)]
-    if not candidates:
-        return None
-    # An exact "sollumz" wins over "Sollumz-main" if somehow both are enabled.
-    candidates.sort(key=lambda name: _addon_leaf_name(name).lower() != "sollumz")
+    if override:
+        return override, verify(override)
 
-    for name in candidates:
-        try:
-            importlib.import_module(f"{name}.{_SOLLUMZ_MARKER_MODULE}")
-            return name
-        except Exception:
-            continue
-    # Nothing verified. Hand back the best-looking candidate anyway so
-    # get_status_message() can name it and say why it failed - far more use than
-    # claiming Sollumz is not installed when something calling itself Sollumz
-    # clearly is.
-    return candidates[0]
+    ordered = sorted(names, key=lambda name: (
+        # Exact "sollumz" first, then anything sollumz-shaped, then the rest.
+        _addon_leaf_name(name).lower() != "sollumz",
+        not _looks_like_sollumz_name(name),
+        name.lower(),
+    ))
+    for name in ordered:
+        if verify(name):
+            return name, True
+
+    looks = [name for name in ordered if _looks_like_sollumz_name(name)]
+    return (looks[0], False) if looks else (None, False)
+
+
+# Resolution is asked for on every panel redraw, and a miss costs an
+# ImportError per enabled add-on, so the answer is kept until the set of
+# enabled add-ons (or the override) changes.
+_resolved = {"key": None, "base": None, "verified": False}
+
+
+def _resolve_cached():
+    override = _sollumz_override()
+    key = (tuple(bpy.context.preferences.addons.keys()), override)
+    if _resolved["key"] != key:
+        base, verified = resolve(key[0], _verify, override)
+        _resolved.update(key=key, base=base, verified=verified)
+    return _resolved["base"], _resolved["verified"]
+
+
+def _sollumz_override():
+    """The module name (or folder) the user pinned in preferences, or "".
+
+    A folder is accepted as well as a module name because that is what people
+    reach for: "here is where Sollumz is". Its parent goes on sys.path and the
+    folder name becomes the module, which is exactly what Blender does with
+    scripts/addons.
+    """
+    from . import addon_prefs
+
+    override = (addon_prefs.sollumz_override() or "").strip()
+    if not override:
+        return ""
+
+    path = bpy.path.abspath(override) if override.startswith("//") else override
+    if os.path.isdir(path):
+        parent = os.path.dirname(os.path.normpath(path))
+        if parent and parent not in sys.path:
+            sys.path.append(parent)
+        return os.path.basename(os.path.normpath(path))
+    return override
+
+
+def forget_sollumz():
+    """Drop the cached resolution, so the next check starts over.
+
+    Called when the override changes: nothing else about Blender's state has
+    changed, so the cache key would not have moved and the old answer would
+    stick.
+    """
+    _resolved.update(key=None, base=None, verified=False)
+
+
+def _get_sollumz_base_module_name():
+    """Resolve Sollumz's registered add-on module name, or None."""
+    return _resolve_cached()[0]
 
 
 def _import(submodule_path):
@@ -151,23 +219,42 @@ def is_sollumz_available():
 def get_status_message():
     """Returns (available: bool, message: str) with a specific reason when
     unavailable, so the UI can show something more useful than a generic
-    "not detected"."""
-    base = _get_sollumz_base_module_name()
+    "not detected".
+
+    What counts as "available" is deliberately narrow: the modules these tools
+    actually call have to import. A Sollumz fork that has moved or dropped
+    anything else - `dependencies` in particular - is not a reason to refuse to
+    run. That check used to be fatal, and a tester on Sollumz Development was
+    told Sollumz was unavailable by a build that would have worked.
+    """
+    base, verified = _resolve_cached()
     if base is None:
         # Installed but unticked looks identical to not installed from here:
         # preferences.addons only lists what is enabled. Say both, because
         # "not installed" alone sends people to reinstall something they have.
-        return False, ("No enabled Sollumz add-on found. Install it, and make "
-                       "sure its checkbox is ticked in Preferences > Add-ons.")
+        return False, ("No enabled Sollumz add-on found. Install it and tick "
+                       "its checkbox in Preferences > Add-ons - or, if it "
+                       "lives somewhere unusual, point Seto Tools at it in "
+                       "Preferences > Add-ons > Seto Tools > Sollumz Module.")
+    if not verified:
+        return False, (f"Found '{base}', but it does not import as Sollumz. If "
+                       "that is not your Sollumz, name the right one in "
+                       "Preferences > Add-ons > Seto Tools > Sollumz Module.")
+    try:
+        importlib.import_module(f"{base}.ydr.shader_materials")
+    except Exception as error:
+        return False, (f"Sollumz ('{base}') is enabled but its shader module "
+                       f"will not import, so no material can be built: {error}")
+    # Only a *positive* answer from Sollumz's own dependency check counts
+    # against it. A fork without that module is not evidence of anything.
     try:
         deps = importlib.import_module(f"{base}.dependencies")
-    except Exception as e:
-        return False, f"Found Sollumz ('{base}') but could not import its dependencies module: {e}"
-    try:
         if not deps.has_required_dependencies():
-            return False, "Sollumz is enabled, but its dependencies (szio) are not installed. Open Sollumz's Preferences and install dependencies."
-    except Exception as e:
-        return False, f"Could not check Sollumz dependencies: {e}"
+            return False, ("Sollumz is enabled, but its dependencies (szio) "
+                           "are not installed. Open Sollumz's Preferences and "
+                           "install dependencies.")
+    except Exception:
+        pass
     return True, f"Sollumz OK ('{base}')."
 
 
