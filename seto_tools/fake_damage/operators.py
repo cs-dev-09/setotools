@@ -7,6 +7,7 @@ from . import geometry
 from . import object_settings
 from . import properties
 from . import textures
+from ..shared import manual_offset
 from ..shared import run_fade
 from ..shared import sollumz_integration as szi
 from ..shared import strip_settings
@@ -302,6 +303,10 @@ class SETO_OT_create_fake_damage(bpy.types.Operator):
             obj_data.edge_keys = object_settings.serialise_edge_keys(edges)
             properties.copy_settings(self, obj_data)
             obj_data.status = ""
+            # Where the tool put it. A rebuild records this too, but the strip
+            # can be dragged and pinned before one ever runs, and then there
+            # would be nothing to measure the drag against.
+            manual_offset.reset(new_obj, obj_data)
 
         # Push the values that actually produced this result back onto the
         # N-panel, so a value dialled in through the F9 panel becomes the

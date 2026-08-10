@@ -8,6 +8,7 @@ from . import object_settings
 from . import properties
 from . import textures
 from ..fake_ao import geometry
+from ..shared import manual_offset
 from ..shared import sollumz_integration as szi
 
 _NAME_PATTERN = re.compile(r"^edge_dirt_(\d{3,})$")
@@ -405,6 +406,10 @@ class SETO_OT_create_edge_dirt(bpy.types.Operator):
                                     and settings.bevel_target != 'SOURCE')
             obj_data.bevel_target = 'STRIP'
             obj_data.status = ""
+            # Where the tool put it. A rebuild records this too, but the strip
+            # can be dragged and pinned before one ever runs, and then there
+            # would be nothing to measure the drag against.
+            manual_offset.reset(new_obj, obj_data)
 
         # Push the values that actually produced this result back onto the
         # N-panel, so a value dialled in through the F9 panel becomes the

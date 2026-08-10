@@ -9,6 +9,7 @@ from . import object_settings
 from . import properties
 from . import source_bevel
 from . import textures
+from ..shared import manual_offset
 from ..shared import sollumz_integration as szi
 
 # What a generated strip is called. The tool is Ambient Occlusion, so that is
@@ -388,6 +389,10 @@ class SETO_OT_create_fake_ao(bpy.types.Operator):
             obj_data.bevel_mesh = settings.bevel_mesh and not ground
             obj_data.bevel_strip = settings.bevel_strip and not ground
             obj_data.status = ""
+            # Where the tool put it. A rebuild records this too, but the strip
+            # can be dragged and pinned before one ever runs, and then there
+            # would be nothing to measure the drag against.
+            manual_offset.reset(new_obj, obj_data)
 
         # Round the source's corner to match, with a modifier rather than by
         # cutting it in - so it stays live, and the strip's own Bevel controls

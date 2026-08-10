@@ -1,7 +1,7 @@
 bl_info = {
     "name": "Seto Tools",
     "author": "Seto",
-    "version": (1, 5, 1),
+    "version": (1, 6, 0),
     "blender": (4, 2, 0),
     "location": "View3D > N-Panel > Seto Tools",
     "description": (
@@ -24,6 +24,7 @@ bl_info = {
 # Color 1 vertex colour they all write.
 from .shared import icons
 from .shared import strip_settings
+from .shared import manual_offset
 from .shared import groups
 from . import fake_ao
 from . import edge_dirt
@@ -36,8 +37,8 @@ from . import surface_painter
 # then groups - and that one is not merely tidiness: every tool panel hangs off
 # one of its two sections, and Blender drops a panel whose bl_parent_id is not
 # registered yet.
-_modules = (icons, strip_settings, groups, fake_damage, smooth_edge, fake_ao,
-            decal_tool, surface_painter, edge_dirt)
+_modules = (icons, strip_settings, manual_offset, groups, fake_damage,
+            smooth_edge, fake_ao, decal_tool, surface_painter, edge_dirt)
 
 
 def register():

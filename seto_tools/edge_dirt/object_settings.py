@@ -14,6 +14,7 @@ once without the panel showing one strip's settings on the other.
 import bpy
 
 from . import properties
+from ..shared import manual_offset
 from ..fake_ao.object_settings import (  # noqa: F401  (re-exported for this package)
     UV_SIZE,
     apply_strip_bevel,
@@ -82,6 +83,7 @@ def _object_annotations():
             default="",
         ),
     }
+    annotations.update(manual_offset.annotations())
     annotations.update(properties.settings_annotations(update=_on_setting_changed))
     return annotations
 

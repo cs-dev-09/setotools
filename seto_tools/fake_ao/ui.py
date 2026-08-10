@@ -1,6 +1,6 @@
 import bpy
 
-from ..shared import groups, icons, panel_layout as pl, ui_common
+from ..shared import groups, icons, manual_offset, panel_layout as pl, ui_common
 
 
 def _draw_bevel(layout, settings, tool_label="Ambient Occlusion",
@@ -135,6 +135,8 @@ class SETO_PT_fake_ao_object_panel(pl.SelectedPanel, bpy.types.Panel):
         col.separator()
         col.prop(data, "alpha_bottom")
         col.prop(data, "alpha_top")
+
+        manual_offset.draw(layout, data, "seto_fake_ao_data")
 
         if data.edge_keys:
             _draw_bevel(layout, data)

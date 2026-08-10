@@ -32,6 +32,7 @@ from mathutils import Matrix, Vector
 from . import geometry
 from . import properties
 from . import source_bevel
+from ..shared import manual_offset
 from ..shared import sollumz_integration as szi
 
 # Span of the UV island's longer axis once fitted into the 0..1 square. Kept
@@ -392,6 +393,10 @@ def rebuild(obj, data=None):
         obj.matrix_world = source.matrix_world.copy()
         obj.data = new_mesh
         _centre_origin(obj, new_mesh)
+        # Last, and it has to be last: the two lines above have just re-derived
+        # this strip's position from its source, which is exactly what wipes a
+        # hand-moved strip. See shared/manual_offset.py.
+        manual_offset.apply(obj, data)
 
         if old_mesh.users == 0:
             bpy.data.meshes.remove(old_mesh)
@@ -459,6 +464,7 @@ def _object_annotations():
             default="",
         ),
     }
+    annotations.update(manual_offset.annotations())
     annotations.update(properties.settings_annotations(update=_on_setting_changed))
     return annotations
 

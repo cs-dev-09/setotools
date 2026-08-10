@@ -1,6 +1,6 @@
 import bpy
 
-from ..shared import groups, icons, panel_layout as pl, ui_common
+from ..shared import groups, icons, manual_offset, panel_layout as pl, ui_common
 from ..fake_ao.ui import _draw_bevel
 
 
@@ -76,6 +76,8 @@ class SETO_PT_fake_damage_object_panel(pl.SelectedPanel, bpy.types.Panel):
         col = pl.section(layout, "Texture Placement", 'UV')
         col.prop(data, "uv_scale")
         col.prop(data, "uv_offset")
+
+        manual_offset.draw(layout, data, "seto_fake_damage_data")
 
         layout.separator()
         if data.edge_keys:

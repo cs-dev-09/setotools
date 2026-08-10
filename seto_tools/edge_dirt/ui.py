@@ -2,7 +2,7 @@ import bpy
 
 from . import textures
 from ..fake_ao.ui import _draw_bevel
-from ..shared import groups, icons, panel_layout as pl, ui_common
+from ..shared import groups, icons, manual_offset, panel_layout as pl, ui_common
 
 
 def _draw_texture_row(layout):
@@ -113,6 +113,8 @@ class SETO_PT_edge_dirt_object_panel(pl.SelectedPanel, bpy.types.Panel):
         col.separator()
         col.prop(data, "alpha_bottom")
         col.prop(data, "alpha_top")
+
+        manual_offset.draw(layout, data, "seto_edge_dirt_data")
 
         _draw_bevel(layout, data, tool_label="Edge Dirt")
 

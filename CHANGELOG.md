@@ -2,6 +2,28 @@
 
 All notable changes to Seto Tools.
 
+## 1.6.0
+
+### Added — a hand-moved strip stays where it was put
+
+Nudge a finished strip up off the floor, touch any setting, and it used to jump
+back onto its source: every rebuild re-derives the strip's position from the
+object it was built along, which is what keeps repeated rebuilds stable and is
+also what wiped the move.
+
+**Selected Strip** now has a **Position** section on all four strip tools —
+Ambient Occlusion, Edge Wear, Smooth Edge and Edge Dirt. Move the strip where
+you want it, press **Pin Position**, and every rebuild from then on puts it back
+there. **Clear Offset** drops the pin and returns it to where the tool
+generates it; the Offset field can be typed into directly, and moves the strip
+without rebuilding its mesh.
+
+The pin means "this far off my source", not "at these coordinates": a setting
+that legitimately moves the strip — a wider shelf re-centres its origin — still
+moves it, carrying the offset along. For the specific case of lifting a strip
+vertically, Ambient Occlusion's **Ground Level** was already an answer and
+still is.
+
 ## 1.5.1
 
 ### Fixed — Edge Wear and Smooth Edge threw on their Selected Strip panel
