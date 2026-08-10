@@ -12,6 +12,8 @@ import bpy
 import bmesh
 from mathutils import Matrix, Vector
 
+from ..shared import run_fade
+
 
 @dataclass
 class EdgeSegment:
@@ -69,21 +71,12 @@ def _oriented_quad_indices(p0_i0, p1_i1, p2_i2, p3_i3, desired_normal):
     return (i0, i1, i2, i3)
 
 
-def local_up_axis(matrix_world):
-    """World "up", expressed in the object's own local space.
-
-    The strip is built in the source's local space, but Alpha Bottom/Top mean
-    the bottom and top of the building, not of the object's axes - a wall whose
-    object happens to be rotated still has to fade toward the actual floor.
-
-    A point's world Z is `row 2 of matrix_world` dotted with the local point
-    (plus the row's translation, which drops out of any comparison), so that
-    row IS the direction local positions grow world-upward along. Taken
-    directly rather than by inverting the matrix, which gets non-uniform scale
-    wrong.
-    """
-    row = matrix_world[2]
-    return Vector((row[0], row[1], row[2]))
+# World "up" in the source's local space, and the along-run fade that uses it,
+# both live in shared/run_fade.py now - this tool grew them first and the other
+# two strip tools were calling a second, identical copy. Re-exported rather
+# than moved out of reach: Edge Dirt reaches into this module for it, and it
+# reads as part of what geometry.py offers.
+local_up_axis = run_fade.local_up_axis
 
 
 def auto_merge_distance(width, surface_offset):
@@ -182,7 +175,7 @@ def build_strip_mesh_data(segments, width, surface_offset, alpha_center, alpha_o
 
     `alpha_center`/`alpha_outer` fade ACROSS that shelf. `alpha_bottom` and
     `alpha_top` fade ALONG the run instead, so a corner can be told to let go
-    before it reaches the floor or the ceiling - see _fade_along_run.
+    before it reaches the floor or the ceiling - see shared/run_fade.py.
     """
     data = StripMeshData()
     wings = []
@@ -259,60 +252,9 @@ def build_strip_mesh_data(segments, width, surface_offset, alpha_center, alpha_o
                                outer_index=base_idx + 2))
 
     _miter_coplanar_wings(data, wings, width, surface_offset)
-    _fade_along_run(data, run_points, up_axis, alpha_bottom, alpha_top)
+    run_fade.apply(data.vertex_alpha, run_points, up_axis, alpha_bottom, alpha_top)
 
     return data
-
-
-def _fade_along_run(data, run_points, up_axis, alpha_bottom, alpha_top):
-    """Scale each vertex's alpha by where it sits between the bottom and the
-    top of the run.
-
-    The other two alpha settings fade across the shelf, from the corner out
-    onto the wall. This one fades along it, which is the other thing a corner
-    needs: a wall-to-wall corner that runs floor to ceiling usually should not
-    arrive at either at full strength.
-
-    The ramp is linear from one end of the run to the other, and multiplies
-    whatever the across-fade already produced - so 1.0 at both ends leaves the
-    strip exactly as it was.
-
-    Linear because that is what the geometry can carry: a run built from ONE
-    selected edge has two vertices along its length, and two vertices cannot
-    describe a curve. Subdividing the source edge gives more vertices along the
-    run and a correspondingly tighter falloff, the same as it does for
-    everything else in this tool.
-
-    `up_axis` is world "up" expressed in the source's local space - the strip
-    is built in local space, but bottom and top mean bottom and top of the
-    building, not of the object's own axes.
-
-    Each vertex is placed by the SELECTED EDGE END it came from rather than by
-    where it itself ended up. The two differ the moment the run is not vertical:
-    a wall-to-floor edge is all one height, but its strip climbs the wall, so
-    measuring the vertices would fade the top of the shelf and call it the top
-    of the run. Measured properly, that run has no bottom or top to fade
-    between and is left alone.
-    """
-    if up_axis is None or (alpha_bottom >= 1.0 and alpha_top >= 1.0):
-        return
-    if up_axis.length < 1e-9:
-        return
-
-    up = up_axis.normalized()
-    heights = [point.dot(up) for point in run_points]
-    if not heights:
-        return
-    low, high = min(heights), max(heights)
-    span = high - low
-    if span < 1e-6:
-        return
-
-    for index, height in enumerate(heights):
-        from_bottom = (height - low) / span
-        factor = (alpha_bottom + (1.0 - alpha_bottom) * from_bottom) * \
-                 (alpha_top + (1.0 - alpha_top) * (1.0 - from_bottom))
-        data.vertex_alpha[index] *= factor
 
 
 def _miter_coplanar_wings(data, wings, width, surface_offset):

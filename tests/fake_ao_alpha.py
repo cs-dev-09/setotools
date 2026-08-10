@@ -150,6 +150,14 @@ check("and putting it back restores exactly what was there",
 
 # --- 7. The helper on its own ------------------------------------------------
 from mathutils import Matrix  # noqa: E402
+from seto_tools.shared import run_fade  # noqa: E402
+
+# This tool grew the along-run fade first and carried its own copy of it for a
+# while. One implementation now, re-exported here - if the copy comes back,
+# these checks stop proving anything about what the other two tools run.
+check("the along-run fade is the shared one",
+      geometry.local_up_axis is run_fade.local_up_axis)
+
 check("local_up_axis reads world up out of an unrotated matrix",
       (geometry.local_up_axis(Matrix.Identity(4)) - Vector((0, 0, 1))).length < 1e-6)
 tipped = Matrix.Rotation(math.radians(90.0), 4, 'X')
