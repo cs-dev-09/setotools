@@ -38,6 +38,8 @@ from dataclasses import dataclass, field
 
 import bpy
 import bmesh
+
+from ..shared import run_fade
 from mathutils import Matrix, Vector
 
 _EPS = 1e-8
@@ -395,7 +397,8 @@ def _cross_sections(points, slots, width, surface_offset, closed=False):
 
 
 def build_damage_mesh_data(edges, chains, coords, width, surface_offset,
-                           alpha_center, alpha_outer, invert_fade, flip_direction):
+                           alpha_center, alpha_outer, invert_fade, flip_direction,
+                           alpha_bottom=1.0, alpha_top=1.0, up_axis=None):
     """Generate the full Smooth Edge ribbon for every chain.
 
     Geometry within a chain is continuous by construction: consecutive
@@ -404,6 +407,11 @@ def build_damage_mesh_data(edges, chains, coords, width, surface_offset,
     loop seams) rely on the merge pass afterwards.
     """
     data = StripMeshData()
+    # Which point on the source chain each generated vertex came from. Alpha
+    # Bottom/Top fade along the RUN, and a vertex out on the wing sits at a
+    # different height from the run point it belongs to whenever the run is not
+    # vertical - see shared/run_fade.py.
+    run_points = []
 
     inner_alpha = alpha_outer if invert_fade else alpha_center
     outer_alpha = alpha_center if invert_fade else alpha_outer
@@ -439,6 +447,7 @@ def build_damage_mesh_data(edges, chains, coords, width, surface_offset,
             data.verts.append(inner_point)
             data.vertex_uv.append((u, _V_INNER_FACTOR * width))
             data.vertex_alpha.append(inner_alpha)
+            run_points.append(points[j])
 
             for wing in (0, 1):
                 outer_point = outer[wing][j]
@@ -448,6 +457,7 @@ def build_damage_mesh_data(edges, chains, coords, width, surface_offset,
                 data.verts.append(outer_point)
                 data.vertex_uv.append((u, _V_OUTER_FACTORS[wing] * width))
                 data.vertex_alpha.append(outer_alpha)
+                run_points.append(points[j])
 
         for k in range(len(eseq)):
             j0, j1 = k, k + 1
@@ -471,6 +481,8 @@ def build_damage_mesh_data(edges, chains, coords, width, surface_offset,
                     side.normal,
                 ))
 
+    run_fade.apply(data.vertex_alpha, run_points, up_axis,
+                   alpha_bottom, alpha_top)
     return data
 
 

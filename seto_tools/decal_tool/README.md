@@ -118,6 +118,59 @@ The decal stays a flat quad: crossing an edge moves it onto the next face, it do
 bend around the corner. A decal parked exactly on a corner will still overhang; slide
 it a little further and it settles onto one side.
 
+## Contact Decals
+
+Dirt collects where things meet the floor. **Contact Decals** finds that line for
+you and lays decals along it.
+
+1. Leave Edit Mode.
+2. Select the object the decals should go **on**, and make it the **active** one —
+   the panel shows its name, because which object is active decides the whole
+   result.
+3. Select whatever it is touching as well.
+4. Open **Contact Decals** and press **CREATE CONTACT DECALS**.
+
+Each decal is turned so its **width runs along the contact line**, and it is an
+ordinary decal in every other way — same library, same size and fade, same
+material reuse, and it slides, spins, resizes and walks across the surface
+afterwards in **Selected Decal** exactly like a hand-placed one.
+
+Selecting the floor and making the counter active puts the dirt up the counter's
+base instead of on the floor around it. One swap, opposite result.
+
+- **Contact Tolerance** — how close the two have to be to count as touching,
+  2 mm by default. This is not a fudge factor: an object *resting* on a floor is
+  coplanar with it, and coplanar surfaces never cross, so without it the most
+  ordinary scene there is would find nothing at all. The receiving surface is
+  lifted by this much, the contact is worked out, and everything found is
+  dropped back down by the same amount — a resting object gives its exact
+  footprint outline, and one that really does sink into the floor moves by those
+  2 mm and nothing else. Raise it when nothing is found; lower it when the line
+  sits visibly too far up the object.
+- **Spacing** — distance between decals along the line. Each stretch is divided
+  into whole steps of about this length, so they sit evenly with no short
+  leftover at the end, and a stretch shorter than one spacing still gets a single
+  decal at its middle.
+- **Side Offset** — slides every decal off the line across the surface. Positive
+  moves away from the other object, negative moves under it. It rides on the same
+  **Offset V** slider you already have in Selected Decal, so one that landed badly
+  is dragged back by hand.
+- **Max Decals** — a long line at a small spacing can ask for thousands of
+  objects. The run stops at this many and says so.
+
+**Random Rotation** and **Random Scale** still apply if you have them on; note
+that a random rotation spins a decal off the line it was just aligned to.
+**Random Position** is deliberately ignored here — it scatters a decal anywhere
+within its face, which is exactly off the line the tool was asked to follow.
+
+Objects you are touching are read **with their modifiers applied**, so a mirrored
+or arrayed one touches where you can see it touching. The receiving object is
+read raw, because the face each decal remembers has to index its own mesh.
+
+Curved contacts, like a rounded counter, come out as a row of separate flat
+decals rather than one long bent one — a decal is a flat quad and stays one.
+Close the spacing to follow a tighter curve.
+
 ## Settings
 
 - **Merge Coplanar** (on by default) — touching faces lying in the same plane count

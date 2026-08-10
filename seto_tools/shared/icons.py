@@ -28,6 +28,16 @@ twice.
 The frames the art was drawn with are cropped off. A rounded box around every
 icon costs about a sixth of a 32px tile and reads as a button next to Blender's
 own frameless icons.
+
+`edge_dirt.png` is the one that was not drawn by hand. Its source is
+`scripts/draw_edge_dirt_icon.py`, run through Blender:
+
+    blender -b --python scripts/draw_edge_dirt_icon.py -- seto_tools/icons/edge_dirt.png
+
+Edit that rather than the PNG, and mind the two things it documents: the view
+transform has to be Standard or the white washes out on the way to the file,
+and the preview it writes must never land in this folder, because register()
+below loads every .png it finds here.
 """
 
 import os

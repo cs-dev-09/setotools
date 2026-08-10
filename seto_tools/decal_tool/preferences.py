@@ -98,6 +98,14 @@ def _on_library_path_changed(self, context):
     Blender and would leave the user with a silently stale cache.
     """
     library.scan_safe(self.library_path)
+    # And refill the texture browser, which is a real collection and so cannot
+    # be filled from a redraw. Imported here rather than at module level:
+    # properties imports this module for the library path.
+    try:
+        from . import properties
+        properties.rebuild_browser(context.scene.seto_decal)
+    except Exception:
+        pass
 
 
 class SETO_AP_decal_tool(bpy.types.AddonPreferences):

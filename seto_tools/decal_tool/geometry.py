@@ -231,7 +231,7 @@ def sample_faces(bm, matrix_world, merge_coplanar=True):
     return samples, skipped
 
 
-def surface_basis(normal, tangent):
+def surface_basis(normal, tangent, along=None):
     """Build a right-handed orthonormal basis (x, y, normal) lying on the surface.
 
     `y` (the decal's local "up") follows world Z projected onto the face plane, so
@@ -239,11 +239,21 @@ def surface_basis(normal, tangent):
     ~2.5 degrees of horizontal - a floor or ceiling, where "upright" means nothing -
     does it fall back to the face's own edge tangent.
 
+    `along` overrides all of that with a direction the decal's local X must
+    follow, whatever the face is doing. Contact decals use it to run their width
+    along the line where two objects meet - "upright" is the wrong idea there,
+    because the line is the thing the decal has to line up with.
+
     This is the *base* frame, with no Rotation applied. Rotation is applied in
     compose_matrix() instead, so that Offset U/V stay measured in a frame that
     does not move when the user drags Rotation - otherwise spinning a decal would
     also slide it across the surface.
     """
+    if along is not None:
+        x = along - normal * along.dot(normal)
+        x = x.normalized() if x.length > _EPS else fallback_axis(normal)
+        return x, normal.cross(x).normalized()
+
     if abs(normal.dot(WORLD_UP)) > UP_PARALLEL_THRESHOLD:
         # Project the world-space tangent back onto the plane perpendicular to
         # the normal: under non-uniform scale the transformed tangent is no
@@ -321,8 +331,8 @@ def random_offset(rng, extent, width, height):
 
 def build_placement(sample, width, height, surface_offset, rotation,
                     texture_stem, texture_path, offset_u=0.0, offset_v=0.0,
-                    rng=None, randomize_position=False):
-    base_x, base_y = surface_basis(sample.normal, sample.tangent)
+                    rng=None, randomize_position=False, along=None):
+    base_x, base_y = surface_basis(sample.normal, sample.tangent, along=along)
     extent = face_extent(sample.verts, sample.center, base_x, base_y)
 
     if randomize_position and rng is not None:

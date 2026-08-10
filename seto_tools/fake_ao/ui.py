@@ -1,32 +1,41 @@
 import bpy
 
-from ..shared import groups, icons, ui_common
+from ..shared import groups, icons, panel_layout as pl, ui_common
 
 
-def _draw_bevel(layout, settings, show_target):
-    """The optional chamfer block, drawn the same way in the create panel and
-    on a finished strip.
+def _draw_bevel(layout, settings, tool_label="Ambient Occlusion",
+                show_target=False):
+    """The Bevel block: two ticks, drawn on the finished strip.
 
-    `show_target` is off on a finished strip: the source bevel already
-    happened once, at creation, and cannot be re-run from there.
+    Rounding the wall and rounding the decal that runs along it are two
+    decisions, so they are two checkboxes rather than one checkbox and a Target
+    enum behind it - "Bevel Mesh" and "Bevel <tool>", each saying plainly which
+    mesh it touches. Both are live: the source's round is a modifier and the
+    strip's is rebuilt, so dragging Width moves whichever is ticked.
+
+    `show_target` is for Edge Dirt, which still cuts its source bevel in
+    destructively at creation and has a warning to show for it.
     """
     box = layout.box()
-    header = box.row()
-    header.prop(settings, "bevel_enabled", text="")
-    header.label(text="Bevel", icon='MOD_BEVEL')
+    box.label(text="Bevel", icon='MOD_BEVEL')
 
+    ticks = box.column(align=True)
+    ticks.prop(settings, "bevel_mesh", text="Bevel Mesh")
+    ticks.prop(settings, "bevel_strip", text=f"Bevel {tool_label}")
+
+    on = settings.bevel_mesh or settings.bevel_strip
     body = box.column(align=True)
-    body.enabled = settings.bevel_enabled
+    body.enabled = on
     if show_target:
         body.prop(settings, "bevel_target", text="")
     body.prop(settings, "bevel_width", text="Width")
     body.prop(settings, "bevel_segments", text="Segments")
     body.prop(settings, "bevel_profile", text="Profile Shape")
 
-    if not settings.bevel_enabled:
+    if not on:
         return
 
-    if show_target and settings.bevel_target in {'SOURCE', 'BOTH'}:
+    if settings.bevel_mesh:
         box.label(text="Modifies the source mesh.", icon='ERROR')
 
     if settings.bevel_width >= settings.width:
@@ -62,41 +71,37 @@ class SETO_PT_fake_ao_panel(bpy.types.Panel):
         if ui_common.draw_sollumz_warning(layout):
             return
 
-        col = layout.column(align=True)
-        col.prop(settings, "width")
-        col.prop(settings, "surface_offset")
+        # Nothing that the finished strip can change lives here any more. Every
+        # shape and fade setting was listed twice - once as a default, once on
+        # the strip itself - and the two looked identical, so the natural thing
+        # to do was drag the top one and watch nothing happen. What is left is
+        # what genuinely has to be decided before there is a strip to look at:
+        # where it runs, and which material it gets.
+        ground = settings.source_mode == 'GROUND'
+        col = pl.section(layout, "Build", 'MOD_SOLIDIFY')
+        col.prop(settings, "source_mode", text="")
+        if ground:
+            col.prop(settings, "ground_level")
+        col.prop(settings, "material_mode", text="Material")
 
-        layout.separator()
-        col = layout.column(align=True)
-        col.prop(settings, "alpha_center")
-        col.prop(settings, "alpha_outer")
-        layout.prop(settings, "invert_fade")
+        pl.create_button(layout, "seto.create_fake_ao",
+                         "Create Ambient Occlusion", 'MOD_SOLIDIFY')
 
-        layout.separator()
-        _draw_bevel(layout, settings, show_target=True)
-
-        layout.separator()
-        layout.prop(settings, "flip_direction")
-        layout.prop(settings, "material_mode")
-
-        layout.separator()
-        layout.operator("seto.create_fake_ao", text="Create Ambient Occlusion", icon='MOD_SOLIDIFY')
-
-        if context.mode != 'EDIT_MESH':
-            layout.label(text="Enter Edit Mode and select edges first.", icon='INFO')
+        if ground:
+            pl.hint(layout, "Select the object. No Edit Mode needed.")
+        else:
+            pl.edit_mode_hint(layout, context)
 
 
-class SETO_PT_fake_ao_object_panel(bpy.types.Panel):
+class SETO_PT_fake_ao_object_panel(pl.SelectedPanel, bpy.types.Panel):
     """Settings of the selected Ambient Occlusion strip, editable after the fact.
 
     Nested under the Ambient Occlusion section rather than given its own tab, and only
-    drawn when the active object is actually one of our strips.
+    drawn when the active object is actually one of our strips. Every row here
+    is live: changing it rebuilds the strip in place.
     """
     bl_label = "Selected Strip"
     bl_idname = "SETO_PT_fake_ao_object_panel"
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'UI'
-    bl_category = "Seto Tools"
     bl_parent_id = "SETO_PT_fake_ao_panel"
 
     @classmethod
@@ -105,49 +110,41 @@ class SETO_PT_fake_ao_object_panel(bpy.types.Panel):
         return (obj is not None and obj.type == 'MESH'
                 and obj.seto_fake_ao_data.is_fake_ao)
 
-    def draw_header(self, context):
-        self.layout.label(text="", icon='MODIFIER')
-
     def draw(self, context):
         layout = self.layout
         obj = context.active_object
         data = obj.seto_fake_ao_data
 
-        box = layout.box()
-        row = box.row()
-        row.label(text=obj.name, icon='OUTLINER_OB_MESH')
-        row.label(text=f"{len(obj.data.polygons)} quads")
-        source_row = box.row()
-        source_row.enabled = False
-        source_row.prop(data, "source_object", text="From")
+        pl.object_header(layout, obj, data)
 
-        if data.status:
-            warn = layout.box()
-            warn.alert = True
-            col = warn.column(align=True)
-            col.label(text="Cannot rebuild:", icon='ERROR')
-            for line in ui_common.wrap(data.status, 38):
-                col.label(text=line)
+        col = pl.section(layout, "Shape", 'MOD_SOLIDIFY')
+        if data.source_mode == 'GROUND':
+            # Live: the contour is re-cut at this height on every change.
+            layout.prop(data, "ground_level")
 
-        layout.prop(data, "live_update")
-
-        col = layout.column(align=True)
         col.prop(data, "width")
         col.prop(data, "surface_offset")
+        col.prop(data, "flip_direction")
 
-        layout.separator()
-        col = layout.column(align=True)
+        # Across the shelf first, then along the run - the two fades answer
+        # different questions and used to sit in one unlabelled column.
+        col = pl.section(layout, "Fade", 'IMAGE_ALPHA')
         col.prop(data, "alpha_center")
         col.prop(data, "alpha_outer")
-        layout.prop(data, "invert_fade")
-        layout.prop(data, "flip_direction")
+        col.prop(data, "invert_fade")
+        col.separator()
+        col.prop(data, "alpha_bottom")
+        col.prop(data, "alpha_top")
 
-        layout.separator()
-        _draw_bevel(layout, data, show_target=False)
+        if data.edge_keys:
+            _draw_bevel(layout, data)
+        else:
+            # Ground Level: the line this runs along is not in the mesh, so
+            # there is no edge to round - on either mesh.
+            pl.hint(layout, "Bevel needs a selected edge.")
 
         if not data.live_update:
-            layout.separator()
-            layout.operator("seto.fake_ao_rebuild", icon='FILE_REFRESH')
+            pl.rebuild_button(layout, "seto.fake_ao_rebuild")
 
 
 _classes = (SETO_PT_fake_ao_panel, SETO_PT_fake_ao_object_panel)

@@ -702,6 +702,40 @@ def main():
               "dirt_07" in [s for s, _ in library.get_textures("Dirt")],
               str([s for s, _ in library.get_textures("Dirt")]))
 
+        # The texture browser: a real collection, so it can only be refilled
+        # from Refresh or a property update - never from a redraw, which is
+        # what a "modifying data in draw" crash is made of. If it is not
+        # refilled at those two points it is simply empty, and the panel shows
+        # "press Refresh" forever.
+        settings.category = "Dirt"
+        browser = [entry.name for entry in settings.browser_items]
+        check("the browser lists the selected category",
+              browser == [s for s, _ in library.get_textures("Dirt")], browser)
+        check("every row knows its file",
+              all(os.path.isfile(entry.path) for entry in settings.browser_items))
+
+        settings.category = "Cracks"
+        check("switching category refills it",
+              [e.name for e in settings.browser_items]
+              == [s for s, _ in library.get_textures("Cracks")],
+              [e.name for e in settings.browser_items])
+
+        # Clicking a row is what selects the texture.
+        settings.browser_index = 0
+        check("picking a row selects that texture",
+              settings.texture == settings.browser_items[0].name,
+              f"{settings.texture} vs {settings.browser_items[0].name}")
+
+        # ...and the highlight follows a texture chosen the other way, so the
+        # list opens where it was left rather than back at the top.
+        settings.category = "Dirt"
+        settings.texture = "dirt_03"
+        properties.rebuild_browser(settings)
+        check("the highlighted row follows the selected texture",
+              settings.browser_items[settings.browser_index].name == "dirt_03",
+              settings.browser_items[settings.browser_index].name)
+        settings.texture = "dirt_01"
+
         # 1b. The library folder survives opening a different file
         prefs = preferences.get_preferences()
         check("the library folder is stored in the add-on preferences",

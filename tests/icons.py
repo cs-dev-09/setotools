@@ -38,6 +38,7 @@ EXPECTED = {
     "fake_damage": "SETO_PT_fake_damage_panel",
     "smooth_edge": "SETO_PT_smooth_edge_panel",
     "fake_ao": "SETO_PT_fake_ao_panel",
+    "edge_dirt": "SETO_PT_edge_dirt_panel",
     "decal_tool": "SETO_PT_decal_tool_panel",
     "surface_painter": "SETO_PT_surface_painter_panel",
 }
@@ -190,8 +191,11 @@ try:
     decal = draw("SETO_PT_decal_tool_panel")
     check("Decal Tool: the category enum is disabled",
           state(decal, "category") is False, decal)
-    check("Decal Tool: the texture enum is disabled",
-          state(decal, "texture") is False, decal)
+    # Not drawn at all with no library: the browser and the texture enum both
+    # live behind "Set a library folder and press Refresh". Either way the
+    # point holds - there is no texture control to click.
+    check("Decal Tool: the texture enum is not clickable",
+          state(decal, "texture") in (False, None), decal)
     check("Decal Tool: Refresh Library stays clickable",
           clickable(decal, "refresh"), decal)
 

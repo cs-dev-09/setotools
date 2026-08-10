@@ -79,22 +79,22 @@ section = [name for _, name in drawn("SETO_PT_geometry_group")]
 wear = [name for _, name in drawn("SETO_PT_fake_damage_panel")]
 smooth = [name for _, name in drawn("SETO_PT_smooth_edge_panel")]
 
-# color_rgb has never had a row: only the alpha of Color 1 is read by these
-# shaders, so the RGB is a constant the operator and the F9 panel can still
-# reach but the tab does not clutter itself with.
-EXPECTED_ROWS = set(strip_settings.SHARED_NAMES) - {"color_rgb"}
-check("the Geometry section draws the shared block",
-      set(section) == EXPECTED_ROWS,
-      sorted(EXPECTED_ROWS ^ set(section)))
-check("Edge Wear repeats none of it", not (set(wear) & set(section)),
-      sorted(set(wear) & set(section)))
-check("Smooth Edge repeats none of it", not (set(smooth) & set(section)),
-      sorted(set(smooth) & set(section)))
-check("Edge Wear still draws its own UV settings",
-      set(wear) == {"uv_scale", "uv_offset"}, wear)
-check("Smooth Edge has nothing left of its own", smooth == [], smooth)
-check("Ambient Occlusion keeps its own copy",
-      "width" in [name for _, name in drawn("SETO_PT_fake_ao_panel")])
+# Nothing that a finished strip can change is offered before there is one. The
+# settings were listed twice - here and on the strip - and only the copy on the
+# strip did anything, so dragging the one at the top of the tab looked broken.
+# What is left is the material, which decides what the strip is built with.
+check("the Geometry section offers only the material choice",
+      section == ["material_mode"], section)
+check("Edge Wear adds nothing to it", wear == [], wear)
+check("Smooth Edge adds nothing to it", smooth == [], smooth)
+
+ao_rows = [name for _, name in drawn("SETO_PT_fake_ao_panel")]
+check("Ambient Occlusion's create panel is down to what it needs",
+      not ({"width", "surface_offset", "alpha_center", "alpha_outer",
+            "alpha_bottom", "alpha_top", "invert_fade", "flip_direction"}
+           & set(ao_rows)), ao_rows)
+check("but it still asks where the strip runs",
+      "source_mode" in ao_rows, ao_rows)
 
 # ------------------------------------------------- and it reaches both tools
 WIDTH = 0.07
@@ -161,6 +161,81 @@ if check("a strip built with an explicit width", again is not None):
     check("the section shows what the last run used",
           abs(scene.seto_edge_strip.width - 0.09) < 1e-6,
           scene.seto_edge_strip.width)
+
+# ------------------------------------------------- the fade along the run
+# Alpha Bottom/Top were Ambient Occlusion's only; both Geometry tools have them
+# now, through the section. What has to hold is that the fade runs along the
+# strip in WORLD up - the strip is built in the source's local space - and that
+# 1.0 at both ends changes nothing at all.
+def alphas_by_height(strip):
+    """[(world z, Color 1 alpha), ...] for every loop of the strip."""
+    layer = strip.data.color_attributes.get("Color 1")
+    if layer is None:
+        return []
+    out = []
+    for loop_index, loop in enumerate(strip.data.loops):
+        vert = strip.data.vertices[loop.vertex_index]
+        out.append(((strip.matrix_world @ vert.co).z,
+                    layer.data[loop_index].color[3]))
+    return out
+
+
+def vertical_edge_strip(**overrides):
+    """A strip along one vertical edge of a cube, so the run has real height."""
+    bpy.ops.mesh.primitive_cube_add(size=2)
+    cube = bpy.context.active_object
+    bpy.ops.object.mode_set(mode='EDIT')
+    bpy.ops.mesh.select_mode(type='EDGE')
+    bpy.ops.mesh.select_all(action='DESELECT')
+    bpy.ops.object.mode_set(mode='OBJECT')
+    for edge in cube.data.edges:
+        a, b = [cube.data.vertices[i].co for i in edge.vertices]
+        if abs(a.x - b.x) < 1e-6 and abs(a.y - b.y) < 1e-6 and abs(a.z - b.z) > 1:
+            edge.select = True
+            break
+    for name, value in overrides.items():
+        setattr(scene.seto_edge_strip, name, value)
+    bpy.ops.object.mode_set(mode='EDIT')
+    try:
+        result = bpy.ops.seto.create_fake_damage()
+    except RuntimeError as error:
+        print("  (operator reported:", error, ")")
+        result = {'CANCELLED'}
+    if bpy.context.mode != 'OBJECT':
+        bpy.ops.object.mode_set(mode='OBJECT')
+    return bpy.context.active_object if result == {'FINISHED'} else None
+
+
+scene.seto_edge_strip.width = 0.04
+plain = vertical_edge_strip(alpha_bottom=1.0, alpha_top=1.0)
+faded = vertical_edge_strip(alpha_bottom=0.0, alpha_top=1.0)
+
+if check("both strips were built", plain is not None and faded is not None):
+    before = alphas_by_height(plain)
+    after = alphas_by_height(faded)
+    # With both ends at 1.0 nothing along the run may have touched the alphas:
+    # every one is still whichever end of the across-fade it came from. Color 1
+    # is BYTE_COLOR, so compare with a byte of slack.
+    ends = (scene.seto_edge_strip.alpha_center, scene.seto_edge_strip.alpha_outer)
+    check("1.0 at both ends is a no-op",
+          all(min(abs(a - end) for end in ends) < 1.0 / 255.0
+              for _, a in before),
+          sorted({round(a, 3) for _, a in before}))
+
+    lowest = min(z for z, _ in after)
+    highest = max(z for z, _ in after)
+    bottom = [a for z, a in after if abs(z - lowest) < 1e-4]
+    top = [a for z, a in after if abs(z - highest) < 1e-4]
+    check("Alpha Bottom 0 kills the alpha at the foot of the run",
+          bottom and max(bottom) < 0.01, bottom[:4])
+    check("and leaves the top of the run alone",
+          top and max(top) > 0.9, top[:4])
+    check("the top is what it was before the fade",
+          abs(max(top) - max(a for _, a in before)) < 0.01,
+          f"{max(top)} vs {max(a for _, a in before)}")
+
+    scene.seto_edge_strip.property_unset("alpha_bottom")
+    scene.seto_edge_strip.property_unset("alpha_top")
 
 failed = [r for r in RESULTS if not r[0]]
 print("\n" + "=" * 60)

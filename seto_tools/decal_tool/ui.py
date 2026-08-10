@@ -18,6 +18,7 @@ from . import previews
 from ..shared import addon_prefs
 from ..shared import groups
 from ..shared import icons
+from ..shared import panel_layout as pl
 from ..shared import sollumz_integration as szi
 from ..shared import ui_common
 
@@ -28,17 +29,34 @@ PREVIEW_SCALE = 6.0
 _sollumz_warning = ui_common.draw_sollumz_warning
 
 
-class _DecalChildPanel:
-    """Shared setup for the collapsed sub-panels under Decal Tool."""
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'UI'
-    bl_category = "Seto Tools"
-    bl_parent_id = "SETO_PT_decal_tool_panel"
-    bl_options = {'DEFAULT_CLOSED'}
+class SETO_UL_decal_textures(bpy.types.UIList):
+    """The texture browser: the category's decals, listed by name.
 
-    @classmethod
-    def poll(cls, context):
-        return szi.is_sollumz_available()
+    Hovering a row shows its path through item_dyntip_propname - a tooltip can
+    carry text, just not an image, which is why the pick is previewed
+    underneath the list instead.
+    """
+
+    def draw_item(self, context, layout, data, item, icon, active_data,
+                  active_propname, index):
+        if self.layout_type == 'COMPACT':
+            layout.label(text=item.name)
+            return
+
+        row = layout.row(align=True)
+        row.label(text=item.name,
+                  icon='FILE_IMAGE' if previews.get_icon_id(item.path)
+                  else 'ERROR')
+
+
+class _DecalChildPanel(pl.ToolChildPanel):
+    """The collapsed sub-panels under Decal Tool.
+
+    Everything but the parent id comes from the shared base, so this tool's
+    children sit, collapse and hide themselves exactly like every other tool's
+    - see shared/panel_layout.py.
+    """
+    bl_parent_id = "SETO_PT_decal_tool_panel"
 
 
 class SETO_PT_decal_tool_panel(bpy.types.Panel):
@@ -78,26 +96,46 @@ class SETO_PT_decal_tool_panel(bpy.types.Panel):
         # something. Both enums are greyed out until there is a real choice
         # behind them - the placeholder stays visible, because it says what to
         # do about it, but it is no longer a control.
-        col = layout.column(align=True)
-        category_row = col.row(align=True)
+        category_row = layout.row(align=True)
         category_row.enabled = bool(library.get_categories())
         category_row.prop(settings, "category", text="")
-        texture_row = col.row(align=True)
-        # With Random Texture on, the chosen texture is ignored, so the enum is
-        # greyed out rather than hidden - the panel height stays stable.
-        texture_row.enabled = (bool(library.get_textures(settings.category))
-                               and not settings.random_texture)
-        texture_row.prop(settings, "texture", text="")
 
         if not library.get_categories():
             layout.label(text="Set a library folder and press Refresh.", icon='INFO')
         else:
+            # The browser, then the pick underneath it - the same two-part
+            # picker Surface Painter uses. A dropdown can only preview the row
+            # the pointer happens to be over, and choosing a decal is choosing
+            # a picture.
+            browser = layout.column(align=True)
+            browser.enabled = not settings.random_texture
+            if settings.browser_items:
+                browser.template_list(
+                    "SETO_UL_decal_textures", "",
+                    settings, "browser_items",
+                    settings, "browser_index",
+                    rows=settings.browser_rows,
+                    maxrows=settings.browser_rows,
+                    item_dyntip_propname="tooltip",
+                )
+            else:
+                box = browser.box()
+                box.scale_y = 0.8
+                box.label(text="Press Refresh to fill the browser.", icon='INFO')
+
             self._draw_preview(layout, settings)
 
-        layout.operator("seto.create_decal", text="CREATE DECAL", icon='TEXTURE')
+            texture_row = layout.row(align=True)
+            # With Random Texture on the chosen texture is ignored, so the enum
+            # is greyed out rather than hidden - the panel height stays stable.
+            texture_row.enabled = (bool(library.get_textures(settings.category))
+                                   and not settings.random_texture)
+            texture_row.prop(settings, "texture", text="")
+
+        pl.create_button(layout, "seto.create_decal", "Create Decal", 'TEXTURE')
 
         if context.mode != 'EDIT_MESH':
-            layout.label(text="Select faces in Edit Mode.", icon='INFO')
+            pl.hint(layout, "Select faces in Edit Mode.")
 
     def _draw_preview(self, layout, settings):
         """The texture that will actually be used, picked visually.
@@ -118,6 +156,7 @@ class SETO_PT_decal_tool_panel(bpy.types.Panel):
 class SETO_PT_decal_placement_panel(_DecalChildPanel, bpy.types.Panel):
     bl_label = "Placement"
     bl_idname = "SETO_PT_decal_placement_panel"
+    bl_order = pl.FIRST_CHILD
 
     def draw(self, context):
         settings = context.scene.seto_decal
@@ -135,6 +174,7 @@ class SETO_PT_decal_placement_panel(_DecalChildPanel, bpy.types.Panel):
 class SETO_PT_decal_random_panel(_DecalChildPanel, bpy.types.Panel):
     bl_label = "Randomization"
     bl_idname = "SETO_PT_decal_random_panel"
+    bl_order = pl.FIRST_CHILD + 1
 
     def draw(self, context):
         layout = self.layout
@@ -161,6 +201,7 @@ class SETO_PT_decal_random_panel(_DecalChildPanel, bpy.types.Panel):
 class SETO_PT_decal_material_panel(_DecalChildPanel, bpy.types.Panel):
     bl_label = "Material"
     bl_idname = "SETO_PT_decal_material_panel"
+    bl_order = pl.MATERIAL_CHILD
 
     def draw(self, context):
         layout = self.layout
@@ -171,8 +212,14 @@ class SETO_PT_decal_material_panel(_DecalChildPanel, bpy.types.Panel):
         row.label(text=f"Shader: {szi.DECAL_SHADER_FILENAME}")
         layout.prop(settings, "material_mode", text="")
 
+        # How tall the texture browser is. It lives here rather than beside the
+        # list itself: it is set once to taste, and a row of its own above the
+        # list would push the decal you are choosing further down the panel.
+        layout.separator()
+        layout.prop(settings, "browser_rows")
 
-class SETO_PT_decal_object_panel(bpy.types.Panel):
+
+class SETO_PT_decal_object_panel(pl.SelectedPanel, bpy.types.Panel):
     """Settings of the selected decal, editable after the fact.
 
     Nested under the Decal Tool section rather than given its own tab, and only
@@ -180,9 +227,6 @@ class SETO_PT_decal_object_panel(bpy.types.Panel):
     """
     bl_label = "Selected Decal"
     bl_idname = "SETO_PT_decal_object_panel"
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'UI'
-    bl_category = "Seto Tools"
     bl_parent_id = "SETO_PT_decal_tool_panel"
 
     @classmethod
@@ -190,9 +234,6 @@ class SETO_PT_decal_object_panel(bpy.types.Panel):
         obj = context.active_object
         return (obj is not None and obj.type == 'MESH'
                 and obj.seto_decal_data.is_seto_decal)
-
-    def draw_header(self, context):
-        self.layout.label(text="", icon='MODIFIER')
 
     def draw(self, context):
         layout = self.layout
@@ -219,31 +260,28 @@ class SETO_PT_decal_object_panel(bpy.types.Panel):
 
         layout.prop(data, "live_update")
 
-        col = layout.column(align=True)
+        col = pl.section(layout, "Placement", 'MOD_SOLIDIFY')
         col.prop(data, "width")
         col.prop(data, "height")
         col.prop(data, "edge_fade")
         col.prop(data, "surface_offset")
         col.prop(data, "rotation")
-
-        col = layout.column(align=True)
+        col.separator()
         col.prop(data, "offset_u")
         col.prop(data, "offset_v")
 
-        layout.separator()
-        layout.label(text="Corner Alpha (Color 1)")
+        col = pl.section(layout, "Corner Alpha (Color 1)", 'IMAGE_ALPHA')
         # Laid out as the decal actually sits: top row above bottom row, so the
         # sliders map onto the corners you can see in the viewport rather than
         # onto an index you have to remember.
-        grid = layout.grid_flow(row_major=True, columns=2, align=True)
+        grid = col.grid_flow(row_major=True, columns=2, align=True)
         for index in (3, 2, 0, 1):      # top left, top right, bottom left, bottom right
             grid.prop(data, "corner_alpha", index=index, text="")
-        row = layout.row(align=True)
+        row = col.row(align=True)
         row.operator("seto.decal_alpha_uniform", text="All 1.0", icon='CHECKMARK')
         row.operator("seto.decal_alpha_fade_down", text="Fade Down", icon='SORT_ASC')
 
-        layout.label(text="Border Alpha (edge ring)")
-        col = layout.column(align=True)
+        col = pl.section(layout, "Border Alpha (edge ring)", 'IMAGE_ALPHA')
         for index, side in enumerate(geometry.SIDE_NAMES):
             col.prop(data, "border_alpha", index=index, text=side)
 
@@ -254,6 +292,9 @@ class SETO_PT_decal_object_panel(bpy.types.Panel):
 
 
 _classes = (
+    # The UIList first: the panel's template_list names it by string, and a
+    # name Blender does not know yet simply draws nothing.
+    SETO_UL_decal_textures,
     SETO_PT_decal_tool_panel,
     SETO_PT_decal_placement_panel,
     SETO_PT_decal_random_panel,

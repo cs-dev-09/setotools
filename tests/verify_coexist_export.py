@@ -127,8 +127,8 @@ def main():
         check(f"{label} does not leave it next to the source",
               "Scene Collection" not in names and "Collection" not in names, str(names))
 
-    make_strip(bpy.ops.seto.create_fake_ao, "Ambient Occlusion", "fake_ao")
-    make_strip(bpy.ops.seto.create_fake_damage, "Edge Wear", "fake_dmg")
+    make_strip(bpy.ops.seto.create_fake_ao, "Ambient Occlusion", "ambient_occlusion")
+    make_strip(bpy.ops.seto.create_fake_damage, "Edge Wear", "edge_wear")
 
     check("no generated collection carries a 'seto' prefix",
           not any("seto" in c.name.lower() for c in bpy.data.collections),

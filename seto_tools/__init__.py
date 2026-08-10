@@ -1,20 +1,20 @@
 bl_info = {
     "name": "Seto Tools",
     "author": "Seto",
-    "version": (1, 3, 1),
+    "version": (1, 4, 0),
     "blender": (4, 2, 0),
     "location": "View3D > N-Panel > Seto Tools",
     "description": (
         "GTA V / FiveM asset authoring tools that integrate with Sollumz. "
-        "Ambient Occlusion corner decals, Edge Wear chipped-edge strips, Smooth Edge "
-        "normal-map strips, a Decal Tool that places library decals on "
-        "selected faces, and a Surface Painter for brushing dirt onto an asset "
-        "through a non-destructive mask."
+        "Ambient Occlusion corner decals, Edge Dirt strips, Edge Wear "
+        "chipped-edge strips, Smooth Edge normal-map strips, a Decal Tool that "
+        "places library decals on selected faces, and a Surface Painter for "
+        "brushing dirt onto an asset through a non-destructive mask."
     ),
     "category": "Object",
 }
 
-# One add-on, five tools. Each lives in its own subpackage and registers itself,
+# One add-on, six tools. Each lives in its own subpackage and registers itself,
 # so they stay as independent as the first three were when they shipped as
 # separate add-ons - this top-level __init__ only aggregates their
 # register()/unregister() calls, in panel order.
@@ -26,6 +26,7 @@ from .shared import icons
 from .shared import strip_settings
 from .shared import groups
 from . import fake_ao
+from . import edge_dirt
 from . import fake_damage
 from . import smooth_edge
 from . import decal_tool
@@ -36,7 +37,7 @@ from . import surface_painter
 # one of its two sections, and Blender drops a panel whose bl_parent_id is not
 # registered yet.
 _modules = (icons, strip_settings, groups, fake_damage, smooth_edge, fake_ao,
-            decal_tool, surface_painter)
+            decal_tool, surface_painter, edge_dirt)
 
 
 def register():

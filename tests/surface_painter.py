@@ -54,6 +54,41 @@ bpy.ops.seto.surface_refresh_library()
 st.category = "dirt"
 st.texture = "Dirt_Test_01"
 check("the library scan found the texture", st.texture == "Dirt_Test_01", st.texture)
+
+# A flat folder of images, with no category subfolder around them. A tester
+# pointed Custom Library at exactly that and got "No textures yet", because
+# categories were subfolders and nothing else - while the Decal Tool had always
+# accepted loose files. Both tools take them now, under the same name.
+from seto_tools.surface_painter import library as sp_library
+
+flat_root = os.path.join(tempfile.mkdtemp(prefix="seto_sp_flat_"), "flat")
+os.makedirs(flat_root)
+image.filepath_raw = os.path.join(flat_root, "Loose_01.png")
+image.save()
+
+categories, textures = sp_library.scan(flat_root)
+check("a flat folder of images is a library", categories == 1 and textures == 1,
+      f"{categories} categories, {textures} textures")
+check("the loose files are one category", sp_library.get_categories() == ["(root)"],
+      sp_library.get_categories())
+check("named after the folder, not '(root)'",
+      sp_library.category_label("(root)") == "Library Folder",
+      sp_library.category_label("(root)"))
+check("and the texture is reachable",
+      [stem for stem, _ in sp_library.get_textures("(root)")] == ["Loose_01"])
+
+# Loose files and subfolders together, with the loose ones offered first.
+os.makedirs(os.path.join(flat_root, "mold"))
+image.filepath_raw = os.path.join(flat_root, "mold", "Mold_01.png")
+image.save()
+categories, textures = sp_library.scan(flat_root)
+check("loose files and subfolders coexist",
+      categories == 2 and sp_library.get_categories() == ["(root)", "mold"],
+      sp_library.get_categories())
+
+sp_library.scan(library_root)
+st.category = "dirt"
+st.texture = "Dirt_Test_01"
 st.shell_spacing = 0.4
 st.shell_offset = 0.01
 

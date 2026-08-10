@@ -156,10 +156,39 @@ for parent, expected in (
          ["SETO_PT_fake_damage_panel", "SETO_PT_smooth_edge_panel"]),
         ("SETO_PT_surface_group",
          ["SETO_PT_fake_ao_panel", "SETO_PT_decal_tool_panel",
-          "SETO_PT_surface_painter_panel"])):
+          "SETO_PT_surface_painter_panel", "SETO_PT_edge_dirt_panel"])):
     got = [c.bl_idname for c in panels
            if getattr(c, "bl_parent_id", "") == parent]
     check(f"{parent} holds its tools, in order", got == expected, got)
+
+print("=== the tab's layout contract ===")
+# One vocabulary across six tools - see shared/panel_layout.py. These are the
+# three rules that were each broken by at least one tool before it existed.
+from seto_tools.shared import panel_layout
+
+for cls in panels:
+    parent = getattr(cls, "bl_parent_id", "")
+    if not parent or parent in ("SETO_PT_geometry_group", "SETO_PT_surface_group"):
+        continue          # sections and tools, not the settings children
+    name = cls.__name__
+    selected = cls.bl_label.startswith("Selected")
+    if selected:
+        # The finished object's panel is always last and always open: it only
+        # appears because one of the tool's objects is selected, and selecting
+        # it is the act of asking to edit it.
+        check(f"{name} sits last", getattr(cls, "bl_order", 0) == panel_layout.SELECTED,
+              getattr(cls, "bl_order", 0))
+        check(f"{name} is not collapsed",
+              'DEFAULT_CLOSED' not in getattr(cls, "bl_options", set()),
+              getattr(cls, "bl_options", set()))
+    else:
+        # A child panel is drawn whether or not its parent drew anything, so
+        # each one has to answer for Sollumz itself.
+        check(f"{name} hides itself without Sollumz",
+              cls.poll.__func__.__qualname__.split(".")[0]
+              in ("ToolChildPanel", "_LayerChildPanel"),
+              cls.poll.__func__.__qualname__)
+        check(f"{name} declares its order", "bl_order" in cls.__dict__, sorted(cls.__dict__))
 
 print("=== every panel draws, with Sollumz available ===")
 bpy.ops.mesh.primitive_cube_add(size=2)
@@ -201,8 +230,8 @@ try:
         draw_panel(cls, "no sollumz")
 
     from seto_tools.shared import ui_common
-    for tool in ("fake_ao", "fake_damage", "smooth_edge", "decal_tool",
-                 "surface_painter"):
+    for tool in ("fake_ao", "edge_dirt", "fake_damage", "smooth_edge",
+                 "decal_tool", "surface_painter"):
         module = __import__(f"seto_tools.{tool}.ui", fromlist=["ui"])
         check(f"{tool} uses the shared warning, not its own copy",
               "ui_common" in dir(module) and not hasattr(module, "_wrap"))

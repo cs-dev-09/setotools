@@ -7,6 +7,7 @@ and never touches your original mesh.
 | Tool | What it makes | Built from |
 | --- | --- | --- |
 | [Ambient Occlusion](seto_tools/fake_ao) | Ambient-occlusion corner decals | selected edges |
+| [Edge Dirt](seto_tools/edge_dirt) | The same strip, carrying a dirt texture you drop in a folder | selected edges |
 | [Edge Wear](seto_tools/fake_damage) | Chipped-edge damage decals | selected edges |
 | [Decal Tool](seto_tools/decal_tool) | Surface-aligned decal planes from your own decal library | selected faces |
 | [Smooth Edge](seto_tools/smooth_edge) | Normal-map strips that make a hard edge read as rounded | selected edges |
@@ -14,8 +15,8 @@ and never touches your original mesh.
 
 They all live in the **Seto Tools** N-panel tab, each as its own collapsible
 section, the way Sollumz Tools is laid out. The sections are grouped by what a
-tool works on — the three that build a strip along selected edges first, then
-the two that put texture on a surface — and inside a section, everything you
+tool works on — the ones that build a strip along selected edges first, then
+the ones that put texture on a surface — and inside a section, everything you
 set once and stop thinking about is a child panel, so the top of each one is
 the thing you actually came to press.
 
@@ -44,6 +45,7 @@ seto_tools/
         addon_prefs.py           the single AddonPreferences, reached from anywhere
     textures/        textures shipped with the add-on, per tool and category
     fake_ao/
+    edge_dirt/       Ambient Occlusion's strip with its own texture and material
     fake_damage/
     decal_tool/
     smooth_edge/
@@ -58,6 +60,12 @@ Each tool stays self-contained — its own settings, operators and panel, exactl
 as when they shipped separately. `shared/` holds only what genuinely belongs to
 all of them; `sollumz_integration.py` in particular used to be copy-pasted into
 each one.
+
+`edge_dirt/` is the deliberate exception: it builds the identical strip to
+Ambient Occlusion and differs only in the texture on it, so it imports
+`fake_ao/`'s geometry and live rebuild instead of carrying a second copy of
+them. It owns what actually differs — its settings, its material, its bundled
+texture and its panel.
 
 Inside a tool the split is always the same:
 
@@ -84,10 +92,10 @@ Surface Painter is the exception, because it is the one tool that is not
 - **Sorted output.** Inside a Sollumz Drawable, what a tool generates lands in
   the Drawable's own collection, beside the rest of the asset. Outside one, each
   tool files into its own collection, created on first use: `fake_ao`,
-  `fake_dmg`, `smooth_edge`, and `decals` with one child per decal-library
-  category.
-- **Bundled textures, where they are small.** Ambient Occlusion, Edge Wear and Smooth
-  Edge each ship their one texture in the tool's own `textures/` folder and
+  `edge_dirt`, `fake_dmg`, `smooth_edge`, and `decals` with one child per
+  decal-library category.
+- **Bundled textures, where they are small.** Ambient Occlusion, Edge Dirt, Edge
+  Wear and Smooth Edge each ship their one texture in the tool's own `textures/` folder and
   wire it in automatically — drop a file there and it is picked up. The Decal
   Tool and Surface Painter instead read a library folder you point them at:
   their textures are whole sheets, they would be most of the download, and

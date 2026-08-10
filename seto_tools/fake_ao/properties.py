@@ -20,8 +20,44 @@ def settings_annotations(update=None):
 
     `update` is the callback Blender fires when a value changes; only the
     per-object copy passes one.
+
+    Edge Dirt builds its own settings from this same set, so a property here
+    belongs to both tools. `bevel_target` is one Ambient Occlusion no longer
+    reads - its source round is a live modifier that always follows the strip
+    (see source_bevel.py) - but Edge Dirt still cuts its bevel in and needs the
+    choice, and strips saved before the change still carry a value for it.
     """
     return {
+        "source_mode": bpy.props.EnumProperty(
+            name="Build From",
+            description="Where the strip runs",
+            items=[
+                ('SELECTION', "Selected Edges",
+                 "Along the edges selected in Edit Mode - a corner where two "
+                 "walls meet, or any edge of the mesh"),
+                ('GROUND', "Ground Level",
+                 "Along the line where the object crosses a height you give, "
+                 "for something that continues past the surface it stands on. "
+                 "There is no edge there to select, so the contour is worked "
+                 "out by cutting a copy of the mesh - the object itself is not "
+                 "touched"),
+            ],
+            default='SELECTION',
+            update=update,
+        ),
+        "ground_level": bpy.props.FloatProperty(
+            name="Ground Level",
+            description=(
+                "World height the contour is taken at. This is world Z, not a "
+                "height above the object, so the floor's own level is the "
+                "number to use"
+            ),
+            default=0.0,
+            soft_min=-10.0,
+            soft_max=10.0,
+            subtype='DISTANCE',
+            update=update,
+        ),
         "width": bpy.props.FloatProperty(
             name="Width",
             description=(
@@ -60,6 +96,31 @@ def settings_annotations(update=None):
             max=1.0,
             update=update,
         ),
+        "alpha_bottom": bpy.props.FloatProperty(
+            name="Alpha Bottom",
+            description=(
+                "Scales the whole strip's alpha at the LOW end of the run, ramping back to "
+                "full at the high end. 1.0 leaves it alone. Where Alpha Center/Outer fade "
+                "across the shelf, this fades along it - so a corner can let go before it "
+                "reaches the floor"
+            ),
+            default=1.0,
+            min=0.0,
+            max=1.0,
+            update=update,
+        ),
+        "alpha_top": bpy.props.FloatProperty(
+            name="Alpha Top",
+            description=(
+                "Scales the whole strip's alpha at the HIGH end of the run, ramping back to "
+                "full at the low end. 1.0 leaves it alone. Bottom and top are the building's, "
+                "not the object's - a rotated source still fades toward the floor"
+            ),
+            default=1.0,
+            min=0.0,
+            max=1.0,
+            update=update,
+        ),
         "invert_fade": bpy.props.BoolProperty(
             name="Invert Fade",
             description="Swap which side (corner/shelf) receives Alpha Center vs Alpha Outer",
@@ -82,13 +143,39 @@ def settings_annotations(update=None):
             default=False,
             update=update,
         ),
+        # Two ticks, not one with a Target enum behind it. Rounding the wall
+        # and rounding the decal that runs along it are separate decisions -
+        # asking which "target" is a way of making the reader work out that
+        # there were two things all along.
+        "bevel_mesh": bpy.props.BoolProperty(
+            name="Bevel Mesh",
+            description=(
+                "Round off the SOURCE object's corner, with a Bevel modifier driven "
+                "by edge weight. Live: drag the width and the wall follows, untick it "
+                "and the modifier comes off, leaving the mesh exactly as it was found. "
+                "Off by default - creating a decal should not reshape the wall you ran "
+                "it along unless you ask it to"
+            ),
+            default=False,
+            update=update,
+        ),
+        "bevel_strip": bpy.props.BoolProperty(
+            name="Bevel Strip",
+            description=(
+                "Round off the GENERATED strip's own seam. With Bevel Mesh on as well "
+                "and the same width, the two rounds coincide and the decal sits ON the "
+                "rounded corner instead of across it"
+            ),
+            default=False,
+            update=update,
+        ),
+        # Kept so a strip made before the split still loads, and so anything
+        # that reads it (older scripts, an F9 redo) keeps working. Nothing
+        # draws it any more.
         "bevel_enabled": bpy.props.BoolProperty(
             name="Bevel",
-            description=(
-                "Round the corner off as well as decal it. A razor-sharp corner reads as "
-                "sharp under the best AO there is, so this is on by default"
-            ),
-            default=True,
+            description="Superseded by Bevel Mesh and Bevel Strip",
+            default=False,
             update=update,
         ),
         "bevel_target": bpy.props.EnumProperty(
@@ -97,11 +184,9 @@ def settings_annotations(update=None):
             items=[
                 ('BOTH', "Source + Strip",
                  "Round the source edge, and build the strip so it follows that round with "
-                 "the same Width and Segments. Both meshes end up the same shape, which is "
-                 "the only way the decal sits ON the rounded corner instead of across it"),
+                 "the same Width and Segments"),
                 ('STRIP', "Strip Only",
-                 "Round off the generated strip's own seam and leave the source mesh sharp. "
-                 "The round hides the sharp corner underneath it"),
+                 "Round off the generated strip's own seam and leave the source mesh sharp"),
                 ('SOURCE', "Source Only",
                  "Round the source edge, then run a flat strip along the chamfer's rim onto "
                  "each wall, leaving the round itself bare"),

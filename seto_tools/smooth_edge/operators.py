@@ -7,6 +7,7 @@ from . import geometry
 from . import object_settings
 from . import properties
 from . import textures
+from ..shared import run_fade
 from ..shared import sollumz_integration as szi
 from ..shared import strip_settings
 
@@ -103,11 +104,12 @@ class SETO_OT_create_smooth_edge(bpy.types.Operator):
     """Generate a separate Smooth Edge decal strip along the selected edges"""
     bl_idname = "seto.create_smooth_edge"
     bl_label = "Create Smooth Edge"
-    # REGISTER + UNDO is what puts this operator in Blender's "Adjust Last
-    # Operation" (F9) panel. Because the settings below are the operator's own
-    # properties, dragging a slider there makes Blender undo and re-run
-    # execute(), regenerating the strip live.
-    bl_options = {'REGISTER', 'UNDO'}
+    # No 'REGISTER': that is what puts an operator in the "Adjust Last
+    # Operation" panel in the bottom-left corner, and this tool does not want
+    # it. Everything it offered is on the finished strip itself, in Selected
+    # Strip, where it rebuilds live and stays reachable after the next click -
+    # the redo panel vanishes the moment you do anything else.
+    bl_options = {'UNDO'}
 
     # Same definitions as the Scene settings - see properties.settings_annotations().
     __annotations__ = properties.settings_annotations()
@@ -179,6 +181,9 @@ class SETO_OT_create_smooth_edge(bpy.types.Operator):
             alpha_outer=settings.alpha_outer,
             invert_fade=settings.invert_fade,
             flip_direction=settings.flip_direction,
+            alpha_bottom=settings.alpha_bottom,
+            alpha_top=settings.alpha_top,
+            up_axis=run_fade.local_up_axis(source_obj.matrix_world),
         )
         if not strip_data.faces:
             self.report({'WARNING'}, "Could not generate damage geometry from the selected edges (degenerate geometry?).")

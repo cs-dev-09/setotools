@@ -21,6 +21,30 @@ import os
 # .dds and a working .png side by side, the .dds is the one that ships.
 IMAGE_EXTENSIONS = (".dds", ".png", ".tga", ".jpg", ".jpeg")
 
+# Scanned folders, keyed by (directory, preferred_stem). A panel that names the
+# texture it found - Edge Dirt's does - asks for it on **every redraw**, which
+# without this is a directory listing per mouse move.
+#
+# Keyed on the folder's modification time as well, so dropping a file in is
+# picked up on the next redraw without anything to press: a directory's mtime
+# changes when an entry is added or removed, which is exactly the event that
+# invalidates this. Replacing a file in place with one of the same name does
+# not, but nor does that change the answer - the name is what is read.
+_cache = {}
+
+
+def forget():
+    """Drop every cached scan. For tests, and for a Refresh that has to be
+    certain rather than merely current."""
+    _cache.clear()
+
+
+def _folder_stamp(directory):
+    try:
+        return os.stat(directory).st_mtime_ns
+    except OSError:
+        return None
+
 
 def list_textures(directory, preferred_stem=None):
     """Every usable image in `directory`, best candidate first.
@@ -29,6 +53,18 @@ def list_textures(directory, preferred_stem=None):
     everything else, so the intended texture can be pinned without having to
     remove the others from the folder.
     """
+    key = (directory, preferred_stem)
+    stamp = _folder_stamp(directory)
+    cached = _cache.get(key)
+    if cached is not None and cached[0] == stamp:
+        return list(cached[1])
+
+    found = _scan(directory, preferred_stem)
+    _cache[key] = (stamp, found)
+    return list(found)
+
+
+def _scan(directory, preferred_stem):
     try:
         names = os.listdir(directory)
     except OSError:

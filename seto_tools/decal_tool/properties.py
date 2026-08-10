@@ -8,6 +8,62 @@ from . import preferences
 from ..shared import sollumz_integration as szi
 
 
+def rebuild_browser(settings):
+    """Refill the texture browser from the selected category.
+
+    The same list Surface Painter uses, for the same reason: a dropdown can
+    only show a thumbnail on the row you happen to be hovering, and choosing a
+    decal is choosing a picture. A CollectionProperty rather than a live read
+    of the library cache, because template_list needs a real collection to
+    iterate - and a collection is saved in the .blend, so the list is still
+    filled when the file is reopened.
+
+    **Never called from draw().** Adding to a collection during a redraw is
+    what causes Blender's "modifying data in draw" crashes. The entry points
+    are the category's update callback, the library path's, and Refresh.
+    """
+    settings.browser_items.clear()
+    for stem, path in library.get_textures(settings.category):
+        entry = settings.browser_items.add()
+        entry.name = stem
+        entry.path = path
+        entry.tooltip = path
+
+    # Keep the highlighted row on the texture that is actually selected, so
+    # the list opens where it was left.
+    for index, entry in enumerate(settings.browser_items):
+        if entry.name == settings.texture:
+            settings["browser_index"] = index
+            break
+    else:
+        settings["browser_index"] = 0
+
+
+def _on_category_changed(self, context):
+    rebuild_browser(self)
+
+
+def _on_browser_index_changed(self, context):
+    """Clicking a row selects that texture."""
+    index = self.browser_index
+    if 0 <= index < len(self.browser_items):
+        try:
+            self.texture = self.browser_items[index].name
+        except TypeError:
+            # The enum no longer has it (library rescanned under us).
+            pass
+
+
+class SETO_PG_decal_browser_item(bpy.types.PropertyGroup):
+    """One texture in the browser list."""
+
+    path: bpy.props.StringProperty(default="")
+
+    # Shown on hover (template_list's item_dyntip_propname). A tooltip can
+    # carry text but never an image, so this is the file itself.
+    tooltip: bpy.props.StringProperty(default="")
+
+
 class SETO_PG_decal_settings(bpy.types.PropertyGroup):
     # The library folder itself is NOT here - it lives in the add-on preferences
     # so it is remembered across files and restarts. See preferences.py.
@@ -15,11 +71,26 @@ class SETO_PG_decal_settings(bpy.types.PropertyGroup):
         name="Category",
         description="Decal category - one subfolder of the decal library",
         items=library.category_items,
+        update=_on_category_changed,
     )
     texture: bpy.props.EnumProperty(
         name="Texture",
         description="Decal texture from the selected category",
         items=library.texture_items,
+    )
+
+    browser_items: bpy.props.CollectionProperty(type=SETO_PG_decal_browser_item)
+
+    browser_index: bpy.props.IntProperty(
+        name="Texture",
+        default=0,
+        update=_on_browser_index_changed,
+    )
+
+    browser_rows: bpy.props.IntProperty(
+        name="Rows",
+        description="How many textures the browser shows at once",
+        default=8, min=3, max=30,
     )
 
     merge_coplanar: bpy.props.BoolProperty(
@@ -137,11 +208,6 @@ class SETO_PG_decal_settings(bpy.types.PropertyGroup):
         default=False,
     )
 
-    # There is deliberately no alpha here. Decals are generated fully opaque
-    # (Color 1 alpha 1.0) and the vertex colour alpha is then dialled in live on
-    # the finished decal, in the Selected Decal section - you can see what you
-    # are doing there, which you cannot before the decal exists.
-
     material_mode: bpy.props.EnumProperty(
         name="Material",
         description=f"How to obtain the {szi.DECAL_SHADER_FILENAME} Sollumz material",
@@ -174,7 +240,8 @@ def _on_blend_file_loaded(_dummy):
         library.scan_safe(path)
 
 
-_classes = (SETO_PG_decal_settings,)
+# The browser item registers first: SETO_PG_decal_settings points at it.
+_classes = (SETO_PG_decal_browser_item, SETO_PG_decal_settings)
 
 
 def register():

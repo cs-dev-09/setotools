@@ -39,7 +39,7 @@ plain = new_cube("plain", (0,0,0))
 select_edge0(plain); run(bpy.ops.seto.create_fake_damage)
 strip = bpy.context.active_object
 check("no Drawable -> strip goes to the 'fake_dmg' collection",
-      "fake_dmg" in [c.name for c in strip.users_collection],
+      "edge_wear" in [c.name for c in strip.users_collection],
       str([c.name for c in strip.users_collection]))
 
 # UV values

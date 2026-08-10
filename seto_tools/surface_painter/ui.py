@@ -23,6 +23,7 @@ import bpy
 from ..shared import addon_prefs
 from ..shared import groups
 from ..shared import icons
+from ..shared import panel_layout as pl
 from ..shared import ui_common
 from . import brush
 from . import library
@@ -71,10 +72,14 @@ class SETO_UL_surface_textures(bpy.types.UIList):
                   else 'ERROR')
 
 
-class _SurfaceChildPanel:
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'UI'
-    bl_category = "Seto Tools"
+class _SurfaceChildPanel(pl.ToolChildPanel):
+    """The sub-panels under Surface Painter.
+
+    Everything but the parent id comes from the shared base - including the
+    poll, which these did not have: a child panel is drawn whether or not its
+    parent drew anything, so with no Sollumz all five came up fully populated
+    underneath a parent that had just said the tool could not run.
+    """
     bl_parent_id = "SETO_PT_surface_painter_panel"
 
 
@@ -164,8 +169,16 @@ class SETO_PT_surface_painter_panel(bpy.types.Panel):
             box.scale_y = 0.8
             col = box.column(align=True)
             col.label(text="No textures yet.", icon='INFO')
-            col.label(text="Set your own folder under")
-            col.label(text="Library Folder below.")
+            if settings.custom_library_path:
+                # A folder IS set and nothing came back, which is a different
+                # problem from not having set one: say what was read and what
+                # counts as a texture there.
+                col.label(text="That folder has no images")
+                col.label(text=f"Seto Tools can read ({', '.join(ext.lstrip('.') for ext in library.IMAGE_EXTENSIONS)}).")
+                col.label(text="Loose files and subfolders both work.")
+            else:
+                col.label(text="Set your own folder under")
+                col.label(text="Library Folder below.")
             return
 
         # Only ever holds the selected category, so picking Graffiti shows
@@ -238,7 +251,11 @@ class SETO_PT_surface_painter_panel(bpy.types.Panel):
 class SETO_PT_surface_brush_panel(_SurfaceChildPanel, bpy.types.Panel):
     bl_label = "Brush"
     bl_idname = "SETO_PT_surface_brush_panel"
-    bl_order = 0
+    bl_order = pl.FIRST_CHILD
+    # Open, unlike the other children: this is the one you reach for mid-stroke,
+    # and a brush size you have to expand a panel to reach is a brush size you
+    # end up setting from the toolbar instead.
+    bl_options = set()
 
     def draw(self, context):
         settings = context.scene.seto_surface
@@ -258,7 +275,10 @@ class SETO_PT_surface_place_panel(_LayerChildPanel, bpy.types.Panel):
 
     bl_label = "Placement"
     bl_idname = "SETO_PT_surface_place_panel"
-    bl_order = 1
+    bl_order = pl.FIRST_CHILD + 1
+    # Open for the same reason Brush is: placing the texture is part of
+    # painting it, not something set once beforehand.
+    bl_options = set()
 
     def draw(self, context):
         layout = self.layout
@@ -299,8 +319,7 @@ class SETO_PT_surface_place_panel(_LayerChildPanel, bpy.types.Panel):
 class SETO_PT_surface_normal_panel(_LayerChildPanel, bpy.types.Panel):
     bl_label = "Normal Map"
     bl_idname = "SETO_PT_surface_normal_panel"
-    bl_options = {'DEFAULT_CLOSED'}
-    bl_order = 2
+    bl_order = pl.FIRST_CHILD + 2
 
     def draw(self, context):
         layout = self.layout
@@ -322,8 +341,7 @@ class SETO_PT_surface_normal_panel(_LayerChildPanel, bpy.types.Panel):
 class SETO_PT_surface_shell_panel(_SurfaceChildPanel, bpy.types.Panel):
     bl_label = "Paint Mesh"
     bl_idname = "SETO_PT_surface_shell_panel"
-    bl_options = {'DEFAULT_CLOSED'}
-    bl_order = 3
+    bl_order = pl.FIRST_CHILD + 3
 
     def draw(self, context):
         layout = self.layout
@@ -354,8 +372,7 @@ class SETO_PT_surface_shell_panel(_SurfaceChildPanel, bpy.types.Panel):
 class SETO_PT_surface_library_panel(_SurfaceChildPanel, bpy.types.Panel):
     bl_label = "Library Folder"
     bl_idname = "SETO_PT_surface_library_panel"
-    bl_options = {'DEFAULT_CLOSED'}
-    bl_order = 4
+    bl_order = pl.MATERIAL_CHILD
 
     def draw(self, context):
         layout = self.layout

@@ -51,6 +51,13 @@ IMAGE_EXTENSIONS = (".png", ".jpg", ".jpeg", ".tga", ".dds")
 NO_CATEGORY = "NONE"
 NO_TEXTURE = "NONE"
 
+# Images sitting directly in the library folder, with no subfolder around them.
+# A tester pointed Custom Library at a folder of PNGs and got "No textures
+# yet": categories were subfolders and nothing else, so a flat folder - the
+# obvious thing to try - looked like an empty library. The Decal Tool had
+# always accepted one; this is the same synthetic category, named the same way.
+ROOT_CATEGORY = "(root)"
+
 # The folder shipped inside the add-on: seto_tools/textures/surface_painter/
 _ADDON_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BUNDLED_ROOT = os.path.join(_ADDON_ROOT, "textures", "surface_painter")
@@ -107,6 +114,10 @@ def scan(custom_path=""):
     categories = {}
 
     if os.path.isdir(root):
+        loose = _scan_directory(root)
+        if loose:
+            categories[ROOT_CATEGORY] = loose
+
         try:
             with os.scandir(root) as entries:
                 subdirs = sorted(
@@ -148,11 +159,17 @@ def get_categories():
     """
     found = _cache["categories"].keys()
     known = [name for name in CATEGORY_ORDER if name in found]
-    extra = sorted((f for f in found if f not in known), key=str.lower)
-    return known + extra
+    extra = sorted((f for f in found if f not in known and f != ROOT_CATEGORY),
+                   key=str.lower)
+    # Loose files first: on a flat folder it is the only category there is, and
+    # having to find "(root)" at the bottom of a list is not an introduction.
+    loose = [ROOT_CATEGORY] if ROOT_CATEGORY in found else []
+    return loose + known + extra
 
 
 def category_label(folder_name):
+    if folder_name == ROOT_CATEGORY:
+        return "Library Folder"
     label = CATEGORY_LABELS.get(folder_name.lower())
     return label if label else folder_name.replace("_", " ").title()
 

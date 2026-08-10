@@ -69,6 +69,23 @@ def _oriented_quad_indices(p0_i0, p1_i1, p2_i2, p3_i3, desired_normal):
     return (i0, i1, i2, i3)
 
 
+def local_up_axis(matrix_world):
+    """World "up", expressed in the object's own local space.
+
+    The strip is built in the source's local space, but Alpha Bottom/Top mean
+    the bottom and top of the building, not of the object's axes - a wall whose
+    object happens to be rotated still has to fade toward the actual floor.
+
+    A point's world Z is `row 2 of matrix_world` dotted with the local point
+    (plus the row's translation, which drops out of any comparison), so that
+    row IS the direction local positions grow world-upward along. Taken
+    directly rather than by inverting the matrix, which gets non-uniform scale
+    wrong.
+    """
+    row = matrix_world[2]
+    return Vector((row[0], row[1], row[2]))
+
+
 def auto_merge_distance(width, surface_offset):
     """How close two vertices have to be before they are welded together.
 
@@ -145,7 +162,8 @@ def gather_selected_edge_segments(bm, exclude_faces=None):
 
 
 def build_strip_mesh_data(segments, width, surface_offset, alpha_center, alpha_outer,
-                           invert_fade, flip_direction):
+                           invert_fade, flip_direction,
+                           alpha_bottom=1.0, alpha_top=1.0, up_axis=None):
     """Build strip geometry for each edge segment independently (no welding
     between segments - see Version 0.1 limitations).
 
@@ -161,9 +179,18 @@ def build_strip_mesh_data(segments, width, surface_offset, alpha_center, alpha_o
         INNER (at the corner, offset off the wall by `surface_offset`
                to avoid z-fighting) ---- OUTER (extends onto that wall's
                                                  surface by `width`)
+
+    `alpha_center`/`alpha_outer` fade ACROSS that shelf. `alpha_bottom` and
+    `alpha_top` fade ALONG the run instead, so a corner can be told to let go
+    before it reaches the floor or the ceiling - see _fade_along_run.
     """
     data = StripMeshData()
     wings = []
+    # Which end of which selected edge each generated vertex belongs to. Not
+    # the vertex's own position: Alpha Bottom/Top fade along the RUN, and a
+    # vertex out on the shelf is at a different height from the run point it
+    # came from whenever the run is not vertical.
+    run_points = []
 
     inner_alpha = alpha_outer if invert_fade else alpha_center
     outer_alpha = alpha_center if invert_fade else alpha_outer
@@ -211,6 +238,8 @@ def build_strip_mesh_data(segments, width, surface_offset, alpha_center, alpha_o
                 (0.0, 0.0), (edge_len, 0.0), (edge_len, width), (0.0, width),
             ])
             data.vertex_alpha.extend([inner_alpha, inner_alpha, outer_alpha, outer_alpha])
+            # Index layout is [inner0, inner1, outer1, outer0] - v0, v1, v1, v0.
+            run_points.extend([seg.v0, seg.v1, seg.v1, seg.v0])
 
             face = _oriented_quad_indices(
                 (inner0, base_idx + 0), (inner1, base_idx + 1),
@@ -230,8 +259,60 @@ def build_strip_mesh_data(segments, width, surface_offset, alpha_center, alpha_o
                                outer_index=base_idx + 2))
 
     _miter_coplanar_wings(data, wings, width, surface_offset)
+    _fade_along_run(data, run_points, up_axis, alpha_bottom, alpha_top)
 
     return data
+
+
+def _fade_along_run(data, run_points, up_axis, alpha_bottom, alpha_top):
+    """Scale each vertex's alpha by where it sits between the bottom and the
+    top of the run.
+
+    The other two alpha settings fade across the shelf, from the corner out
+    onto the wall. This one fades along it, which is the other thing a corner
+    needs: a wall-to-wall corner that runs floor to ceiling usually should not
+    arrive at either at full strength.
+
+    The ramp is linear from one end of the run to the other, and multiplies
+    whatever the across-fade already produced - so 1.0 at both ends leaves the
+    strip exactly as it was.
+
+    Linear because that is what the geometry can carry: a run built from ONE
+    selected edge has two vertices along its length, and two vertices cannot
+    describe a curve. Subdividing the source edge gives more vertices along the
+    run and a correspondingly tighter falloff, the same as it does for
+    everything else in this tool.
+
+    `up_axis` is world "up" expressed in the source's local space - the strip
+    is built in local space, but bottom and top mean bottom and top of the
+    building, not of the object's own axes.
+
+    Each vertex is placed by the SELECTED EDGE END it came from rather than by
+    where it itself ended up. The two differ the moment the run is not vertical:
+    a wall-to-floor edge is all one height, but its strip climbs the wall, so
+    measuring the vertices would fade the top of the shelf and call it the top
+    of the run. Measured properly, that run has no bottom or top to fade
+    between and is left alone.
+    """
+    if up_axis is None or (alpha_bottom >= 1.0 and alpha_top >= 1.0):
+        return
+    if up_axis.length < 1e-9:
+        return
+
+    up = up_axis.normalized()
+    heights = [point.dot(up) for point in run_points]
+    if not heights:
+        return
+    low, high = min(heights), max(heights)
+    span = high - low
+    if span < 1e-6:
+        return
+
+    for index, height in enumerate(heights):
+        from_bottom = (height - low) / span
+        factor = (alpha_bottom + (1.0 - alpha_bottom) * from_bottom) * \
+                 (alpha_top + (1.0 - alpha_top) * (1.0 - from_bottom))
+        data.vertex_alpha[index] *= factor
 
 
 def _miter_coplanar_wings(data, wings, width, surface_offset):
@@ -303,8 +384,77 @@ def _runs_along_any(edge, directions):
     return any(abs(vec.dot(d)) >= _ALONG_TOLERANCE for d in directions)
 
 
+# How far the plane is lifted when nothing crosses it at the height asked for.
+# An object RESTING on the floor is coplanar with it, and coplanar surfaces do
+# not intersect - so the commonest case of all ("my counter stands on this
+# floor") finds nothing at the exact height. Two millimetres up, the floor-level
+# face is below the plane and the contour is the object's footprint.
+CONTACT_TOLERANCE = 0.002
+
+
+def gather_ground_edge_segments(bm, plane_co, plane_no, tolerance=1e-4):
+    """Segments along where the mesh crosses a plane, as if it had been cut there.
+
+    For an object that continues past the surface it stands on - sunk into the
+    ground, or into a kerb - the line you can see is not an edge of the mesh,
+    it is an intersection, and there is nothing to select. A tester asked for
+    exactly this: "can I create a decal for an object that extends into the
+    ground?"
+
+    The cut is made on a **copy** of the BMesh, so the source is not touched:
+    everything below the plane is discarded, which leaves the contour as
+    boundary edges with a single face above them - and a boundary edge is what
+    produces one wing going up, rather than a band spreading equally either
+    side of the line with half of it buried.
+
+    `plane_co`/`plane_no` are in the source's local space; the caller converts,
+    since only it knows the object's matrix.
+    """
+    work = bm.copy()
+    try:
+        bmesh.ops.bisect_plane(
+            work,
+            geom=list(work.verts) + list(work.edges) + list(work.faces),
+            dist=tolerance,
+            plane_co=plane_co,
+            plane_no=plane_no,
+            clear_inner=True,
+        )
+        work.edges.ensure_lookup_table()
+
+        segments = []
+        for edge in work.edges:
+            # One face: the material above the cut. Anything else is somewhere
+            # the mesh only touched the plane, not somewhere it crossed it.
+            if len(edge.link_faces) != 1:
+                continue
+            if any(abs((vert.co - plane_co).dot(plane_no)) > tolerance * 10
+                   for vert in edge.verts):
+                continue
+            face = edge.link_faces[0]
+            segments.append(EdgeSegment(
+                v0=edge.verts[0].co.copy(),
+                v1=edge.verts[1].co.copy(),
+                normals=[face.normal.copy()],
+                face_centers=[face.calc_center_median()],
+            ))
+        return segments
+    finally:
+        work.free()
+
+
 def bevel_source_edges(bm, width, segments, profile):
     """Chamfer the selected edges of the SOURCE mesh, in place.
+
+    Ambient Occlusion no longer uses this - it rounds the source with a Bevel
+    modifier instead, which is live and reversible (see source_bevel.py). Kept
+    because Edge Dirt still cuts its bevel in this way.
+    """
+    return _bevel_source_edges_in_place(bm, width, segments, profile)
+
+
+def _bevel_source_edges_in_place(bm, width, segments, profile):
+    """The destructive bevel itself.
 
     This is the one thing in the tool that modifies the object you started
     from, which is why it is opt-in. It is the manual workflow it replaces:

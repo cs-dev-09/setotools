@@ -1,13 +1,13 @@
 """The two sections the "Seto Tools" tab is split into.
 
-Five tools side by side in one tab is a wall of collapsible headers with no
+Six tools side by side in one tab is a wall of collapsible headers with no
 hint of which one to reach for. They divide cleanly by what they actually
 produce, so the tab now opens on two sections and the tools nest inside them:
 
     Geometry   builds new mesh along the selected edges
       Edge Wear, Smooth Edge
     Surface    puts texture on a surface that already exists
-      Ambient Occlusion, Decal Tool, Surface Painter
+      Ambient Occlusion, Decal Tool, Surface Painter, Edge Dirt
 
 These two panels are the only top-level panels in the add-on. They own no
 settings and draw nothing - a group header is all they are - but they have to

@@ -29,6 +29,7 @@ import bpy
 from mathutils import Matrix, Vector
 
 from . import geometry
+from ..shared import run_fade
 from . import properties
 from ..shared import sollumz_integration as szi
 
@@ -189,6 +190,9 @@ def rebuild(obj):
             alpha_outer=data.alpha_outer,
             invert_fade=data.invert_fade,
             flip_direction=data.flip_direction,
+            alpha_bottom=data.alpha_bottom,
+            alpha_top=data.alpha_top,
+            up_axis=run_fade.local_up_axis(source.matrix_world),
         )
         if not strip_data.faces:
             return "Current settings produce no geometry."

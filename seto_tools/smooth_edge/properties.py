@@ -24,7 +24,7 @@ def settings_annotations(update=None):
     per-object copy passes its rebuild function here, the other two leave it
     None so nothing happens until the operator runs.
     """
-    return {
+    annotations = {
         "width": bpy.props.FloatProperty(
             name="Width",
             description=(
@@ -116,6 +116,15 @@ def settings_annotations(update=None):
             update=update,
         ),
     }
+
+    # Alpha Bottom/Top belong to the Geometry section, but the operator and the
+    # finished strip need the FULL set of settings - so their definitions are
+    # pulled in from there rather than written out a third time and left to
+    # drift.
+    shared = strip_settings.annotations(update)
+    for name in ("alpha_bottom", "alpha_top"):
+        annotations[name] = shared[name]
+    return annotations
 
 
 # Every setting name, in panel order. Used to copy values between the Scene

@@ -2,6 +2,177 @@
 
 All notable changes to Seto Tools.
 
+## 1.4.0
+
+### Changed — one layout for the whole tab
+
+Six tools grew their panels separately and ended up saying the same things six
+different ways: three spellings of the child-panel boilerplate, five copies of
+the "Selected X" header, Create buttons at three sizes, and — on the tools that
+had not been split up — a dozen settings run together in one unlabelled column.
+
+They now share one vocabulary (`shared/panel_layout.py`):
+
+- **Related rows sit under a heading.** Every finished object's panel is now
+  Shape / Fade / Bevel — and, where the tool has them, Texture Placement,
+  Corner Alpha, Border Alpha — instead of one column you had to read to
+  navigate.
+- **The Create button is the same button everywhere**, and taller than a
+  normal row. Child panels are drawn after their parent, so it stays at the top
+  of the tool's block however much is expanded below it.
+- **Sub-panels collapse, order and hide themselves the same way.** The order is
+  declared rather than left to whatever registration happened to run first, and
+  the "Selected X" panel is always last and always open.
+
+**Fixed on the way through:** Surface Painter's five sub-panels drew regardless
+of Sollumz. A child panel is a panel in its own right — Blender draws it
+whether or not its parent drew anything — so on a machine without Sollumz they
+came up fully populated underneath a parent that had just said the tool could
+not run. The shared base polls for Sollumz, so this cannot come back one tool
+at a time.
+
+### Fixed — Edge Dirt's panel listed its textures folder on every redraw
+
+`os.listdir` per redraw, which is per mouse move over the panel. Bundled-texture
+scans are now cached against the folder's modification time, so dropping a file
+in is still picked up with nothing to press.
+
+### Changed — Create no longer opens the redo panel
+
+The "Adjust Last Operation" box in the bottom-left corner is gone from every
+Create button. It duplicated the panel you had just used, and it disappears the
+moment you click anything else — while the same settings live on the finished
+strip, in **Selected Strip**, where they rebuild it live and stay there.
+
+### Changed — generated objects are named after the tool
+
+`fake_ao_003` and `fake_dmg_003` named tools that no longer exist anywhere in
+the UI. New strips are **`ambient_occlusion_003`** and **`edge_wear_003`**, and
+their collections match. Existing files keep the collection they already have
+rather than growing a second one beside it, and numbering continues past
+old-named strips instead of restarting at 001 on top of them.
+
+### Added — Alpha Bottom and Alpha Top on Edge Wear and Smooth Edge
+
+They were Ambient Occlusion's only. Both Geometry tools have them now, through
+the section that owns their shared settings, and on finished strips in
+**Selected Strip**. Alpha Center/Outer fade a strip *across*; these fade it
+*along* the run, so an edge can let go before it reaches the floor. 1.0 at both
+ends — the default — leaves the strip exactly as it was.
+
+Bottom and top are the building's, read out of the source's world matrix, so a
+wall whose object happens to be rotated still fades toward the real floor.
+
+### Added — Edge Dirt
+
+A sixth tool, at the bottom of the **Surface** section. It is Ambient Occlusion
+with a different texture on it: the same strip, the same Width, alphas, Bevel
+and Ground Level, the same live rebuild on the finished strip — but it takes
+its image from `seto_tools/edge_dirt/textures/` and puts it on a
+`seto_edgedirt` material of its own.
+
+**The folder is the setting.** Drop a dirt texture in and every strip the tool
+builds picks it up in `DiffuseSampler`, as sRGB and not embedded; the panel
+names the file it found, and says so plainly when the folder is empty. A file
+called `edge_dirt.*` wins if you want to pin one while keeping others around.
+
+A strip built **before** the texture was dropped in leaves an untextured
+material behind, and reuse would hand that same empty material to every strip
+after it — the tool looking broken however many times the texture was added.
+So reuse now fills a DiffuseSampler that is empty. One that has an image in it
+is still never touched.
+
+The two tools keep their own settings and their own materials, so a dirt strip
+and an AO strip can sit on the same wall without either one moving or
+retexturing the other. What they share is the code: the geometry and the
+rebuild live in `fake_ao/` and are imported, not copied, so a fix to one corner
+case is a fix in both.
+
+### Changed — Ambient Occlusion's Bevel is live, and rounds both meshes
+
+It used to be set before Create and then cut into the source mesh with
+`bmesh.ops.bevel`. That worked exactly once: the edge it rounded no longer
+existed afterwards, so the width could never be changed and the round could
+never be taken back.
+
+**The Bevel block has moved off the create panel and onto the finished strip**,
+where one set of controls drives the strip's own seam *and* the source's corner,
+live. Drag Width and both follow. Switch it off and the round comes off both,
+leaving the source exactly as it was found. There is no Target to pick any more
+— rounding one mesh and not the other was never what anyone wanted.
+
+The source's round is a **Bevel modifier** (`Seto AO Bevel`) limited by edge
+weight, with the weight set on the strip's own edges and nowhere else. The mesh
+itself is not edited. Sollumz exports the evaluated object, so the round is
+baked into the YDR exactly as if it had been applied by hand — checked against a
+real evaluated mesh, not assumed.
+
+Two things fall out of the mesh no longer being cut. A strip can go on pointing
+at its corner by **vertex index**, so the frozen-geometry fallback that a
+destructive bevel forced is down to Ground Level strips alone. And **one
+modifier serves every strip on an object** at each strip's own width: weight
+limiting scales the modifier's width per edge, so the modifier carries the
+widest strip's width and the rest are weighted down to their share. Segments and
+Profile Shape have no per-edge equivalent and are genuinely shared.
+
+Edge Dirt is unchanged — it still cuts its bevel in, and keeps the Target
+choice.
+
+### Added — Ambient Occlusion fades along the run, not just across it
+
+**Alpha Bottom** and **Alpha Top**, next to the two alphas that were already
+there. Those fade the strip *across* the shelf, corner out onto the wall; these
+fade it *along* the run, so a corner does not have to arrive at the floor or
+the ceiling at full strength. 1.0 at both ends — the default — leaves the strip
+exactly as it was, and anything lower scales what the across-fade produced,
+ramping back to full at the other end.
+
+Bottom and top are the **building's**, read out of the source's world matrix,
+so a wall whose object happens to be rotated still fades toward the real floor.
+
+Each vertex is placed by the selected-edge end it came from rather than by
+where it itself ended up, which is the part that is easy to get wrong: a
+wall-to-floor edge is all one height, but its strip climbs the wall, so
+measuring the vertices would fade the top of the *shelf* and call it the top of
+the run. Measured properly, a run with no height has no bottom or top to fade
+between and is left alone.
+
+The ramp is linear, because that is what the geometry can carry — a run built
+from one selected edge has two vertices along its length. Subdivide the source
+edge for a tighter falloff, the same as for everything else in this tool.
+
+### Added — Ambient Occlusion along a ground line, with no edge to select
+
+From a tester, with a screenshot of a curved desk sunk into the floor: *"can I
+create a decal for an object that extends into the ground?"* There was no edge
+there to select — the line you can see is where the mesh crosses the floor, not
+geometry.
+
+**Build From: Ground Level** takes a world height and builds along the contour
+at that height. A copy of the mesh is cut there and everything below is
+discarded, which is what makes the strip run **upward only**: cutting the wall
+in place would leave an edge with a face either side and a strip spread equally
+both ways, half of it buried. **The object itself is never touched.**
+
+It needs no selection and no Edit Mode — pick the object and press Create.
+Bevel is not available in this mode: it rounds off selected edges, and there
+are none.
+
+### Fixed — Surface Painter ignored a folder of loose images
+
+A tester pointed **Custom Library** at a folder of PNGs and got *"No textures
+yet"*. Categories were subfolders and nothing else, so a flat folder — the
+obvious thing to try — read as an empty library. Loose images now form their
+own category, exactly as they always have in the Decal Tool, and the message
+when a folder really does come back empty now says which file types are read.
+
+### Changed — the Decal Tool gets Surface Painter's texture browser
+
+The same list of names with the pick previewed underneath, in place of a
+dropdown. A dropdown can only show a thumbnail for the row the pointer happens
+to be over, and choosing a decal is choosing a picture. The texture enum is
+still there under the preview, so nothing that scripted against it breaks.
+
 ## 1.3.1
 
 ### Fixed — Sollumz Development was reported as not installed

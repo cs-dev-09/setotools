@@ -7,16 +7,28 @@ from . import geometry
 from . import object_settings
 from . import properties
 from . import textures
+from ..shared import run_fade
 from ..shared import sollumz_integration as szi
 from ..shared import strip_settings
 
-_NAME_PATTERN = re.compile(r"^fake_dmg_(\d{3,})$")
+# What a generated strip is called. The tool is Edge Wear, so that is what its
+# output says - "fake_dmg_003" in the outliner named a tool that no longer
+# exists anywhere in the UI.
+#
+# The old name is still *recognised*: numbering continues past strips made
+# before the rename instead of restarting at 001 and colliding with them.
+NAME_PREFIX = "edge_wear"
+_NAME_PATTERN = re.compile(r"^(?:edge_wear|fake_dmg)_(\d{3,})$")
 
 # Span of the UV island's longer axis once fitted into the 0..1 square.
 _UV_SIZE = object_settings.UV_SIZE
 
 # Every generated strip is collected here, created on first use.
-COLLECTION_NAME = "fake_dmg"
+COLLECTION_NAME = NAME_PREFIX
+
+# The name this tool used before the rename. A file that already has one keeps
+# using it rather than growing a second collection alongside it.
+LEGACY_COLLECTION_NAME = "fake_dmg"
 
 # Blender's automatic ".001" suffix, so a collection it had to rename is still
 # recognised as ours on the next run instead of spawning ".002", ".003", ...
@@ -35,9 +47,10 @@ def _get_or_create_collection(context, name, parent=None):
     somewhere else in the scene.
     """
     parent = parent or context.scene.collection
+    accepted = (name, LEGACY_COLLECTION_NAME) if name == COLLECTION_NAME else (name,)
 
     for child in parent.children:
-        if _base_name(child.name) == name:
+        if _base_name(child.name) in accepted:
             return child
 
     existing = bpy.data.collections.get(name)
@@ -75,7 +88,7 @@ def _next_fake_damage_name():
         match = _NAME_PATTERN.match(name)
         if match:
             max_n = max(max_n, int(match.group(1)))
-    return f"fake_dmg_{max_n + 1:03d}"
+    return f"{NAME_PREFIX}_{max_n + 1:03d}"
 
 
 def _parent_keep_transform(child, parent):
@@ -103,11 +116,12 @@ class SETO_OT_create_fake_damage(bpy.types.Operator):
     """Generate a separate Edge Wear decal strip along the selected edges"""
     bl_idname = "seto.create_fake_damage"
     bl_label = "Create Edge Wear"
-    # REGISTER + UNDO is what puts this operator in Blender's "Adjust Last
-    # Operation" (F9) panel. Because the settings below are the operator's own
-    # properties, dragging a slider there makes Blender undo and re-run
-    # execute(), regenerating the strip live.
-    bl_options = {'REGISTER', 'UNDO'}
+    # No 'REGISTER': that is what puts an operator in the "Adjust Last
+    # Operation" panel in the bottom-left corner, and this tool does not want
+    # it. Everything it offered is on the finished strip itself, in Selected
+    # Strip, where it rebuilds live and stays reachable after the next click -
+    # the redo panel vanishes the moment you do anything else.
+    bl_options = {'UNDO'}
 
     # Same definitions as the Scene settings - see properties.settings_annotations().
     __annotations__ = properties.settings_annotations()
@@ -179,6 +193,9 @@ class SETO_OT_create_fake_damage(bpy.types.Operator):
             alpha_outer=settings.alpha_outer,
             invert_fade=settings.invert_fade,
             flip_direction=settings.flip_direction,
+            alpha_bottom=settings.alpha_bottom,
+            alpha_top=settings.alpha_top,
+            up_axis=run_fade.local_up_axis(source_obj.matrix_world),
         )
         if not strip_data.faces:
             self.report({'WARNING'}, "Could not generate damage geometry from the selected edges (degenerate geometry?).")

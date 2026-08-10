@@ -93,7 +93,24 @@ from a perfect axis-aligned grid.
   Width; see below.
 - **Surface Offset** — lift off the wall, avoids z-fighting. Capped at 0.05 m;
   past that the strip is not on the wall any more.
-- **Alpha Center / Alpha Outer** — Color 1 alpha fade, corner → edge.
+- **Alpha Center / Alpha Outer** — Color 1 alpha fade *across* the shelf,
+  corner → edge.
+- **Alpha Bottom / Alpha Top** — Color 1 alpha fade *along* the run, so a
+  corner does not have to arrive at the floor or the ceiling at full strength.
+  1.0 at both ends leaves the strip exactly as it was; anything lower scales
+  what the across-fade produced, ramping back to full at the other end.
+
+  Bottom and top are the **building's**, read out of the source's world matrix,
+  so a wall whose object happens to be rotated still fades toward the real
+  floor. Each vertex is placed by the selected-edge end it came from rather
+  than by where it itself ended up — a wall-to-floor edge is all one height but
+  its strip climbs the wall, and measuring the vertices would fade the top of
+  the shelf and call it the top of the run. Such a run has no bottom or top to
+  fade between and is left alone.
+
+  The ramp is linear, because that is what the geometry can carry: a run built
+  from one selected edge has two vertices along its length, and two vertices
+  cannot describe a curve. Subdivide the source edge for a tighter falloff.
 - **Invert Fade** — swap which side gets which alpha.
 - **Flip Direction** — flips a single-wall wing to the other side.
 - **Material** — reuse an existing `decal.sps` material, or always create new.
@@ -102,54 +119,63 @@ All of these stay editable on the created strip, not just at creation time.
 
 ## Bevel
 
-A sharp corner still reads as sharp under the best AO there is, so the **Bevel**
-block rounds it off for you. It is **on by default**, at **Width 0.0833 m, 4
-segments, profile 0.5** — Blender's own bevel settings, under their own names.
+A sharp corner still reads as sharp under the best AO there is, so **Bevel**
+rounds it off for you — the strip's own seam *and* the source's corner, from one
+set of controls, kept the same shape. Width, Segments and Profile Shape are
+Blender's own bevel settings under their own names, and it is on by default at
+**0.0833 m, 4 segments, profile 0.5**.
 
-**Target** decides what gets rounded:
+**It lives on the finished strip, not on the create panel.** There is nothing to
+decide in advance: create the strip, then drag Width and watch both meshes
+follow. Switching it off takes the round off both again.
 
-- **Source + Strip** (default) — rounds the selected edge on **your** mesh, and
-  builds the strip so it follows that round with the same Width and Segments.
-  Both meshes end up the same shape, which is the only way the decal sits *on*
-  the rounded corner instead of flat across it. The strip's round is generated
-  by beveling the strip's own seam with the same settings rather than by
-  approximating the source's, so the two match by construction — the strip
-  lands exactly Surface Offset outside the source.
-- **Strip Only** — rounds off the strip's own seam and leaves the source sharp.
-  The round hides the sharp corner underneath it, and nothing you started from
-  is modified. A wing with no partner (a boundary edge like a door frame) has
-  no seam and is left as it is.
-- **Source Only** — rounds the source and runs a *flat* strip along the
-  chamfer's rim onto each wall, leaving the round itself bare. The short cap
-  edges at either end of a run are skipped, so nothing decals the end of the
-  chamfer.
+Two different mechanisms, because the two meshes are different things:
+
+- **The strip's seam** is beveled into its mesh, and rebuilt from scratch every
+  time a setting changes — the strip is generated, so regenerating it is free.
+- **The source's corner** is a **Bevel modifier** (`Seto AO Bevel`), limited by
+  edge weight, with the weight set on the strip's own edges. Nothing about the
+  source mesh is edited. That is what makes it live and reversible, and it is
+  why the strip can go on pointing at the corner by vertex index — cutting the
+  bevel in used to destroy the very edge the strip was built from.
+
+  Sollumz exports the **evaluated** object (`ydrexport.py` → `get_evaluated_obj`
+  → `to_mesh()`), so the round is baked into the YDR exactly as if it had been
+  applied by hand.
+
+The two rounds match by construction: the strip's is generated with the same
+Width and Segments rather than by approximating the source's, and it lands
+exactly Surface Offset outside it.
+
+**One modifier per source object**, shared by every AO strip on it — which is
+what a corner treatment is, a property of the wall rather than of the decal
+running along it. Per-strip widths still work: with weight limiting the
+modifier's width is scaled by each edge's own weight, so the modifier carries
+the widest strip's width and every other strip's edges are weighted down to
+their share. Segments and Profile Shape have no per-edge equivalent, so those
+really are shared — the strip you last touched sets them.
+
+Only edges belonging to a strip are ever written to. A bevel weight set by hand
+anywhere else on the mesh is left alone.
 
 **Width matters here.** The round eats into the shelf, and what is left is what
 the AO has to fade out across — which is why the default Width is 0.25 m, not
 the 0.1 m it used to be. The panel warns when Bevel Width is no longer below
 Width.
 
-**The source bevel runs once, at creation.** Live rebuilds only re-apply the
-strip's; re-running the source one on every slider drag would round the round.
-So the strip's own panel offers a plain Bevel toggle with no target to pick, and
-a strip created with Source Only starts with it off.
-
-A **Source + Strip** strip cannot store its corner as vertex indices — the edge
-it was built from was beveled away — so it stores the corner geometry itself and
-rebuilds from that. It still follows the source object being moved, rotated or
-scaled; what it cannot follow is the source's vertices being edited, which is
-the same limit the index path has.
+A **Ground Level** strip has no Bevel: the line it runs along is not in the mesh,
+so there is no edge to round on either side.
 
 Bevel Width is clamped the way Blender's own **Clamp Overlap** clamps it, so an
 oversized value cannot eat the strip.
 
 ### The round keeps the wall's material
 
-The bevel is asked to inherit each new face's material from the wall it came
-from — `material=-1`, exactly what Blender's own Bevel does with its Material
-Index. `bmesh.ops.bevel` defaults that to **0** instead, which puts the whole
-chamfer on material slot 0 whatever that happens to be: on a wall whose brick
-lives in another slot, a corner's worth of the wrong material, in a stripe.
+The modifier inherits each new face's material from the wall it came from, which
+is its default. Worth knowing because the version of this that cut the bevel in
+did not: `bmesh.ops.bevel` defaults `material` to **0** where Blender's own
+Bevel defaults Material Index to **-1**, and slot 0 on a wall whose brick lives
+in another slot is a corner's worth of the wrong material, in a stripe.
 
 The UVs are left to Blender's own interpolation, the same as beveling by hand.
 It blends between the two rims, so the chamfer can only land inside the span

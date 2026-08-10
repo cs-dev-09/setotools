@@ -8,6 +8,7 @@ import bmesh
 from . import geometry
 from . import library
 from . import object_settings
+from . import properties
 from . import preferences
 from ..shared import sollumz_integration as szi
 
@@ -129,6 +130,10 @@ class SETO_OT_refresh_decal_library(bpy.types.Operator):
             self.report({'ERROR'}, str(e))
             return {'CANCELLED'}
 
+        # The browser is a real collection, and a redraw may not touch it -
+        # refilling it here is half of what Refresh is for.
+        properties.rebuild_browser(context.scene.seto_decal)
+
         if not textures:
             self.report({'WARNING'}, "Decal library folder contains no usable image files.")
             return {'FINISHED'}
@@ -137,11 +142,109 @@ class SETO_OT_refresh_decal_library(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class SETO_OT_create_decal(bpy.types.Operator):
+class _DecalBuilder:
+    """Turning a finished placement into a decal object in the scene.
+
+    A mixin rather than module functions: these belong to the operator's run,
+    and keeping them methods leaves the call site reading as it always did. It
+    was shared with a second operator once, which is why it is factored out at
+    all.
+    """
+
+    def _resolve_materials(self, settings, placements):
+        """Resolve one material per distinct texture BEFORE any geometry exists.
+
+        Doing this up front means the common failure - a missing image or an
+        unavailable shader - never gets as far as creating an object, so there is
+        nothing to clean up in the first place.
+
+        With material_mode 'NEW' the reuse pass is skipped, but a single run still
+        shares one material between decals using the same texture; otherwise five
+        random dirt decals that happened to draw the same image would produce five
+        identical materials.
+        """
+        materials = {}
+        failures = []
+        reuse = settings.material_mode == 'AUTO'
+
+        for placement in placements:
+            if placement.texture_path in materials:
+                continue
+            if any(name == placement.texture_stem for name, _ in failures):
+                continue
+            try:
+                materials[placement.texture_path] = szi.find_or_create_decal_material(
+                    placement.texture_stem, placement.texture_path, reuse=reuse,
+                )
+            except _PLACEMENT_ERRORS as e:
+                failures.append((os.path.basename(placement.texture_path), str(e)))
+
+        return materials, failures
+
+    def _create_one(self, placement, material, collections, drawable_root,
+                    failures, drawable_warnings, source_obj, settings):
+        """Build one decal object. Returns True on success.
+
+        Everything that can fail is inside the try: on any failure the
+        half-built object and mesh are removed again, so a failed decal never
+        leaves an untextured plane in the scene.
+        """
+        name = f"seto_decal_{placement.texture_stem}"
+        mesh = None
+        obj = None
+        try:
+            # Created fully opaque; the vertex colour alpha is dialled in live
+            # afterwards in the Selected Decal section.
+            fade = settings.edge_fade
+            mesh = geometry.build_decal_mesh(name, placement.width, placement.height, fade)
+            szi.write_uv_and_color(
+                mesh,
+                geometry.decal_loop_uv(placement.width, placement.height, fade),
+                geometry.decal_loop_color(placement.width, placement.height, fade),
+            )
+
+            obj = bpy.data.objects.new(name, mesh)
+            for collection in collections:
+                collection.objects.link(obj)
+            obj.matrix_world = placement.matrix
+
+            szi.assign_material_to_object(obj, material)
+
+            # Stamp the surface frame and settings onto the object so its own
+            # panel can slide, spin and resize it live afterwards.
+            object_settings.store_placement(obj, placement, source_obj,
+                                            placement.texture_stem,
+                                            texture_path=placement.texture_path,
+                                            edge_fade=fade)
+        except _PLACEMENT_ERRORS as e:
+            _rollback(obj, mesh)
+            failures.append((os.path.basename(placement.texture_path), str(e)))
+            return False
+
+        # Drawable parenting is not part of the rollback contract: a decal that
+        # could not join a Drawable is still a perfectly valid decal, so it is
+        # kept and only warned about - and it is NOT counted as a failure, which
+        # is why these go to their own list.
+        if drawable_root is not None:
+            try:
+                _parent_keep_transform(obj, drawable_root)
+                szi.convert_to_drawable_model(obj)
+            except Exception as e:
+                drawable_warnings.append((obj.name, str(e)))
+
+        return True
+
+
+class SETO_OT_create_decal(_DecalBuilder, bpy.types.Operator):
     """Create a separate decal plane on each selected face, aligned to its surface"""
     bl_idname = "seto.create_decal"
     bl_label = "Create Decal"
-    bl_options = {'REGISTER', 'UNDO'}
+    # No 'REGISTER': that is what puts an operator in the "Adjust Last
+    # Operation" panel in the bottom-left corner, and this tool does not want
+    # it. Everything it offered is on the finished strip itself, in Selected
+    # Strip, where it rebuilds live and stays reachable after the next click -
+    # the redo panel vanishes the moment you do anything else.
+    bl_options = {'UNDO'}
 
     def execute(self, context):
         settings = context.scene.seto_decal
@@ -242,89 +345,6 @@ class SETO_OT_create_decal(bpy.types.Operator):
                 randomize_position=settings.random_position,
             ))
         return placements
-
-    def _resolve_materials(self, settings, placements):
-        """Resolve one material per distinct texture BEFORE any geometry exists.
-
-        Doing this up front means the common failure - a missing image or an
-        unavailable shader - never gets as far as creating an object, so there is
-        nothing to clean up in the first place.
-
-        With material_mode 'NEW' the reuse pass is skipped, but a single run still
-        shares one material between decals using the same texture; otherwise five
-        random dirt decals that happened to draw the same image would produce five
-        identical materials.
-        """
-        materials = {}
-        failures = []
-        reuse = settings.material_mode == 'AUTO'
-
-        for placement in placements:
-            if placement.texture_path in materials:
-                continue
-            if any(name == placement.texture_stem for name, _ in failures):
-                continue
-            try:
-                materials[placement.texture_path] = szi.find_or_create_decal_material(
-                    placement.texture_stem, placement.texture_path, reuse=reuse,
-                )
-            except _PLACEMENT_ERRORS as e:
-                failures.append((os.path.basename(placement.texture_path), str(e)))
-
-        return materials, failures
-
-    def _create_one(self, placement, material, collections, drawable_root,
-                    failures, drawable_warnings, source_obj, settings):
-        """Build one decal object. Returns True on success.
-
-        Everything that can fail is inside the try: on any failure the
-        half-built object and mesh are removed again, so a failed decal never
-        leaves an untextured plane in the scene.
-        """
-        name = f"seto_decal_{placement.texture_stem}"
-        mesh = None
-        obj = None
-        try:
-            # Created fully opaque; the vertex colour alpha is dialled in live
-            # afterwards in the Selected Decal section.
-            fade = settings.edge_fade
-            mesh = geometry.build_decal_mesh(name, placement.width, placement.height, fade)
-            szi.write_uv_and_color(
-                mesh,
-                geometry.decal_loop_uv(placement.width, placement.height, fade),
-                geometry.decal_loop_color(placement.width, placement.height, fade),
-            )
-
-            obj = bpy.data.objects.new(name, mesh)
-            for collection in collections:
-                collection.objects.link(obj)
-            obj.matrix_world = placement.matrix
-
-            szi.assign_material_to_object(obj, material)
-
-            # Stamp the surface frame and settings onto the object so its own
-            # panel can slide, spin and resize it live afterwards.
-            object_settings.store_placement(obj, placement, source_obj,
-                                            placement.texture_stem,
-                                            texture_path=placement.texture_path,
-                                            edge_fade=fade)
-        except _PLACEMENT_ERRORS as e:
-            _rollback(obj, mesh)
-            failures.append((os.path.basename(placement.texture_path), str(e)))
-            return False
-
-        # Drawable parenting is not part of the rollback contract: a decal that
-        # could not join a Drawable is still a perfectly valid decal, so it is
-        # kept and only warned about - and it is NOT counted as a failure, which
-        # is why these go to their own list.
-        if drawable_root is not None:
-            try:
-                _parent_keep_transform(obj, drawable_root)
-                szi.convert_to_drawable_model(obj)
-            except Exception as e:
-                drawable_warnings.append((obj.name, str(e)))
-
-        return True
 
     # ----------------------------------------------------------------- report
 

@@ -34,6 +34,8 @@ SHARED_NAMES = (
     "merge_distance",
     "alpha_center",
     "alpha_outer",
+    "alpha_bottom",
+    "alpha_top",
     "invert_fade",
     "color_rgb",
     "flip_direction",
@@ -104,6 +106,32 @@ def annotations(update=None):
             name="Alpha Outer",
             description="Color 1 alpha at the far edge of the strip, so the decal fades out",
             default=vertex_color.DEFAULT_ALPHA_OUTER,
+            min=0.0,
+            max=1.0,
+            update=update,
+        ),
+        "alpha_bottom": bpy.props.FloatProperty(
+            name="Alpha Bottom",
+            description=(
+                "Scales the whole strip's alpha at the LOW end of the run, "
+                "ramping back to full at the high end. 1.0 leaves it alone. "
+                "Where Alpha Center/Outer fade across the strip, this fades "
+                "along it - so an edge can let go before it reaches the floor"
+            ),
+            default=1.0,
+            min=0.0,
+            max=1.0,
+            update=update,
+        ),
+        "alpha_top": bpy.props.FloatProperty(
+            name="Alpha Top",
+            description=(
+                "Scales the whole strip's alpha at the HIGH end of the run, "
+                "ramping back to full at the low end. 1.0 leaves it alone. "
+                "Bottom and top are the building's, not the object's - a "
+                "rotated source still fades toward the floor"
+            ),
+            default=1.0,
             min=0.0,
             max=1.0,
             update=update,
@@ -184,20 +212,18 @@ def write_back(operator, context, tool_settings, names):
 
 
 def draw(layout, settings):
-    """The shared block, in the order the tools used to draw it themselves."""
-    col = layout.column(align=True)
-    col.prop(settings, "width")
-    col.prop(settings, "surface_offset")
-    col.prop(settings, "merge_distance")
+    """What has to be decided BEFORE there is a strip to look at.
 
-    layout.separator()
-    col = layout.column(align=True)
-    col.prop(settings, "alpha_center")
-    col.prop(settings, "alpha_outer")
-    layout.prop(settings, "invert_fade")
-    layout.prop(settings, "flip_direction")
+    Which is almost nothing. Every shape and fade setting used to be listed
+    here as well as on the finished strip, and the two blocks were identical -
+    so the natural thing to do was drag the one at the top of the tab and watch
+    nothing happen, because that one only seeds the *next* Create.
 
-    layout.separator()
+    They are gone. A strip is made with the defaults and then dialled in on
+    itself, where every drag rebuilds it in front of you. The material choice
+    stays: it decides what the strip is built with, not how it looks
+    afterwards.
+    """
     layout.prop(settings, "material_mode")
 
 

@@ -31,6 +31,7 @@ from mathutils import Matrix, Vector
 
 from . import geometry
 from . import properties
+from . import source_bevel
 from ..shared import sollumz_integration as szi
 
 # Span of the UV island's longer axis once fitted into the 0..1 square. Kept
@@ -40,6 +41,15 @@ UV_SIZE = 1.5
 # Guards against a rebuild triggering another rebuild through the same
 # property callbacks.
 _rebuilding = False
+
+
+def is_rebuilding():
+    """Whether a rebuild is already running.
+
+    Exposed for Edge Dirt, which drives the same machinery through its own
+    per-object group and needs the same guard - see rebuild().
+    """
+    return _rebuilding
 
 
 @contextlib.contextmanager
@@ -222,7 +232,7 @@ def apply_strip_bevel(mesh, segments, settings):
     Surface Offset before welding, and the weld itself moves vertices up to
     the merge distance.
     """
-    if not settings.bevel_enabled or settings.bevel_target == 'SOURCE':
+    if not settings.bevel_strip:
         return 0
     corner_points = [(seg.v0, seg.v1) for seg in segments]
     merge = geometry.auto_merge_distance(settings.width, settings.surface_offset)
@@ -257,21 +267,60 @@ def _centre_origin(obj, mesh):
     obj.matrix_world = obj.matrix_world @ Matrix.Translation(median)
 
 
-def rebuild(obj):
+def _ground_segments(source, level):
+    """The contour where `source` crosses world height `level`.
+
+    The same two passes the create operator makes - at the height asked for,
+    and a whisker above it for an object that is standing on that height rather
+    than sunk through it - kept here so a rebuild and a create cannot drift.
+    """
+    import bmesh
+    from mathutils import Vector
+
+    bm = bmesh.new()
+    try:
+        bm.from_mesh(source.data)
+        inverse = source.matrix_world.inverted()
+        plane_co = inverse @ Vector((0.0, 0.0, level))
+        plane_no = (inverse.transposed().to_3x3()
+                    @ Vector((0.0, 0.0, 1.0))).normalized()
+        segments = geometry.gather_ground_edge_segments(bm, plane_co, plane_no)
+        if not segments:
+            step = plane_no.normalized() * geometry.CONTACT_TOLERANCE
+            segments = geometry.gather_ground_edge_segments(
+                bm, plane_co + step, plane_no)
+            for segment in segments:
+                segment.v0 -= step
+                segment.v1 -= step
+        return segments
+    finally:
+        bm.free()
+
+
+def rebuild(obj, data=None):
     """Regenerate `obj`'s mesh from its stored source, edges and settings.
 
     Returns a short status string for the panel, or None when everything is
     fine. Never raises: this runs from a UI callback, where an exception would
     surface as a traceback in the console on every mouse move.
+
+    `data` is the per-object settings group to read; it defaults to this tool's
+    own. Edge Dirt builds the identical strip and differs only in the texture on
+    it, so it passes its own group in here rather than carrying a second copy of
+    this function that would drift from this one.
     """
     global _rebuilding
     if _rebuilding:
         return None
 
-    data = obj.seto_fake_ao_data
+    data = data if data is not None else obj.seto_fake_ao_data
     source = data.source_object
     if source is None:
-        return "Source object is gone - settings can no longer rebuild this strip."
+        # Cleared on purpose, most likely: a strip that has been moved
+        # somewhere else of its own accord has to be cut loose first, or the
+        # next rebuild puts it back on the object it came from. Said as a fact
+        # rather than as an error, because that is what it is.
+        return "Detached from its source - settings no longer rebuild it."
     if source.type != 'MESH':
         return "Source object is not a mesh."
     if source.mode == 'EDIT':
@@ -284,7 +333,12 @@ def rebuild(obj):
 
     _rebuilding = True
     try:
-        if frozen:
+        if getattr(data, "source_mode", 'SELECTION') == 'GROUND':
+            # Re-cut at whatever height the panel is showing now, rather than
+            # replaying the contour that was frozen at creation - that is what
+            # makes Ground Level a slider you can drag and watch.
+            segments, missing = _ground_segments(source, data.ground_level), 0
+        elif frozen:
             # The corner this was built from no longer exists in the source -
             # see serialise_segments().
             segments, missing = parse_segments(frozen), 0
@@ -301,6 +355,9 @@ def rebuild(obj):
             alpha_outer=data.alpha_outer,
             invert_fade=data.invert_fade,
             flip_direction=data.flip_direction,
+            alpha_bottom=data.alpha_bottom,
+            alpha_top=data.alpha_top,
+            up_axis=geometry.local_up_axis(source.matrix_world),
         )
         if not strip_data.faces:
             return "Current settings produce no geometry."
@@ -354,6 +411,11 @@ def _on_setting_changed(self, context):
     if _rebuilding or not self.is_fake_ao or not self.live_update:
         return
     self.status = rebuild(obj) or ""
+    # The strip's Bevel drives the source's round as well as its own, so the
+    # two stay the same shape while a slider is being dragged. Cheap enough to
+    # run on every change: it only ever touches this source's own modifier and
+    # the edges its strips own.
+    source_bevel.sync(self.source_object, leader=obj)
 
 
 def _object_annotations():

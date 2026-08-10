@@ -4,31 +4,18 @@ import bpy
 import bmesh
 from mathutils import Vector
 
-from . import geometry
 from . import object_settings
 from . import properties
-from . import source_bevel
 from . import textures
+from ..fake_ao import geometry
 from ..shared import sollumz_integration as szi
 
-# What a generated strip is called. The tool is Ambient Occlusion, so that is
-# what its output says - "fake_ao_003" in the outliner named a tool that no
-# longer exists anywhere in the UI.
-#
-# The old name is still *recognised*, which is the point of the alternation:
-# numbering continues past strips made before the rename instead of restarting
-# at 001 and colliding with them, and a .blend full of fake_ao_* keeps working.
-NAME_PREFIX = "ambient_occlusion"
-_NAME_PATTERN = re.compile(r"^(?:ambient_occlusion|fake_ao)_(\d{3,})$")
+_NAME_PATTERN = re.compile(r"^edge_dirt_(\d{3,})$")
 # Span of the UV island's longer axis once fitted into the 0..1 square.
 _UV_SIZE = object_settings.UV_SIZE
 
 # Every generated strip is collected here, created on first use.
-COLLECTION_NAME = NAME_PREFIX
-
-# The name this tool used before the rename. A file that already has one keeps
-# using it rather than growing a second collection alongside it.
-LEGACY_COLLECTION_NAME = "fake_ao"
+COLLECTION_NAME = "edge_dirt"
 
 # Blender's automatic ".001" suffix, so a collection it had to rename is still
 # recognised as ours on the next run instead of spawning ".002", ".003", ...
@@ -44,14 +31,12 @@ def _get_or_create_collection(context, name, parent=None):
 
     Reuses one we created earlier even if Blender had to suffix its name, and
     never adopts or moves an unrelated collection the user already has
-    somewhere else in the scene. A file made before the rename keeps its
-    old-named collection rather than being given a second one beside it.
+    somewhere else in the scene.
     """
     parent = parent or context.scene.collection
-    accepted = (name, LEGACY_COLLECTION_NAME) if name == COLLECTION_NAME else (name,)
 
     for child in parent.children:
-        if _base_name(child.name) in accepted:
+        if _base_name(child.name) == name:
             return child
 
     existing = bpy.data.collections.get(name)
@@ -81,15 +66,15 @@ def _drawable_collections(drawable_root):
     return list(drawable_root.users_collection) or None
 
 
-def _next_fake_ao_name():
-    """Explicit sequential naming (fake_ao_001, _002, ...) instead of relying
+def _next_edge_dirt_name():
+    """Explicit sequential naming (edge_dirt_001, _002, ...) instead of relying
     on Blender's automatic .001 suffixing."""
     max_n = 0
     for name in bpy.data.objects.keys():
         match = _NAME_PATTERN.match(name)
         if match:
             max_n = max(max_n, int(match.group(1)))
-    return f"{NAME_PREFIX}_{max_n + 1:03d}"
+    return f"edge_dirt_{max_n + 1:03d}"
 
 
 def _parent_keep_transform(child, parent):
@@ -113,10 +98,10 @@ def _set_origin_to_geometry(obj):
     bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='MEDIAN')
 
 
-class SETO_OT_create_fake_ao(bpy.types.Operator):
-    """Generate a separate Ambient Occlusion decal strip along the selected edges"""
-    bl_idname = "seto.create_fake_ao"
-    bl_label = "Create Ambient Occlusion"
+class SETO_OT_create_edge_dirt(bpy.types.Operator):
+    """Generate a separate Edge Dirt decal strip along the selected edges"""
+    bl_idname = "seto.create_edge_dirt"
+    bl_label = "Create Edge Dirt"
     # No 'REGISTER': that is what puts an operator in the "Adjust Last
     # Operation" panel in the bottom-left corner, and this tool does not want
     # it. Everything it offered is on the finished strip itself, in Selected
@@ -134,7 +119,7 @@ class SETO_OT_create_fake_ao(bpy.types.Operator):
         invoke() entirely in background mode, so relying on it would make the
         operator behave differently from a script than from the button.
         """
-        panel = context.scene.seto_fake_ao
+        panel = context.scene.seto_edge_dirt
         for name in properties.SETTING_NAMES:
             if not self.properties.is_property_set(name):
                 value = getattr(panel, name)
@@ -144,9 +129,9 @@ class SETO_OT_create_fake_ao(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        # Object Mode is allowed as well now: building from Ground Level reads
-        # the whole mesh and needs no selection, so requiring Edit Mode would
-        # be requiring a mode with nothing to do in it.
+        # Object Mode is allowed as well: building from Ground Level reads the
+        # whole mesh and needs no selection, so requiring Edit Mode would be
+        # requiring a mode with nothing to do in it.
         obj = context.active_object
         return (
             obj is not None
@@ -157,7 +142,7 @@ class SETO_OT_create_fake_ao(bpy.types.Operator):
 
     def execute(self, context):
         if not szi.is_sollumz_available():
-            self.report({'ERROR'}, "Sollumz is not enabled/available. Seto Ambient Occlusion requires Sollumz.")
+            self.report({'ERROR'}, "Sollumz is not enabled/available. Seto Edge Dirt requires Sollumz.")
             return {'CANCELLED'}
 
         self._seed_from_panel(context)
@@ -185,12 +170,33 @@ class SETO_OT_create_fake_ao(bpy.types.Operator):
             bm = temporary_bm = bmesh.new()
             bm.from_mesh(source_mesh)
 
-        # The source mesh is never written to here. Rounding its corner is a
-        # Bevel modifier now, set up after the strip exists and kept in step
-        # with it from then on - see source_bevel.py. So the strip is always
-        # built from the sharp corner, and the edge indices pointing at that
-        # corner stay valid for as long as the mesh does.
+        # The bevel is the only thing in this tool that writes to the source
+        # mesh, so it happens up front and everything below reads whatever it
+        # left behind.
+        # Bevel rounds off the *selected* edges, and Ground Level has no
+        # selection - the line it builds along is not in the mesh at all.
+        bevel_source = (not ground and settings.bevel_mesh
+                        and settings.bevel_target in {'SOURCE', 'BOTH'})
+        # 'Source + Strip' builds the strip from the SHARP corner and then
+        # rounds it with the same Width/Segments, so the two rounds coincide
+        # and the decal lands on the rounded corner instead of across it. That
+        # means reading the corner before the bevel removes it.
+        follow_round = bevel_source and settings.bevel_target == 'BOTH'
+
         segments = skipped = None
+        if follow_round:
+            segments, skipped = geometry.gather_selected_edge_segments(bm)
+
+        excluded_faces = set()
+        if bevel_source:
+            excluded_faces = geometry.bevel_source_edges(
+                bm,
+                width=settings.bevel_width,
+                segments=settings.bevel_segments,
+                profile=settings.bevel_profile,
+            )
+            if excluded_faces:
+                bmesh.update_edit_mesh(source_mesh)
 
         if ground:
             # World Z, taken into the source's local space. The plane's normal
@@ -223,9 +229,14 @@ class SETO_OT_create_fake_ao(bpy.types.Operator):
             # onto the strip - the same mechanism a 'Source + Strip' bevel uses
             # for a corner it has rounded away.
             frozen_segments = object_settings.serialise_segments(segments)
+        elif follow_round:
+            # Vertex indices cannot describe an edge that no longer exists;
+            # the corner itself is stored instead - see serialise_segments().
+            edge_keys = ""
+            frozen_segments = object_settings.serialise_segments(segments)
         else:
-            segments, skipped = geometry.gather_selected_edge_segments(bm)
-            edge_keys = object_settings.serialise_edge_keys(bm)
+            segments, skipped = geometry.gather_selected_edge_segments(bm, excluded_faces)
+            edge_keys = object_settings.serialise_edge_keys(bm, excluded_faces)
             frozen_segments = ""
 
         if temporary_bm is not None:
@@ -282,7 +293,7 @@ class SETO_OT_create_fake_ao(bpy.types.Operator):
         if context.mode == 'EDIT_MESH':
             bpy.ops.object.mode_set(mode='OBJECT')
 
-        new_name = _next_fake_ao_name()
+        new_name = _next_edge_dirt_name()
         new_mesh = geometry.create_mesh_from_strip_data(new_name, strip_data)
         loop_uv, loop_rgba = geometry.compute_loop_uv_and_alpha(
             new_mesh, strip_data, color_rgb=tuple(settings.color_rgb)
@@ -354,7 +365,7 @@ class SETO_OT_create_fake_ao(bpy.types.Operator):
         shader_warning = None
         texture_warning = None
         try:
-            material, texture_warning = szi.find_or_create_fake_ao_material(
+            material, texture_warning = szi.find_or_create_edge_dirt_material(
                 texture_path=textures.bundled_texture_path(),
                 reuse=(settings.material_mode == 'AUTO'),
             )
@@ -369,45 +380,47 @@ class SETO_OT_create_fake_ao(bpy.types.Operator):
         try:
             _set_origin_to_geometry(new_obj)
         except Exception as e:
-            self.report({'WARNING'}, f"Ambient Occlusion mesh created, but setting Origin to Geometry failed: {e}")
+            self.report({'WARNING'}, f"Edge Dirt mesh created, but setting Origin to Geometry failed: {e}")
 
         # Stamp the strip with everything needed to regenerate itself later,
         # so its settings stay live in the panel (see object_settings.py).
         # Suppressed: each assignment fires the live-rebuild callback, which
         # would regenerate the mesh before this operator has finished with it.
         with object_settings.suppress_rebuild():
-            obj_data = new_obj.seto_fake_ao_data
-            obj_data.is_fake_ao = True
+            obj_data = new_obj.seto_edge_dirt_data
+            obj_data.is_edge_dirt = True
             obj_data.source_object = source_obj
             obj_data.edge_keys = edge_keys
             obj_data.frozen_segments = frozen_segments
             properties.copy_settings(self, obj_data)
-            # Ground Level builds along a contour that is not in the mesh, so
-            # there is no edge there to round off.
-            # Ground Level has no source edge to round, on either mesh.
-            obj_data.bevel_mesh = settings.bevel_mesh and not ground
-            obj_data.bevel_strip = settings.bevel_strip and not ground
+            # The source bevel is a one-shot: it already happened, and the
+            # stored settings exist to rebuild the STRIP. Collapsing the
+            # target here is what lets the strip's panel offer a plain Bevel
+            # toggle with no target to pick - and stops a later rebuild from
+            # reading 'SOURCE' and silently doing nothing.
+            # The source's round has already been cut in; what the strip
+            # carries is its own seam.
+            obj_data.bevel_mesh = False
+            obj_data.bevel_strip = (settings.bevel_strip
+                                    and settings.bevel_target != 'SOURCE')
+            obj_data.bevel_target = 'STRIP'
             obj_data.status = ""
-
-        # Round the source's corner to match, with a modifier rather than by
-        # cutting it in - so it stays live, and the strip's own Bevel controls
-        # both from here on.
-        bevel_note = source_bevel.sync(source_obj, leader=new_obj)
 
         # Push the values that actually produced this result back onto the
         # N-panel, so a value dialled in through the F9 panel becomes the
         # starting point for the next strip instead of silently reverting.
-        properties.copy_settings(self, context.scene.seto_fake_ao)
+        properties.copy_settings(self, context.scene.seto_edge_dirt)
 
         msg = f"Created '{new_name}' with {len(strip_data.faces)} strip quad(s)."
-        if bevel_note:
-            msg += f" Source corner rounded by a '{source_bevel.MODIFIER_NAME}' modifier ({bevel_note})."
+        if bevel_source:
+            msg += (f" Beveled {len(excluded_faces)} face(s) onto the source mesh."
+                    if excluded_faces else " Source bevel produced nothing.")
         if skipped:
             msg += f" Skipped {skipped} edge(s) with no adjacent face."
         self.report({'INFO'}, msg)
 
         if shader_warning:
-            self.report({'WARNING'}, f"Ambient Occlusion mesh created, but {szi.DECAL_SHADER_FILENAME} assignment failed: {shader_warning}")
+            self.report({'WARNING'}, f"Edge Dirt mesh created, but {szi.DECAL_SHADER_FILENAME} assignment failed: {shader_warning}")
 
         if texture_warning:
             self.report({'WARNING'}, texture_warning)
@@ -415,7 +428,7 @@ class SETO_OT_create_fake_ao(bpy.types.Operator):
         return {'FINISHED'}
 
 
-_classes = (SETO_OT_create_fake_ao,)
+_classes = (SETO_OT_create_edge_dirt,)
 
 
 def register():

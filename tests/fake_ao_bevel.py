@@ -1,18 +1,19 @@
-"""Ambient Occlusion's optional Bevel: the strip seam, the source edge, and both.
+"""Ambient Occlusion's Bevel - one control, two meshes, live.
 
-The three things that can quietly go wrong here, and are therefore what this
-checks:
+The strip's own seam is beveled into its mesh; the source's corner is rounded
+by a **Bevel modifier**, so it is reversible and can be dragged after the fact.
+Both come off the same settings on the finished strip, and have to stay the
+same shape.
 
-  * the source bevel running twice (once at creation, again on every live
-    rebuild) - chamfering the chamfer,
-  * the rebuild growing a wing onto the chamfer face the creation deliberately
-    left bare, because the stored edge keys did not record which faces were
-    used,
-  * a bevel width past the strip's own Width collapsing it.
+What that has to get right, and is checked here:
+  * the source mesh itself is never edited - only a modifier is added,
+  * the round Sollumz will export (the evaluated mesh) matches the strip's,
+  * switching Bevel off leaves the source exactly as it was found,
+  * one modifier serves every strip on an object, at each strip's own width,
+  * bevel weights are written to strip edges and nowhere else.
 """
 
 import bpy, sys
-from mathutils import Vector
 sys.path.append(r"D:\SetoClaude\setotools")
 R = []
 def check(n, c, d=""):
@@ -22,193 +23,111 @@ def check(n, c, d=""):
 import seto_tools
 if getattr(bpy.types, "SETO_PT_fake_ao_panel", None) is None:
     seto_tools.register()
-from seto_tools.fake_ao import geometry, object_settings, properties
+from seto_tools.fake_ao import object_settings, operators, properties, source_bevel
+
+BASE = dict(width=0.4, surface_offset=0.0003)
+BEVEL = dict(bevel_mesh=True, bevel_strip=True, bevel_width=0.0833, bevel_segments=4, bevel_profile=0.5)
 
 
-def fresh_cube():
-    """A cube with one vertical edge selected - the architectural corner the
-    tool is built for: one edge, two walls."""
+def fresh_cube(prepare=None):
+    """A cube with its +X/+Y vertical edge selected - one edge, two walls."""
     for obj in list(bpy.data.objects):
         bpy.data.objects.remove(obj, do_unlink=True)
     bpy.ops.mesh.primitive_cube_add(size=2)
     cube = bpy.context.active_object
+    if prepare is not None:
+        prepare(cube)
     bpy.ops.object.mode_set(mode='EDIT')
     bpy.ops.mesh.select_mode(type='EDGE')
     bpy.ops.mesh.select_all(action='DESELECT')
     bpy.ops.object.mode_set(mode='OBJECT')
-    # The +X/+Y vertical edge: both verts share x=1, y=1, differ in z.
-    target = None
     for edge in cube.data.edges:
         a, b = (cube.data.vertices[i].co for i in edge.vertices)
         if abs(a.x - 1) < 1e-4 and abs(b.x - 1) < 1e-4 and abs(a.y - 1) < 1e-4 and abs(b.y - 1) < 1e-4:
-            target = edge
-            break
-    target.select = True
+            edge.select = True
     bpy.ops.object.mode_set(mode='EDIT')
     return cube
 
 
 def create(prepare=None, **settings):
-    """Run the operator with the given settings, leave Object Mode, and return
-    (source, strip).
-
-    `prepare` gets the cube before the operator runs, for setting up the state
-    a check needs - it is called in Edit Mode with the corner already selected.
-    """
-    cube = fresh_cube()
-    if prepare is not None:
-        bpy.ops.object.mode_set(mode='OBJECT')
-        prepare(cube)
-        bpy.ops.object.mode_set(mode='EDIT')
-    source_faces = len(cube.data.polygons)
+    cube = fresh_cube(prepare)
+    before = len(cube.data.polygons)
     try:
         bpy.ops.seto.create_fake_ao(**settings)
     except RuntimeError as e:
         print("  (err", e, ")")
     bpy.ops.object.mode_set(mode='OBJECT')
-    strips = [o for o in bpy.data.objects if o.name.startswith("fake_ao_")]
-    return cube, (strips[-1] if strips else None), source_faces
+    strips = [o for o in bpy.data.objects if o.name.startswith(operators.NAME_PREFIX)]
+    return cube, (strips[-1] if strips else None), before
 
 
-BASE = dict(width=0.4, surface_offset=0.0003)
-
-# --- 0. The defaults a new user gets ----------------------------------------
-defaults = bpy.context.scene.seto_fake_ao
-check("bevel is on out of the box", defaults.bevel_enabled is True)
-check("and rounds both meshes by default", defaults.bevel_target == 'BOTH', defaults.bevel_target)
-check("default bevel width", abs(defaults.bevel_width - 0.0833) < 1e-6, str(defaults.bevel_width))
-check("default segments", defaults.bevel_segments == 4, str(defaults.bevel_segments))
-check("default profile is circular", abs(defaults.bevel_profile - 0.5) < 1e-6, str(defaults.bevel_profile))
-
-# --- 1. Baseline: bevel off, nothing changes anywhere -----------------------
-cube, strip, before = create(**BASE, bevel_enabled=False)
-if not check("baseline strip created", strip is not None):
-    sys.exit(1)
-base_faces = len(strip.data.polygons)
-check("baseline is the two-wing L", base_faces == 2, f"{base_faces} faces")
-check("bevel off leaves the source mesh alone", len(cube.data.polygons) == before,
-      f"{len(cube.data.polygons)} vs {before}")
-
-# --- 2. Strip bevel: the strip's seam is chamfered, the source is not -------
-cube, strip, before = create(**BASE, bevel_enabled=True, bevel_target='STRIP',
-                             bevel_width=0.02, bevel_segments=1, bevel_profile=0.5)
-strip_faces = len(strip.data.polygons)
-check("STRIP bevel adds the chamfer face", strip_faces == base_faces + 1, f"{strip_faces} faces")
-check("STRIP bevel never touches the source", len(cube.data.polygons) == before,
-      f"{len(cube.data.polygons)} vs {before}")
-
-# Segments: a rounded seam is more faces than a flat chamfer.
-cube, strip, before = create(**BASE, bevel_enabled=True, bevel_target='STRIP',
-                             bevel_width=0.02, bevel_segments=4, bevel_profile=0.5)
-check("Segments rounds the seam off", len(strip.data.polygons) == base_faces + 4,
-      f"{len(strip.data.polygons)} faces")
-
-# The chamfer must carry the corner's alpha, not a hole in the fade.
-attr = strip.data.attributes["Color 1"]
-alphas = sorted({round(e.color_srgb[3], 2) for e in attr.data})
-check("the chamfer stays inside the corner..outer alpha range",
-      min(alphas) >= 0.0 and max(alphas) <= 1.0 and len(alphas) >= 2, str(alphas))
-
-# --- 3. Source bevel: the source IS modified, the strip runs on the rim -----
-cube, strip, before = create(**BASE, bevel_enabled=True, bevel_target='SOURCE',
-                             bevel_width=0.05, bevel_segments=1, bevel_profile=0.5)
-check("SOURCE bevel chamfers the source mesh", len(cube.data.polygons) == before + 1,
-      f"{len(cube.data.polygons)} vs {before}")
-check("SOURCE bevel still produces a strip", strip is not None and len(strip.data.polygons) > 0,
-      f"{len(strip.data.polygons) if strip else 0} faces")
-# Two rim edges, one wall each - the chamfer itself is left bare.
-check("the chamfer face is left bare (one wing per rim edge)", len(strip.data.polygons) == 2,
-      f"{len(strip.data.polygons)} faces")
-check("the excluded faces were recorded on the strip",
-      ":" in strip.seto_fake_ao_data.edge_keys, strip.seto_fake_ao_data.edge_keys)
-check("the strip's stored target collapses to STRIP",
-      strip.seto_fake_ao_data.bevel_target == 'STRIP', strip.seto_fake_ao_data.bevel_target)
-check("a source-only bevel does not arm the strip bevel",
-      strip.seto_fake_ao_data.bevel_enabled is False)
-
-# The rebuild must not re-bevel the source, and must not adopt the chamfer.
-source_faces_after_create = len(cube.data.polygons)
-strip_faces_after_create = len(strip.data.polygons)
-strip.seto_fake_ao_data.width = 0.12          # fires the live rebuild
-bpy.ops.seto.fake_ao_rebuild()
-check("rebuild leaves the already-beveled source alone",
-      len(cube.data.polygons) == source_faces_after_create,
-      f"{len(cube.data.polygons)} vs {source_faces_after_create}")
-check("rebuild does not grow a wing onto the chamfer",
-      len(strip.data.polygons) == strip_faces_after_create,
-      f"{len(strip.data.polygons)} vs {strip_faces_after_create}")
-
-# --- 4. Source + Strip: the two rounds have to coincide ---------------------
-BEVEL = dict(bevel_enabled=True, bevel_target='BOTH', bevel_width=0.0833,
-             bevel_segments=4, bevel_profile=0.5)
-cube, strip, before = create(**BASE, **BEVEL)
-check("BOTH rounds the source", len(cube.data.polygons) == before + 4,
-      f"{len(cube.data.polygons)} vs {before}")
-check("BOTH rounds the strip to match", len(strip.data.polygons) == base_faces + 4,
-      f"{len(strip.data.polygons)} faces")
-check("BOTH arms the strip bevel for later rebuilds",
-      strip.seto_fake_ao_data.bevel_enabled is True)
+def modifier_of(obj):
+    return obj.modifiers.get(source_bevel.MODIFIER_NAME)
 
 
-def round_profile(obj, matrix=None):
+def evaluated_mesh(obj):
+    """What Sollumz exports: the object with its modifiers applied."""
+    depsgraph = bpy.context.evaluated_depsgraph_get()
+    return obj.evaluated_get(depsgraph).to_mesh()
+
+
+def round_profile(mesh, matrix=None):
     """The rounded corner's cross-section, as distances from the sharp corner
-    line the round replaced (the cube's +X/+Y vertical edge, at x=y=1).
-
-    Sorted, so it can be compared between two meshes without depending on
-    vertex order.
-    """
+    line it replaced (the cube's +X/+Y vertical edge)."""
     seen = set()
-    for v in obj.data.vertices:
-        co = (matrix @ v.co) if matrix else v.co
-        # Only the near quadrant: the round, not the far side of the cube.
+    for vert in mesh.vertices:
+        co = (matrix @ vert.co) if matrix else vert.co
         if co.x < 0.5 or co.y < 0.5:
             continue
-        d = ((co.x - 1.0) ** 2 + (co.y - 1.0) ** 2) ** 0.5
-        seen.add(round(d, 4))
+        seen.add(round(((co.x - 1.0) ** 2 + (co.y - 1.0) ** 2) ** 0.5, 4))
     return sorted(seen)
 
 
-source_round = round_profile(cube)
-# The strip is a separate object with its own origin - measure it in the
-# source's local space, which is where it was built.
-strip_local = cube.matrix_world.inverted() @ strip.matrix_world
-strip_round = [d for d in round_profile(strip, strip_local)
+# --- 1. The source mesh is not edited, only modified ------------------------
+cube, strip, before = create(**BASE, **BEVEL)
+if not check("strip created", strip is not None):
+    sys.exit(1)
+check("the source mesh itself is untouched", len(cube.data.polygons) == before,
+      f"{len(cube.data.polygons)} vs {before}")
+
+modifier = modifier_of(cube)
+if not check("a Bevel modifier was added", modifier is not None and modifier.type == 'BEVEL'):
+    sys.exit(1)
+check("driven by edge weights, on edges",
+      modifier.limit_method == 'WEIGHT' and modifier.affect == 'EDGES',
+      f"{modifier.limit_method}/{modifier.affect}")
+check("at the strip's own settings",
+      abs(modifier.width - 0.0833) < 1e-6 and modifier.segments == 4
+      and abs(modifier.profile - 0.5) < 1e-6,
+      f"{modifier.width}/{modifier.segments}/{modifier.profile}")
+
+weights = cube.data.attributes[source_bevel.WEIGHT_ATTRIBUTE]
+weighted = [i for i, v in enumerate(weights.data) if v.value > 0.0]
+selected = [e.index for e in cube.data.edges
+            if all(abs(cube.data.vertices[v].co.x - 1) < 1e-4
+                   and abs(cube.data.vertices[v].co.y - 1) < 1e-4 for v in e.vertices)]
+check("the weight lands on the selected edge and nowhere else",
+      weighted == selected, f"{weighted} vs {selected}")
+
+# --- 2. The exported round is the strip's round -----------------------------
+source_round = round_profile(evaluated_mesh(cube))
+# A 4-segment round is 5 cross-section points, but measured as distance from
+# the corner line they pair up by symmetry: both ends at the bevel width, two
+# at the same distance in, and the apex nearest the corner. Three values.
+check("the evaluated source really is rounded - the modifier reaches the export",
+      len(source_round) == 3 and abs(max(source_round) - 0.0833) < 1e-3,
+      str(source_round))
+strip_round = [d for d in round_profile(strip.data, cube.matrix_world.inverted() @ strip.matrix_world)
                if d <= max(source_round) + 1e-3]
 check("the strip's round has the same number of steps as the source's",
       len(strip_round) == len(source_round), f"{strip_round} vs {source_round}")
 if len(strip_round) == len(source_round):
-    gaps = [abs(a - b) for a, b in zip(strip_round, source_round)]
-    # Each strip vertex sits Surface Offset outside its source counterpart,
-    # so the two profiles differ by that and nothing more.
-    check("the strip's round sits exactly Surface Offset outside the source's",
-          max(gaps) < 0.0015, f"max gap {max(gaps):.5f}, {strip_round} vs {source_round}")
+    check("and sits exactly Surface Offset outside it",
+          max(abs(a - b) for a, b in zip(strip_round, source_round)) < 0.0015,
+          f"{strip_round} vs {source_round}")
 
-both_faces = len(strip.data.polygons)
-check("a beveled-away corner is stored verbatim, not as indices",
-      strip.seto_fake_ao_data.frozen_segments != "" and strip.seto_fake_ao_data.edge_keys == "",
-      strip.seto_fake_ao_data.edge_keys)
-source_faces_after_create = len(cube.data.polygons)
-strip.seto_fake_ao_data.width = 0.45
-check("the strip bevel survives a rebuild", len(strip.data.polygons) == both_faces,
-      f"{len(strip.data.polygons)} vs {both_faces}")
-check("and the rebuild does not re-bevel the source",
-      len(cube.data.polygons) == source_faces_after_create,
-      f"{len(cube.data.polygons)} vs {source_faces_after_create}")
-rebuilt_round = [d for d in round_profile(strip, cube.matrix_world.inverted() @ strip.matrix_world)
-                 if d <= max(source_round) + 1e-3]
-check("the rebuilt strip still lands on the source's round",
-      len(rebuilt_round) == len(source_round)
-      and max(abs(a - b) for a, b in zip(rebuilt_round, source_round)) < 0.0015,
-      f"{rebuilt_round} vs {source_round}")
-
-# --- 5. The source's own look has to survive being beveled ------------------
-# The coloured band down the corner was never a UV problem: bmesh.ops.bevel
-# defaults its `material` to 0, where Blender's own Bevel defaults Material
-# Index to -1, "same as the adjacent face". The chamfer was being dragged onto
-# slot 0 - a different material entirely - which on a wall whose brick lives in
-# another slot is a band of the wrong texture the full length of the corner.
+# --- 3. The chamfer keeps the wall's material -------------------------------
 def two_slots(cube):
-    """Everything on slot 1; slot 0 is the material nothing should pick up."""
     for name in ("slot0_TRIM", "slot1_BRICK"):
         cube.data.materials.append(bpy.data.materials.new(name))
     for poly in cube.data.polygons:
@@ -216,109 +135,112 @@ def two_slots(cube):
 
 
 cube, strip, before = create(prepare=two_slots, **BASE, **BEVEL)
-chamfer = [p for p in cube.data.polygons if p.center.x > 0.8 and p.center.y > 0.8]
-slots = sorted({p.material_index for p in chamfer})
+baked = evaluated_mesh(cube)
+chamfer = [p for p in baked.polygons if p.center.x > 0.8 and p.center.y > 0.8]
 check("the chamfer inherits the wall's material, not slot 0",
-      len(chamfer) == 4 and slots == [1], f"{len(chamfer)} faces on slots {slots}")
-check("and the walls themselves are untouched",
-      sorted({p.material_index for p in cube.data.polygons}) == [1])
+      len(chamfer) == 4 and {p.material_index for p in chamfer} == {1},
+      f"{len(chamfer)} faces on {sorted({p.material_index for p in chamfer})}")
 
+# --- 4. Live, in both directions --------------------------------------------
+cube, strip, before = create(**BASE, **BEVEL)
+data = strip.seto_fake_ao_data
 
-def uv_bounds(obj, faces):
-    uv = obj.data.uv_layers.active.data
-    points = [Vector(uv[li].uv) for poly in faces
-              for li in range(poly.loop_start, poly.loop_start + poly.loop_total)]
-    return (min(p.x for p in points), min(p.y for p in points),
-            max(p.x for p in points), max(p.y for p in points))
+data.bevel_width = 0.15
+check("dragging Width moves the source's modifier with it",
+      abs(modifier_of(cube).width - 0.15) < 1e-6, str(modifier_of(cube).width))
+grown = round_profile(strip.data, cube.matrix_world.inverted() @ strip.matrix_world)
+check("and rebuilds the strip to match", max(grown) > 0.1, str(grown))
 
+data.bevel_segments = 8
+check("Segments too", modifier_of(cube).segments == 8, str(modifier_of(cube).segments))
+check("and the strip gains the same steps",
+      len(strip.data.polygons) == 2 + 8, f"{len(strip.data.polygons)} faces")
 
-# Blender's own interpolation is what lays the chamfer's UVs out, and it is a
-# blend between the two rims - so the chamfer can only ever land inside the
-# span the walls already occupied. Worth pinning: an earlier attempt to
-# "improve" on it by unrolling the chamfer could run past that span and off the
-# end of the wall's island, which on an atlas is the same coloured band again.
-def atlas_walls(cube):
-    """Map the two walls that meet at the corner into the unit square, at a
-    different rate across the wall than up it. Everything else goes far away."""
-    uv = cube.data.uv_layers.active.data
-    for poly in cube.data.polygons:
-        centre = poly.center
-        wall = abs(poly.normal.z) < 0.9 and (centre.x > 0.8 or centre.y > 0.8)
-        for li in range(poly.loop_start, poly.loop_start + poly.loop_total):
-            co = cube.data.vertices[cube.data.loops[li].vertex_index].co
-            if wall:
-                lateral = (1.0 - co.y) if centre.x > 0.8 else (1.0 - co.x)
-                uv[li].uv = (lateral * 0.5, (co.z + 1.0) * 0.25)
-            else:
-                uv[li].uv = (5.0 + co.x * 0.1, 5.0 + co.y * 0.1)
+data.bevel_profile = 0.75
+check("Profile Shape too", abs(modifier_of(cube).profile - 0.75) < 1e-6,
+      str(modifier_of(cube).profile))
 
+# --- 5. Switching it off puts everything back -------------------------------
+data.bevel_mesh = False
+data.bevel_strip = False
+check("switching Bevel off removes the modifier", modifier_of(cube) is None)
+check("and clears the weight it set",
+      all(v.value == 0.0 for v in cube.data.attributes[source_bevel.WEIGHT_ATTRIBUTE].data))
+check("the source is back to a sharp corner",
+      round_profile(evaluated_mesh(cube)) == [0.0], str(round_profile(evaluated_mesh(cube))))
+check("and the strip is back to its plain two-wing L",
+      len(strip.data.polygons) == 2, f"{len(strip.data.polygons)} faces")
 
-cube, strip, before = create(prepare=atlas_walls, **BASE, **BEVEL)
-chamfer = [p for p in cube.data.polygons if p.center.x > 0.8 and p.center.y > 0.8]
-min_u, min_v, max_u, max_v = uv_bounds(cube, chamfer)
-outside = max(-min_u, max_u - 1.0, -min_v, max_v - 1.0)
-check("nothing on the chamfer leaves the wall's island",
-      outside <= 0.001, f"{outside:.4f} past the edge, u [{min_u:.4f}, {max_u:.4f}]")
-check("the chamfer spans the corner's full height in UV",
-      abs((max_v - min_v) - 2.0 * 0.25) < 0.01, f"v span {max_v - min_v:.4f}")
+data.bevel_mesh = True
+data.bevel_strip = True
+check("switching it back on restores both",
+      modifier_of(cube) is not None and len(strip.data.polygons) == 2 + 8,
+      f"{len(strip.data.polygons)} faces")
 
+# --- 6. One modifier, several strips, each at its own width -----------------
+cube, first, before = create(**BASE, **BEVEL)
+bpy.context.view_layer.objects.active = cube
+bpy.ops.object.mode_set(mode='EDIT')
+bpy.ops.mesh.select_all(action='DESELECT')
+bpy.ops.object.mode_set(mode='OBJECT')
+for edge in cube.data.edges:          # the -X/+Y vertical edge, a second corner
+    a, b = (cube.data.vertices[i].co for i in edge.vertices)
+    if abs(a.x + 1) < 1e-4 and abs(b.x + 1) < 1e-4 and abs(a.y - 1) < 1e-4 and abs(b.y - 1) < 1e-4:
+        edge.select = True
+bpy.ops.object.mode_set(mode='EDIT')
+try:
+    bpy.ops.seto.create_fake_ao(**BASE, bevel_mesh=True, bevel_strip=True, bevel_width=0.04,
+                                bevel_segments=4, bevel_profile=0.5)
+except RuntimeError as e:
+    print("  (err", e, ")")
+bpy.ops.object.mode_set(mode='OBJECT')
 
-# --- 6. Settings that are no longer settings --------------------------------
-offset_prop = defaults.bl_rna.properties["surface_offset"]
-check("Surface Offset is capped at 0.05", abs(offset_prop.hard_max - 0.05) < 1e-9,
-      str(offset_prop.hard_max))
-check("Merge Distance is gone from the settings",
-      "merge_distance" not in properties.SETTING_NAMES, str(properties.SETTING_NAMES))
-check("the automatic merge distance clears the corner seam it has to close",
-      geometry.auto_merge_distance(0.25, 0.0003) > 0.0003 * 2 ** 0.5,
-      str(geometry.auto_merge_distance(0.25, 0.0003)))
-check("and stays far below Width",
-      geometry.auto_merge_distance(0.25, 0.0003) < 0.25 * 0.1,
-      str(geometry.auto_merge_distance(0.25, 0.0003)))
-check("a huge Surface Offset cannot let the weld eat the strip",
-      geometry.auto_merge_distance(0.1, 0.05) <= 0.1 * 0.25,
-      str(geometry.auto_merge_distance(0.1, 0.05)))
+check("a second strip on the same object reuses the one modifier",
+      len([m for m in cube.modifiers if m.type == 'BEVEL']) == 1,
+      str([m.name for m in cube.modifiers]))
+modifier = modifier_of(cube)
+check("the modifier carries the widest strip's width",
+      abs(modifier.width - 0.0833) < 1e-6, str(modifier.width))
+values = sorted({round(v.value, 3) for v in
+                 cube.data.attributes[source_bevel.WEIGHT_ATTRIBUTE].data if v.value > 0.0})
+check("and the narrower strip's edges are weighted down to their share",
+      len(values) == 2 and abs(values[0] - 0.04 / 0.0833) < 0.002 and abs(values[1] - 1.0) < 1e-6,
+      str(values))
 
-# The seam still closes: one welded strip, not two wings sitting side by side.
-cube, strip, before = create(**BASE, bevel_enabled=False)
-loose = sum(1 for e in strip.data.edges if len([p for p in strip.data.polygons
-                                                if e.key[0] in p.vertices and e.key[1] in p.vertices]) == 2)
-check("the two wings are welded into one mesh", loose >= 1 and len(strip.data.vertices) == 6,
-      f"{len(strip.data.vertices)} verts, {loose} shared edges")
+baked = evaluated_mesh(cube)
+wide = [p for p in baked.polygons if p.center.x > 0.8 and p.center.y > 0.8]
+narrow = [p for p in baked.polygons if p.center.x < -0.8 and p.center.y > 0.8]
+check("both corners come out rounded", len(wide) == 4 and len(narrow) == 4,
+      f"{len(wide)} / {len(narrow)}")
 
-cube, both_strip, before = create(**BASE, **BEVEL)
-parsed = object_settings.parse_segments(both_strip.seto_fake_ao_data.frozen_segments)
-check("frozen segments round-trip", len(parsed) == 1 and len(parsed[0].normals) == 2,
-      str(len(parsed)))
-check("unreadable frozen segments degrade quietly",
-      object_settings.parse_segments("not json") == [])
+# --- 7. Nothing to round -----------------------------------------------------
+check("a strip with no source edges contributes nothing",
+      source_bevel._edge_indices(cube.data, "") is None)
+check("neither does one whose edges are gone",
+      source_bevel._edge_indices(cube.data, "9990,9991") is None)
 
-# --- 5. Backwards compatibility and edge cases ------------------------------
+# --- 8. The create panel no longer decides any of this ----------------------
+import inspect  # noqa: E402
+import seto_tools.fake_ao.ui as ao_ui  # noqa: E402
+create_draw = inspect.getsource(ao_ui.SETO_PT_fake_ao_panel.draw)
+check("the create panel draws no Bevel block", "_draw_bevel" not in create_draw)
+strip_draw = inspect.getsource(ao_ui.SETO_PT_fake_ao_object_panel.draw)
+check("the finished strip's panel does", "_draw_bevel" in strip_draw)
+check("and draws it with no target to pick", "show_target=True" not in strip_draw)
+
+# --- 9. Edge keys still parse, old and new ----------------------------------
 keys = object_settings.parse_edge_keys("3,7 1,2")
-check("edge keys stored before this feature still parse",
-      keys == [(3, 7, None), (1, 2, None)], str(keys))
-keys = object_settings.parse_edge_keys("3,7:1/2/3/4;0/1/2 1,2")
-check("edge keys with face specs parse",
-      keys[0][0:2] == (3, 7) and keys[0][2] == {frozenset({1, 2, 3, 4}), frozenset({0, 1, 2})}
-      and keys[1] == (1, 2, None), str(keys))
-
-# A bevel wider than the strip must clamp, not collapse it into nothing.
-cube, strip, before = create(**BASE, bevel_enabled=True, bevel_target='STRIP',
-                             bevel_width=5.0, bevel_segments=1, bevel_profile=0.5)
-check("an absurd bevel width clamps instead of destroying the strip",
-      strip is not None and len(strip.data.polygons) >= 2 and len(strip.data.vertices) > 0,
-      f"{len(strip.data.polygons) if strip else 0} faces")
-
-# Width 0 with the checkbox on is a no-op, not an error.
-cube, strip, before = create(**BASE, bevel_enabled=True, bevel_target='BOTH',
-                             bevel_width=0.0, bevel_segments=1, bevel_profile=0.5)
-check("bevel width 0 is a harmless no-op",
-      strip is not None and len(strip.data.polygons) == base_faces
-      and len(cube.data.polygons) == before,
-      f"{len(strip.data.polygons) if strip else 0} faces, source {len(cube.data.polygons)}")
+check("edge keys parse", keys == [(3, 7, None), (1, 2, None)], str(keys))
+keys = object_settings.parse_edge_keys("3,7:1/2/3/4;0/1/2")
+check("and so do the face specs older strips stored",
+      keys[0][2] == {frozenset({1, 2, 3, 4}), frozenset({0, 1, 2})}, str(keys))
+check("Merge Distance is still not a setting",
+      "merge_distance" not in properties.SETTING_NAMES)
+check("Surface Offset is still capped at 0.05",
+      abs(bpy.context.scene.seto_fake_ao.bl_rna.properties["surface_offset"].hard_max - 0.05) < 1e-9)
 
 failed = [r for r in R if not r[0]]
 print("\n" + "=" * 60); print(f"RESULT: {len(R)-len(failed)}/{len(R)} checks passed")
-for _, n, dd in failed: print("  FAIL", n, "--", dd)
+for _, n, d in failed: print("  FAIL", n, "--", d)
 print("=" * 60)
 sys.exit(1 if failed else 0)

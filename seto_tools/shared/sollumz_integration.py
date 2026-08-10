@@ -698,6 +698,79 @@ def find_or_create_fake_ao_material(texture_path=None, reuse=True):
     return material, texture_warning
 
 
+# ---------------------------------------------------------- Edge Dirt material
+
+EDGE_DIRT_MATERIAL_NAME = "seto_edgedirt"
+
+
+def _find_existing_edge_dirt_material():
+    """An Edge Dirt material we made earlier, or None.
+
+    Name-scoped, for the same reason Ambient Occlusion is: decal.sps is used by
+    the Decal Tool and by Ambient Occlusion as well, so matching on the shader
+    alone would adopt one of theirs and put dirt where the AO shadow belongs.
+    """
+    for mat in bpy.data.materials:
+        if not (mat.name == EDGE_DIRT_MATERIAL_NAME
+                or mat.name.startswith(EDGE_DIRT_MATERIAL_NAME + ".")):
+            continue
+        if not _is_shader_material(mat):
+            continue
+        if mat.shader_properties.filename == DECAL_SHADER_FILENAME:
+            return mat
+    return None
+
+
+def find_or_create_edge_dirt_material(texture_path=None, reuse=True):
+    """Find an Edge Dirt material to reuse, or create and texture a new one.
+
+    The same shader and the same single sRGB slot as Ambient Occlusion - dirt
+    is a colour texture, not a normal map - kept as its own function purely so
+    the two get their own materials. Sharing one would mean a dirt strip and an
+    AO strip fighting over which texture is in DiffuseSampler.
+
+    Returns (material, texture_warning). A reused material is left exactly as
+    the user has it, so hand tweaks survive - with one exception: if its
+    DiffuseSampler is **empty**, the bundled texture goes in. An empty slot is
+    not a tweak worth preserving, and it is what a strip built before the
+    texture was dropped into the folder leaves behind. Without this, the first
+    strip's untextured material is reused forever and the tool looks broken
+    however many times the texture is added.
+    """
+    try:
+        shader_module = importlib.import_module("szio.gta5.shader")
+    except ImportError as e:
+        raise SollumzShaderError(f"Could not import szio.gta5.shader ({e}).")
+
+    shader_materials = _import("ydr.shader_materials")
+
+    if shader_module.ShaderManager.find_shader(DECAL_SHADER_FILENAME) is None:
+        raise SollumzShaderError(
+            f"Shader '{DECAL_SHADER_FILENAME}' was not found by Sollumz's ShaderManager."
+        )
+
+    if reuse:
+        existing = _find_existing_edge_dirt_material()
+        if existing is not None:
+            node = get_diffuse_node(existing)
+            if node is not None and node.image is None and texture_path:
+                return existing, _assign_bundled_texture(
+                    existing, texture_path,
+                    node_names=(DIFFUSE_SAMPLER_NODE,),
+                    colorspace='sRGB',
+                )
+            return existing, None
+
+    material = shader_materials.create_shader(DECAL_SHADER_FILENAME)
+    material.name = EDGE_DIRT_MATERIAL_NAME
+    texture_warning = _assign_bundled_texture(
+        material, texture_path,
+        node_names=(DIFFUSE_SAMPLER_NODE,),
+        colorspace='sRGB',
+    )
+    return material, texture_warning
+
+
 # ------------------------------------------------------ Smooth Edge material
 
 SMOOTH_EDGE_SHADER_FILENAME = "decal_normal_only.sps"
