@@ -2,6 +2,26 @@
 
 All notable changes to Seto Tools.
 
+## 1.5.0
+
+### Added — Bevel on Edge Wear and Smooth Edge
+
+The two Geometry tools had no Bevel at all; Ambient Occlusion and Edge Dirt
+did. They have the same one now, in the same shape: a **Bevel** block on the
+finished strip with two ticks — **Bevel Mesh** rounds the source object's
+corner with a live modifier, **Bevel Edge Wear** / **Bevel Smooth Edge** rounds
+the strip's own seam — and Width, Segments and Profile Shape underneath.
+
+Both off by default, both live: drag the width and whichever is ticked follows.
+Unticking Bevel Mesh removes the modifier and leaves the source exactly as it
+was found. A strip built from Ground Level says so instead, since there is no
+selected edge to round on either mesh.
+
+The definitions are imported from Ambient Occlusion rather than written out
+again, so the three tools cannot drift into rounding things three different
+ways, and `source_bevel.py` now serves all of them — a tool differs only by
+which per-object group its strips live in and what its modifier is called.
+
 ## 1.4.0
 
 ### Changed — one layout for the whole tab

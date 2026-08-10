@@ -151,6 +151,31 @@ def _centre_origin(obj, mesh):
     return median
 
 
+def apply_strip_bevel(mesh, edges, coords, settings):
+    """Round off the strip's own seam, if Bevel Edge Wear is ticked.
+
+    The seam runs along the edges the strip was built from, so those are the
+    corner points handed to the shared beveller. The tolerance has to cover how
+    far the welded seam ends up from the original edge: the strip is lifted off
+    the wall by Surface Offset and the weld moves vertices up to the merge
+    distance.
+    """
+    if not getattr(settings, "bevel_strip", False):
+        return 0
+    from ..fake_ao import geometry as ao_geometry
+
+    # A DamageEdge carries the two vertex indices it was read from -
+    # see geometry.gather_selected_edges.
+    corner_points = [(coords[e.va], coords[e.vb]) for e in edges]
+    tolerance = max(settings.merge_distance, settings.surface_offset) * 2.0 + 1e-6
+    return ao_geometry.bevel_strip_corners(
+        mesh, corner_points,
+        width=settings.bevel_width,
+        segments=settings.bevel_segments,
+        profile=settings.bevel_profile,
+        tolerance=tolerance,
+    )
+
 def rebuild(obj):
     """Regenerate `obj`'s mesh from its stored source, edges and settings.
 
@@ -221,6 +246,7 @@ def rebuild(obj):
 
         # Place the object back on the source before re-centring, so repeated
         # rebuilds cannot accumulate origin drift.
+        apply_strip_bevel(new_mesh, edges, coords, data)
         obj.matrix_world = source.matrix_world.copy()
         obj.data = new_mesh
         _centre_origin(obj, new_mesh)
@@ -240,7 +266,14 @@ def _on_setting_changed(self, context):
     obj = getattr(self, "id_data", None)
     if obj is None or not isinstance(obj, bpy.types.Object):
         return
-    if _rebuilding or not self.is_fake_damage or not self.live_update:
+    if _rebuilding or not self.is_fake_damage:
+        return
+    # The source's round is a modifier, not a rebuild, so it is kept in step
+    # here rather than inside rebuild() - and it happens even with Live Update
+    # off, because a modifier is not the strip's geometry.
+    from ..fake_ao import source_bevel
+    source_bevel.sync(self.source_object, leader=obj, tool=source_bevel.EDGE_WEAR)
+    if not self.live_update:
         return
     self.status = rebuild(obj) or ""
 

@@ -72,6 +72,14 @@ class SETO_PT_smooth_edge_object_panel(pl.SelectedPanel, bpy.types.Panel):
         col.prop(data, "alpha_bottom")
         col.prop(data, "alpha_top")
 
+        layout.separator()
+        if data.edge_keys:
+            _draw_bevel(layout, data, tool_label="Smooth Edge")
+        else:
+            box = layout.box()
+            box.scale_y = 0.8
+            box.label(text="Bevel needs a selected edge.", icon='INFO')
+
         if not data.live_update:
             pl.rebuild_button(layout, "seto.smooth_edge_rebuild")
 

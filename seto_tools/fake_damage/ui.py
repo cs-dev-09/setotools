@@ -76,6 +76,14 @@ class SETO_PT_fake_damage_object_panel(pl.SelectedPanel, bpy.types.Panel):
         col.prop(data, "uv_scale")
         col.prop(data, "uv_offset")
 
+        layout.separator()
+        if data.edge_keys:
+            _draw_bevel(layout, data, tool_label="Edge Wear")
+        else:
+            box = layout.box()
+            box.scale_y = 0.8
+            box.label(text="Bevel needs a selected edge.", icon='INFO')
+
         if not data.live_update:
             pl.rebuild_button(layout, "seto.fake_damage_rebuild")
 

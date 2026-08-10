@@ -28,19 +28,27 @@ hand anywhere else on the mesh is left alone.
 import bpy
 
 MODIFIER_NAME = "Seto AO Bevel"
+
+# Which per-object group a tool keeps its strips in, and what its modifier is
+# called. Edge Wear and Smooth Edge build the same strip and want the same live
+# round, and the only things that differ between the three are these.
+AO = ("seto_fake_ao_data", "is_fake_ao", MODIFIER_NAME)
+EDGE_WEAR = ("seto_fake_damage_data", "is_fake_damage", "Seto Edge Wear Bevel")
+SMOOTH_EDGE = ("seto_smooth_edge_data", "is_smooth_edge", "Seto Smooth Edge Bevel")
 # Blender's own bevel-weight attribute - the one the modifier's Weight limit
 # reads. A generic float on the edge domain since 4.0.
 WEIGHT_ATTRIBUTE = "bevel_weight_edge"
 
 
-def strips_for(source):
-    """Every AO strip in the file built from `source`, in a stable order."""
+def strips_for(source, tool=AO):
+    """Every strip of one tool built from `source`, in a stable order."""
     if source is None:
         return []
+    attr, flag, _ = tool
     found = [obj for obj in bpy.data.objects
              if obj.type == 'MESH'
-             and obj.seto_fake_ao_data.is_fake_ao
-             and obj.seto_fake_ao_data.source_object is source]
+             and getattr(getattr(obj, attr), flag)
+             and getattr(obj, attr).source_object is source]
     return sorted(found, key=lambda obj: obj.name)
 
 
@@ -76,13 +84,13 @@ def _weights(mesh):
     return attribute
 
 
-def _remove_modifier(source):
-    modifier = source.modifiers.get(MODIFIER_NAME)
+def _remove_modifier(source, name=MODIFIER_NAME):
+    modifier = source.modifiers.get(name)
     if modifier is not None:
         source.modifiers.remove(modifier)
 
 
-def sync(source, leader=None):
+def sync(source, leader=None, tool=AO):
     """Bring `source`'s bevel modifier and edge weights in line with every AO
     strip built from it.
 
@@ -100,12 +108,13 @@ def sync(source, leader=None):
         # moment Blender flushes its own copy back.
         return None
 
+    attr, _flag, modifier_name = tool
     mesh = source.data
     contributors = []
     ours = []          # every edge any strip owns, contributing or not
 
-    for strip in strips_for(source):
-        data = strip.seto_fake_ao_data
+    for strip in strips_for(source, tool):
+        data = getattr(strip, attr)
         indices = _edge_indices(mesh, data.edge_keys)
         if indices is None:
             continue
@@ -114,7 +123,7 @@ def sync(source, leader=None):
             contributors.append((data, indices))
 
     if not ours:
-        _remove_modifier(source)
+        _remove_modifier(source, modifier_name)
         return None
 
     weights = _weights(mesh)
@@ -124,7 +133,7 @@ def sync(source, leader=None):
         # and take the modifier away, leaving the mesh as it was found.
         for index in ours:
             weights.data[index].value = 0.0
-        _remove_modifier(source)
+        _remove_modifier(source, modifier_name)
         mesh.update()
         return None
 
@@ -132,7 +141,7 @@ def sync(source, leader=None):
     if leader is None:
         leader = max(contributors, key=lambda entry: entry[0].bevel_width)[0]
     else:
-        leader = leader.seto_fake_ao_data
+        leader = getattr(leader, attr)
 
     contributing = {index for _, indices in contributors for index in indices}
     for index in ours:
@@ -145,9 +154,9 @@ def sync(source, leader=None):
         for index in indices:
             weights.data[index].value = share
 
-    modifier = source.modifiers.get(MODIFIER_NAME)
+    modifier = source.modifiers.get(modifier_name)
     if modifier is None:
-        modifier = source.modifiers.new(MODIFIER_NAME, 'BEVEL')
+        modifier = source.modifiers.new(modifier_name, 'BEVEL')
     modifier.affect = 'EDGES'
     modifier.limit_method = 'WEIGHT'
     modifier.offset_type = 'OFFSET'

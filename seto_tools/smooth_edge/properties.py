@@ -124,6 +124,16 @@ def settings_annotations(update=None):
     shared = strip_settings.annotations(update)
     for name in ("alpha_bottom", "alpha_top"):
         annotations[name] = shared[name]
+
+    # Bevel is defined once, in Ambient Occlusion, and imported here rather
+    # than written out a third time - the wording, the ranges and the meaning
+    # of each tick have to be identical or the tab reads as three tools that
+    # round things three different ways. NOT in strip_settings.SHARED_NAMES:
+    # these belong to the finished strip, not to the Geometry section.
+    from ..fake_ao.properties import settings_annotations as ao_annotations
+    ao = ao_annotations(update)
+    for name in ('bevel_mesh', 'bevel_strip', 'bevel_width', 'bevel_segments', 'bevel_profile'):
+        annotations[name] = ao[name]
     return annotations
 
 
