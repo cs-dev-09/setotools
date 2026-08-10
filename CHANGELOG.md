@@ -2,6 +2,19 @@
 
 All notable changes to Seto Tools.
 
+## 1.5.1
+
+### Fixed — Edge Wear and Smooth Edge threw on their Selected Strip panel
+
+`_draw_bevel` was called without being imported, so selecting a strip from
+either tool produced a NameError and no Bevel block. Shipped in 1.5.0 because
+`tests/panels.py` cannot reach these panels: a "Selected X" panel polls False
+unless one of the tool's own objects is active, so its draw() was never run.
+
+`tests/selected_panels.py` closes that gap - it builds a real strip for each
+tool first, then draws its panel. These are the panels with the most in them
+and the only ones anyone looks at while dragging a value.
+
 ## 1.5.0
 
 ### Added — Bevel on Edge Wear and Smooth Edge

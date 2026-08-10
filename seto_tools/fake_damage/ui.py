@@ -1,6 +1,7 @@
 import bpy
 
 from ..shared import groups, icons, panel_layout as pl, ui_common
+from ..fake_ao.ui import _draw_bevel
 
 
 class SETO_PT_fake_damage_panel(bpy.types.Panel):
