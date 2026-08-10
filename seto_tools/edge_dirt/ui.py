@@ -116,7 +116,12 @@ class SETO_PT_edge_dirt_object_panel(pl.SelectedPanel, bpy.types.Panel):
 
         manual_offset.draw(layout, data, "seto_edge_dirt_data")
 
-        _draw_bevel(layout, data, tool_label="Edge Dirt")
+        if data.edge_keys:
+            _draw_bevel(layout, data, tool_label="Edge Dirt")
+        else:
+            # Ground Level: the line this runs along is not in the mesh, so
+            # there is no edge to round - on either mesh.
+            pl.hint(layout, "Bevel needs a selected edge.")
 
         if not data.live_update:
             pl.rebuild_button(layout, "seto.edge_dirt_rebuild")

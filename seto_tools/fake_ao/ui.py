@@ -3,18 +3,15 @@ import bpy
 from ..shared import groups, icons, manual_offset, panel_layout as pl, ui_common
 
 
-def _draw_bevel(layout, settings, tool_label="Ambient Occlusion",
-                show_target=False):
+def _draw_bevel(layout, settings, tool_label="Ambient Occlusion"):
     """The Bevel block: two ticks, drawn on the finished strip.
 
     Rounding the wall and rounding the decal that runs along it are two
     decisions, so they are two checkboxes rather than one checkbox and a Target
     enum behind it - "Bevel Mesh" and "Bevel <tool>", each saying plainly which
-    mesh it touches. Both are live: the source's round is a modifier and the
-    strip's is rebuilt, so dragging Width moves whichever is ticked.
-
-    `show_target` is for Edge Dirt, which still cuts its source bevel in
-    destructively at creation and has a warning to show for it.
+    mesh it touches. Both are live on all four tools: the source's round is a
+    modifier and the strip's is rebuilt, so dragging Width moves whichever is
+    ticked.
     """
     box = layout.box()
     box.label(text="Bevel", icon='MOD_BEVEL')
@@ -26,8 +23,6 @@ def _draw_bevel(layout, settings, tool_label="Ambient Occlusion",
     on = settings.bevel_mesh or settings.bevel_strip
     body = box.column(align=True)
     body.enabled = on
-    if show_target:
-        body.prop(settings, "bevel_target", text="")
     body.prop(settings, "bevel_width", text="Width")
     body.prop(settings, "bevel_segments", text="Segments")
     body.prop(settings, "bevel_profile", text="Profile Shape")

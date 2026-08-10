@@ -2,6 +2,29 @@
 
 All notable changes to Seto Tools.
 
+## 1.6.2
+
+### Fixed — Edge Dirt's Bevel Mesh did nothing
+
+The tick was on the finished strip, it could be clicked, and nothing anywhere
+read it. Edge Dirt cut its source round into the mesh with `bmesh.ops.bevel` at
+creation, which works exactly once: the edge it rounded no longer exists
+afterwards, so there was nothing left for the tick to act on — and the strip
+had to store its corner verbatim because the indices pointing at it had stopped
+meaning anything.
+
+It is the same live **Bevel modifier** the other three tools use now. Ticking
+**Bevel Mesh** rounds the source, dragging Width follows it, unticking removes
+the modifier and leaves the source exactly as it was found, and the round still
+reaches the YDR because Sollumz exports the evaluated object. The source mesh
+is never edited, which also means an Edge Dirt strip now keeps pointing at real
+source edges.
+
+The **Bevel target** dropdown (Source / Strip / Source + Strip) is gone with
+it: with both rounds live off one set of settings there is nothing left to
+choose. Strips saved with a target still load — the setting is simply no longer
+read.
+
 ## 1.6.1
 
 ### Fixed — two tools' Bevels on one wall rounded each other's edges

@@ -37,7 +37,14 @@ def _on_setting_changed(self, context):
     obj = getattr(self, "id_data", None)
     if obj is None or not isinstance(obj, bpy.types.Object):
         return
-    if is_rebuilding() or not self.is_edge_dirt or not self.live_update:
+    if is_rebuilding() or not self.is_edge_dirt:
+        return
+    # The source's round is a modifier, not a rebuild, so it is kept in step
+    # here rather than inside rebuild() - and it happens even with Live Update
+    # off, because a modifier is not the strip's geometry.
+    from ..fake_ao import source_bevel
+    source_bevel.sync(self.source_object, leader=obj, tool=source_bevel.EDGE_DIRT)
+    if not self.live_update:
         return
     self.status = rebuild(obj) or ""
 

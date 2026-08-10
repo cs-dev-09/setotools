@@ -22,10 +22,11 @@ def settings_annotations(update=None):
     per-object copy passes one.
 
     Edge Dirt builds its own settings from this same set, so a property here
-    belongs to both tools. `bevel_target` is one Ambient Occlusion no longer
-    reads - its source round is a live modifier that always follows the strip
-    (see source_bevel.py) - but Edge Dirt still cuts its bevel in and needs the
-    choice, and strips saved before the change still carry a value for it.
+    belongs to both tools. `bevel_target` is one **nothing** reads any more:
+    both tools round the source with a live modifier that always follows the
+    strip (see source_bevel.py), so there is no target left to choose. It is
+    still declared because strips saved before the change carry a value for it,
+    and a missing property is a console error on every one of them.
     """
     return {
         "source_mode": bpy.props.EnumProperty(

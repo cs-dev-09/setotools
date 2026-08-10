@@ -8,6 +8,7 @@ from . import object_settings
 from . import properties
 from . import textures
 from ..fake_ao import geometry
+from ..fake_ao import source_bevel
 from ..shared import manual_offset
 from ..shared import sollumz_integration as szi
 
@@ -171,33 +172,13 @@ class SETO_OT_create_edge_dirt(bpy.types.Operator):
             bm = temporary_bm = bmesh.new()
             bm.from_mesh(source_mesh)
 
-        # The bevel is the only thing in this tool that writes to the source
-        # mesh, so it happens up front and everything below reads whatever it
-        # left behind.
-        # Bevel rounds off the *selected* edges, and Ground Level has no
-        # selection - the line it builds along is not in the mesh at all.
-        bevel_source = (not ground and settings.bevel_mesh
-                        and settings.bevel_target in {'SOURCE', 'BOTH'})
-        # 'Source + Strip' builds the strip from the SHARP corner and then
-        # rounds it with the same Width/Segments, so the two rounds coincide
-        # and the decal lands on the rounded corner instead of across it. That
-        # means reading the corner before the bevel removes it.
-        follow_round = bevel_source and settings.bevel_target == 'BOTH'
-
+        # Nothing here writes to the source mesh. The source's round used to be
+        # cut in at this point with bmesh.ops.bevel, which worked exactly once:
+        # the edge it rounded no longer existed afterwards, so Bevel Mesh on the
+        # finished strip had nothing left to act on and was a dead tick. It is a
+        # Bevel modifier now, driven from the strip's settings after the object
+        # exists - see fake_ao/source_bevel.py, which serves all four tools.
         segments = skipped = None
-        if follow_round:
-            segments, skipped = geometry.gather_selected_edge_segments(bm)
-
-        excluded_faces = set()
-        if bevel_source:
-            excluded_faces = geometry.bevel_source_edges(
-                bm,
-                width=settings.bevel_width,
-                segments=settings.bevel_segments,
-                profile=settings.bevel_profile,
-            )
-            if excluded_faces:
-                bmesh.update_edit_mesh(source_mesh)
 
         if ground:
             # World Z, taken into the source's local space. The plane's normal
@@ -227,17 +208,11 @@ class SETO_OT_create_edge_dirt(bpy.types.Operator):
             skipped = 0
             edge_keys = ""
             # There are no source edges to point at, so the contour is frozen
-            # onto the strip - the same mechanism a 'Source + Strip' bevel uses
-            # for a corner it has rounded away.
-            frozen_segments = object_settings.serialise_segments(segments)
-        elif follow_round:
-            # Vertex indices cannot describe an edge that no longer exists;
-            # the corner itself is stored instead - see serialise_segments().
-            edge_keys = ""
+            # onto the strip.
             frozen_segments = object_settings.serialise_segments(segments)
         else:
-            segments, skipped = geometry.gather_selected_edge_segments(bm, excluded_faces)
-            edge_keys = object_settings.serialise_edge_keys(bm, excluded_faces)
+            segments, skipped = geometry.gather_selected_edge_segments(bm)
+            edge_keys = object_settings.serialise_edge_keys(bm)
             frozen_segments = ""
 
         if temporary_bm is not None:
@@ -394,16 +369,10 @@ class SETO_OT_create_edge_dirt(bpy.types.Operator):
             obj_data.edge_keys = edge_keys
             obj_data.frozen_segments = frozen_segments
             properties.copy_settings(self, obj_data)
-            # The source bevel is a one-shot: it already happened, and the
-            # stored settings exist to rebuild the STRIP. Collapsing the
-            # target here is what lets the strip's panel offer a plain Bevel
-            # toggle with no target to pick - and stops a later rebuild from
-            # reading 'SOURCE' and silently doing nothing.
-            # The source's round has already been cut in; what the strip
-            # carries is its own seam.
-            obj_data.bevel_mesh = False
-            obj_data.bevel_strip = (settings.bevel_strip
-                                    and settings.bevel_target != 'SOURCE')
+            # Ground Level builds along a contour that is not in the mesh, so
+            # there is no edge there to round - on either mesh.
+            obj_data.bevel_mesh = settings.bevel_mesh and not ground
+            obj_data.bevel_strip = settings.bevel_strip and not ground
             obj_data.bevel_target = 'STRIP'
             obj_data.status = ""
             # Where the tool put it. A rebuild records this too, but the strip
@@ -416,10 +385,16 @@ class SETO_OT_create_edge_dirt(bpy.types.Operator):
         # starting point for the next strip instead of silently reverting.
         properties.copy_settings(self, context.scene.seto_edge_dirt)
 
+        # Round the source's corner to match, with a modifier rather than by
+        # cutting it in - so it stays live, and the strip's own Bevel controls
+        # both from here on.
+        bevel_note = source_bevel.sync(source_obj, leader=new_obj,
+                                       tool=source_bevel.EDGE_DIRT)
+
         msg = f"Created '{new_name}' with {len(strip_data.faces)} strip quad(s)."
-        if bevel_source:
-            msg += (f" Beveled {len(excluded_faces)} face(s) onto the source mesh."
-                    if excluded_faces else " Source bevel produced nothing.")
+        if bevel_note:
+            msg += (f" Source corner rounded by a "
+                    f"'{source_bevel.EDGE_DIRT[2]}' modifier ({bevel_note}).")
         if skipped:
             msg += f" Skipped {skipped} edge(s) with no adjacent face."
         self.report({'INFO'}, msg)

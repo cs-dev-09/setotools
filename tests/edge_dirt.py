@@ -113,22 +113,56 @@ if check("Create Edge Dirt builds a strip", result == {'FINISHED'}, str(result))
     check("Rebuild Now still rebuilds", strip.seto_edge_dirt_data.status == "",
           strip.seto_edge_dirt_data.status)
 
-# Source + Strip is the one case that DOES write to the source mesh - it rounds
-# the selected edge so the strip can sit on the round. Switched on explicitly:
-# Bevel ships OFF now, because creating a decal should not reshape the wall it
-# was run along unless it was asked to.
+# Bevel. This tool used to cut the source's round in with bmesh.ops.bevel at
+# creation, which worked exactly once - the edge it rounded no longer existed
+# afterwards, so **Bevel Mesh on the finished strip was a dead tick**: it drew,
+# it could be clicked, and nothing anywhere read it. It is a live modifier now,
+# the same one the other three tools drive.
+from seto_tools.fake_ao import source_bevel  # noqa: E402
+
+
+def evaluated_verts(obj):
+    """What Sollumz exports: the object with its modifiers applied."""
+    depsgraph = bpy.context.evaluated_depsgraph_get()
+    return len(obj.evaluated_get(depsgraph).to_mesh().vertices)
+
+
 scene_settings.property_unset("bevel_target")
 scene_settings.bevel_mesh = True
 scene_settings.bevel_strip = True
 beveled_cube, beveled_strip, beveled_result = build_strip(bpy.ops.seto.create_edge_dirt)
-if check("Source + Strip builds too", beveled_result == {'FINISHED'}, str(beveled_result)):
-    check("and it rounds the source edge, as designed",
-          len(beveled_cube.data.polygons) > 6, len(beveled_cube.data.polygons))
-    check("the strip stores its corner rather than vertex indices",
-          beveled_strip.seto_edge_dirt_data.frozen_segments != "")
-    check("and its own bevel target is collapsed to Strip",
-          beveled_strip.seto_edge_dirt_data.bevel_target == 'STRIP',
-          beveled_strip.seto_edge_dirt_data.bevel_target)
+if check("a strip builds with Bevel on", beveled_result == {'FINISHED'}, str(beveled_result)):
+    beveled_data = beveled_strip.seto_edge_dirt_data
+    check("the source mesh is not edited - it is a modifier",
+          len(beveled_cube.data.polygons) == 6, len(beveled_cube.data.polygons))
+    check("and the modifier is this tool's own",
+          beveled_cube.modifiers.get(source_bevel.EDGE_DIRT[2]) is not None,
+          str([m.name for m in beveled_cube.modifiers]))
+    check("reading its own weight attribute, not Blender's",
+          {m.edge_weight for m in beveled_cube.modifiers if m.type == 'BEVEL'}
+          == {source_bevel.EDGE_DIRT[3]},
+          str({m.name: m.edge_weight for m in beveled_cube.modifiers if m.type == 'BEVEL'}))
+    check("the strip keeps pointing at real source edges",
+          beveled_data.edge_keys != "" and beveled_data.frozen_segments == "")
+    check("the round reaches the evaluated mesh Sollumz exports",
+          evaluated_verts(beveled_cube) == 16, evaluated_verts(beveled_cube))
+
+    # The tick used to be inert. Each of these three would have passed before
+    # the fix only because nothing happened at all.
+    beveled_data.bevel_mesh = False
+    check("unticking Bevel Mesh removes the modifier",
+          beveled_cube.modifiers.get(source_bevel.EDGE_DIRT[2]) is None,
+          str([m.name for m in beveled_cube.modifiers]))
+    check("and leaves the source exactly as it was found",
+          evaluated_verts(beveled_cube) == 8, evaluated_verts(beveled_cube))
+    beveled_data.bevel_mesh = True
+    check("ticking it back on rounds the source again",
+          evaluated_verts(beveled_cube) == 16, evaluated_verts(beveled_cube))
+    beveled_data.bevel_width = beveled_data.bevel_width * 2.0
+    check("and Width drags the modifier live",
+          abs(beveled_cube.modifiers[source_bevel.EDGE_DIRT[2]].width
+              - beveled_data.bevel_width) < 1e-6,
+          str(beveled_cube.modifiers[source_bevel.EDGE_DIRT[2]].width))
 
 # A material left untextured - what a strip built before a texture was dropped
 # into edge_dirt/textures/ leaves behind - must be filled on reuse, or the tool

@@ -43,6 +43,7 @@ for label, op, panel in (
     ("Edge Wear", bpy.ops.seto.create_fake_damage, "SETO_PT_fake_damage_object_panel"),
     ("Smooth Edge", bpy.ops.seto.create_smooth_edge, "SETO_PT_smooth_edge_object_panel"),
     ("Ambient Occlusion", bpy.ops.seto.create_fake_ao, "SETO_PT_fake_ao_object_panel"),
+    ("Edge Dirt", bpy.ops.seto.create_edge_dirt, "SETO_PT_edge_dirt_object_panel"),
 ):
     build(op)
     cls = getattr(bpy.types, panel)

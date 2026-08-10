@@ -45,6 +45,8 @@ EDGE_WEAR = ("seto_fake_damage_data", "is_fake_damage", "Seto Edge Wear Bevel",
              "seto_bevel_edge_wear")
 SMOOTH_EDGE = ("seto_smooth_edge_data", "is_smooth_edge", "Seto Smooth Edge Bevel",
                "seto_bevel_smooth_edge")
+EDGE_DIRT = ("seto_edge_dirt_data", "is_edge_dirt", "Seto Edge Dirt Bevel",
+             "seto_bevel_edge_dirt")
 
 # Blender's own bevel-weight attribute. Not written any more - it is the user's,
 # and a modifier they added themselves reads it - but our old weights are still
@@ -53,7 +55,7 @@ SMOOTH_EDGE = ("seto_smooth_edge_data", "is_smooth_edge", "Seto Smooth Edge Beve
 LEGACY_WEIGHT_ATTRIBUTE = "bevel_weight_edge"
 WEIGHT_ATTRIBUTE = AO[3]
 
-ALL_TOOLS = (AO, EDGE_WEAR, SMOOTH_EDGE)
+ALL_TOOLS = (AO, EDGE_WEAR, SMOOTH_EDGE, EDGE_DIRT)
 
 
 def strips_for(source, tool=AO):
