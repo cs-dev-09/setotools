@@ -11,9 +11,13 @@
 from . import properties
 from . import object_settings
 from . import operators
+from . import source_bevel
 from . import ui
 
-_modules = (properties, object_settings, operators, ui)
+# source_bevel registers no classes - only the handler that notices a source
+# whose last strip has been deleted, which serves all three tools that round a
+# source. See the end of that module.
+_modules = (properties, object_settings, operators, source_bevel, ui)
 
 
 def register():

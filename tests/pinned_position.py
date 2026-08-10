@@ -66,6 +66,15 @@ def build_strip(operator):
 
 
 def world(obj):
+    """Where the object actually is, after letting the depsgraph catch up.
+
+    Writing `matrix_world` updates `location` at once, but writing `location` -
+    which is what the offset does, so that a parented strip stays correct when
+    its Drawable moves - leaves `matrix_world` stale until the scene is
+    evaluated. In the UI that happens before anything is drawn; in a script it
+    has to be asked for, or every read here is one step behind.
+    """
+    bpy.context.view_layer.update()
     return Vector(obj.matrix_world.translation)
 
 
@@ -156,6 +165,43 @@ for label, create, attr in TOOLS:
     data.alpha_center = max(0.0, data.alpha_center - 0.05)
     check(f"{label}: an unpinned strip still tracks its source",
           close(world(strip), base), f"{tuple(world(strip))} vs {tuple(base)}")
+
+
+# --- A parented strip, and a parent that moves ------------------------------
+#
+# Strips built from a source inside a Sollumz Drawable are parented into it. A
+# world-space auto_location went stale the moment that parent was moved - the
+# strip travelled with it, as it should, but the remembered figure did not, so
+# typing into the Offset field teleported the strip back to where the parent
+# used to be. Both values are the object's own location now, which parenting
+# leaves alone.
+cube, strip = build_strip(bpy.ops.seto.create_fake_ao)
+if check("a strip was created to parent", strip is not None):
+    data = strip.seto_fake_ao_data
+    rig = bpy.data.objects.new("Rig", None)
+    bpy.context.scene.collection.objects.link(rig)
+    for child in (cube, strip):
+        child.parent = rig
+        child.matrix_parent_inverse = rig.matrix_world.inverted()
+
+    rig.location = (5.0, 0.0, 0.0)
+    bpy.context.view_layer.update()
+    travelled = world(strip)
+    check("the strip travels with its parent",
+          close(travelled - world(cube), Vector((-0.917, 0.0, -0.917)), tol=0.01),
+          f"{tuple(travelled)} vs source {tuple(world(cube))}")
+
+    data.manual_offset = (0.0, 0.0, 0.25)
+    bpy.context.view_layer.update()
+    check("typing an offset does not teleport it back to where the parent was",
+          close(world(strip), travelled + Vector((0.0, 0.0, 0.25))),
+          f"{tuple(world(strip))} vs {tuple(travelled + Vector((0.0, 0.0, 0.25)))}")
+
+    data.alpha_center = max(0.0, data.alpha_center - 0.1)
+    bpy.context.view_layer.update()
+    check("and a rebuild under a moved parent keeps it there",
+          close(world(strip), travelled + Vector((0.0, 0.0, 0.25))),
+          f"{tuple(world(strip))}")
 
 
 # The operator refuses an object that carries no strip data rather than writing

@@ -2,6 +2,38 @@
 
 All notable changes to Seto Tools.
 
+## 1.6.1
+
+### Fixed — two tools' Bevels on one wall rounded each other's edges
+
+Ambient Occlusion, Edge Wear and Smooth Edge all drove their source round
+through Blender's own `bevel_weight_edge` attribute, which **every** Bevel
+modifier limiting by Weight reads. A wall carrying an AO strip and an Edge Wear
+strip therefore got two modifiers that each rounded both tools' edges, at each
+other's widths, and the rounds compounded — measured on a cube, one strip takes
+it from 8 vertices to 16 and two strips took it to 44.
+
+Each tool now writes and reads its own attribute. Blender's is left alone
+entirely, so a Bevel modifier you added yourself is no longer affected, and
+weights left in it by older versions are cleared off our edges as each source
+is next synced.
+
+### Fixed — deleting a strip left the source rounded
+
+The modifier came off when the last strip's Bevel was switched off, but not
+when the strip itself was deleted: nothing was left to notice. The wall kept
+its round and a modifier named after a tool that was no longer there. Deleting
+a strip now takes its modifier and its weights with it, leaving the source as
+it was found.
+
+### Fixed — a pinned strip jumped when its Drawable was moved
+
+Strips built from a source inside a Sollumz Drawable are parented into it. The
+pinned position was remembered in world space, so moving the Drawable left that
+figure stale — the strip travelled with its parent correctly, but typing into
+the Offset field teleported it back to where the Drawable used to be. It is
+remembered in the strip's own transform now, which parenting leaves alone.
+
 ## 1.6.0
 
 ### Added — a hand-moved strip stays where it was put

@@ -16,10 +16,18 @@ is therefore stale by the time it could be used.
 So the offset is remembered instead of derived. Two values live on the strip:
 
     auto_location   where the last rebuild put the origin, before any offset
-    manual_offset   what the user wants added to that, in world space
+    manual_offset   what the user wants added to that
 
 `apply()` writes the first and adds the second, at the very end of a rebuild.
 That survives `_centre_origin` because it runs after it.
+
+**Both are the object's own location, not its world position.** A strip built
+from a source inside a Sollumz Drawable is parented into that Drawable, and a
+world-space `auto_location` goes stale the moment the Drawable is moved - the
+strip travels with its parent, as it should, but the remembered figure does
+not. Typing into the Offset field then teleported the strip back to where the
+Drawable used to be. Expressed in the object's own transform, which is what
+parenting leaves alone, there is nothing to go stale.
 
 Why there is a button rather than a silent grab of `obj.location`: a rebuild
 moves the object legitimately, several times per slider drag, so there is no
@@ -82,39 +90,33 @@ def annotations():
 
 
 def place(obj, data):
-    """Put `obj` at its generated location plus its offset.
-
-    A whole new matrix rather than `matrix_world.translation += ...`: adding to
-    it in place is the version that made the first attempt at this hard to
-    reason about, since the same matrix is read again by the next rebuild.
-    """
-    matrix = obj.matrix_world.copy()
-    matrix.translation = Vector(data.auto_location) + Vector(data.manual_offset)
-    obj.matrix_world = matrix
+    """Put `obj` at its generated location plus its offset."""
+    obj.location = Vector(data.auto_location) + Vector(data.manual_offset)
 
 
 def reset(obj, data):
     """Mark where the object is now as its generated location, offset zero.
 
     For the create operators: without it, a strip that is dragged and pinned
-    before it has ever been rebuilt would measure its offset against the origin
-    of the world.
+    before it has ever been rebuilt would measure its offset against the
+    origin.
     """
-    data.auto_location = tuple(obj.matrix_world.translation)
+    data.auto_location = tuple(obj.location)
+    # Through the ID-property back door on purpose: assigning the property
+    # fires the update below, which would move a strip that is already exactly
+    # where it belongs.
     data["manual_offset"] = (0.0, 0.0, 0.0)
 
 
 def apply(obj, data):
     """The last thing a rebuild does - after `_centre_origin`, never before."""
-    data.auto_location = tuple(obj.matrix_world.translation)
+    data.auto_location = tuple(obj.location)
     place(obj, data)
 
 
 def capture(obj, data):
     """Adopt wherever the object has been dragged to as its offset."""
-    data.manual_offset = (
-        Vector(obj.matrix_world.translation) - Vector(data.auto_location)
-    )
+    data.manual_offset = Vector(obj.location) - Vector(data.auto_location)
 
 
 def is_pinned(data):

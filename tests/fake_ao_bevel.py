@@ -239,6 +239,91 @@ check("Merge Distance is still not a setting",
 check("Surface Offset is still capped at 0.05",
       abs(bpy.context.scene.seto_fake_ao.bl_rna.properties["surface_offset"].hard_max - 0.05) < 1e-9)
 
+# --- 10. Two tools on one wall do not round each other's edges --------------
+#
+# All three tools used to write Blender's own bevel_weight_edge, which every
+# Bevel modifier limiting by Weight reads. An AO strip and an Edge Wear strip on
+# one cube therefore gave it two modifiers that each rounded BOTH edges, and the
+# rounds compounded: 8 vertices became 44 where one strip makes 16.
+cube = fresh_cube()
+try:
+    bpy.ops.seto.create_fake_ao(**BASE, **BEVEL)
+except RuntimeError as e:
+    print("  (err", e, ")")
+bpy.ops.object.mode_set(mode='OBJECT')
+ao_strip = bpy.context.active_object
+
+bpy.context.view_layer.objects.active = cube
+bpy.ops.object.mode_set(mode='EDIT')
+bpy.ops.mesh.select_all(action='DESELECT')
+bpy.ops.object.mode_set(mode='OBJECT')
+for edge in cube.data.edges:                      # the -X/-Y vertical edge
+    a, b = (cube.data.vertices[i].co for i in edge.vertices)
+    if abs(a.x + 1) < 1e-4 and abs(b.x + 1) < 1e-4 and abs(a.y + 1) < 1e-4 and abs(b.y + 1) < 1e-4:
+        edge.select = True
+bpy.ops.object.mode_set(mode='EDIT')
+try:
+    bpy.ops.seto.create_fake_damage()
+except RuntimeError as e:
+    print("  (err", e, ")")
+bpy.ops.object.mode_set(mode='OBJECT')
+wear_strip = bpy.context.active_object
+wear_data = wear_strip.seto_fake_damage_data
+wear_data.bevel_mesh = True
+wear_data.bevel_width = 0.02
+
+ao_attr, wear_attr = source_bevel.AO[3], source_bevel.EDGE_WEAR[3]
+check("each tool writes its own weight attribute",
+      ao_attr != wear_attr
+      and cube.data.attributes.get(ao_attr) is not None
+      and cube.data.attributes.get(wear_attr) is not None,
+      str([a.name for a in cube.data.attributes]))
+check("and each modifier reads only its own",
+      {m.edge_weight for m in cube.modifiers if m.type == 'BEVEL'} == {ao_attr, wear_attr},
+      str({m.name: m.edge_weight for m in cube.modifiers if m.type == 'BEVEL'}))
+check("Blender's own bevel weight is left alone",
+      all(v.value == 0.0 for v in
+          cube.data.attributes[source_bevel.LEGACY_WEIGHT_ATTRIBUTE].data)
+      if cube.data.attributes.get(source_bevel.LEGACY_WEIGHT_ATTRIBUTE) else True)
+for name, attribute in ((ao_attr, ao_attr), (wear_attr, wear_attr)):
+    weighted = [i for i, v in enumerate(cube.data.attributes[attribute].data) if v.value > 0.0]
+    check(f"{name} weights exactly one edge", len(weighted) == 1, str(weighted))
+
+# Two edges rounded once each, not twice each. A 4-segment round replaces each
+# end of the edge with 5 vertices, so one round takes a cube from 8 to 16 and
+# two rounds take it to 24. Cross-reading the weights took it to 44.
+baked = evaluated_mesh(cube)
+check("neither corner is rounded twice", len(baked.vertices) == 24,
+      f"{len(baked.vertices)} vertices, want 24 (44 is the bug)")
+
+# --- 11. Deleting the last strip takes the round with it ---------------------
+#
+# sync() removes the modifier when a source has no strips left, but nothing
+# called it once the strip that would have was deleted - so the wall kept its
+# round and a modifier named after a tool the user could no longer see.
+bpy.data.objects.remove(ao_strip, do_unlink=True)
+bpy.context.view_layer.update()
+check("deleting the strip removes its modifier from the source",
+      modifier_of(cube) is None, str([m.name for m in cube.modifiers]))
+check("and takes its weight attribute with it",
+      cube.data.attributes.get(ao_attr) is None,
+      str([a.name for a in cube.data.attributes]))
+check("the other tool's strip is left alone",
+      cube.modifiers.get(source_bevel.EDGE_WEAR[2]) is not None
+      and cube.data.attributes.get(wear_attr) is not None,
+      str([m.name for m in cube.modifiers]))
+check("the source is sharp again where the deleted strip was",
+      len(evaluated_mesh(cube).vertices) == 16,
+      f"{len(evaluated_mesh(cube).vertices)} vertices, want 16 (one round left)")
+
+bpy.data.objects.remove(wear_strip, do_unlink=True)
+bpy.context.view_layer.update()
+check("deleting the last strip leaves the source exactly as it was found",
+      not [m for m in cube.modifiers if m.type == 'BEVEL']
+      and cube.data.attributes.get(wear_attr) is None
+      and len(evaluated_mesh(cube).vertices) == 8,
+      f"{[m.name for m in cube.modifiers]} / {len(evaluated_mesh(cube).vertices)} verts")
+
 failed = [r for r in R if not r[0]]
 print("\n" + "=" * 60); print(f"RESULT: {len(R)-len(failed)}/{len(R)} checks passed")
 for _, n, d in failed: print("  FAIL", n, "--", d)
