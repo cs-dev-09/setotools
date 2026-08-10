@@ -1,4 +1,4 @@
-"""Pure mesh-generation logic for the Fake Damage strip.
+"""Pure mesh-generation logic for the Edge Wear strip.
 
 This module has no knowledge of Sollumz. It only knows how to turn a set of
 selected BMesh edges (in the source object's local space) into a lightweight
@@ -396,7 +396,7 @@ def _cross_sections(points, slots, width, surface_offset, closed=False):
 
 def build_damage_mesh_data(edges, chains, coords, width, surface_offset,
                            alpha_center, alpha_outer, invert_fade, flip_direction):
-    """Generate the full Fake Damage ribbon for every chain.
+    """Generate the full Edge Wear ribbon for every chain.
 
     Geometry within a chain is continuous by construction: consecutive
     segments reference the same cross-section vertices, so there is nothing to

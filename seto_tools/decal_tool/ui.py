@@ -46,7 +46,7 @@ class SETO_PT_decal_tool_panel(bpy.types.Panel):
     bl_idname = "SETO_PT_decal_tool_panel"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
-    # Second of the three Surface tools, between Fake AO (0) and Surface
+    # Second of the three Surface tools, between Ambient Occlusion (0) and Surface
     # Painter (2). Both of those shade a surface; this one puts an image on it.
     bl_category = "Seto Tools"
     bl_parent_id = groups.SURFACE

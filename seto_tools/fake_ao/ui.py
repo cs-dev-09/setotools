@@ -40,7 +40,7 @@ def _draw_bevel(layout, settings, show_target):
 
 
 class SETO_PT_fake_ao_panel(bpy.types.Panel):
-    bl_label = "Fake AO"
+    bl_label = "Ambient Occlusion"
     bl_idname = "SETO_PT_fake_ao_panel"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
@@ -80,16 +80,16 @@ class SETO_PT_fake_ao_panel(bpy.types.Panel):
         layout.prop(settings, "material_mode")
 
         layout.separator()
-        layout.operator("seto.create_fake_ao", text="Create Fake AO", icon='MOD_SOLIDIFY')
+        layout.operator("seto.create_fake_ao", text="Create Ambient Occlusion", icon='MOD_SOLIDIFY')
 
         if context.mode != 'EDIT_MESH':
             layout.label(text="Enter Edit Mode and select edges first.", icon='INFO')
 
 
 class SETO_PT_fake_ao_object_panel(bpy.types.Panel):
-    """Settings of the selected Fake AO strip, editable after the fact.
+    """Settings of the selected Ambient Occlusion strip, editable after the fact.
 
-    Nested under the Fake AO section rather than given its own tab, and only
+    Nested under the Ambient Occlusion section rather than given its own tab, and only
     drawn when the active object is actually one of our strips.
     """
     bl_label = "Selected Strip"

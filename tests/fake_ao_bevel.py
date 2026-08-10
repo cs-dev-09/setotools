@@ -1,4 +1,4 @@
-"""Fake AO's optional Bevel: the strip seam, the source edge, and both.
+"""Ambient Occlusion's optional Bevel: the strip seam, the source edge, and both.
 
 The three things that can quietly go wrong here, and are therefore what this
 checks:

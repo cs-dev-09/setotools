@@ -57,8 +57,8 @@ check("UV island is not offset in V", abs(cv - 0.5) < 1e-3, f"centre_v={cv:.4f}"
 mat = strip.data.materials[0]
 bump = mat.node_tree.nodes.get("BumpSampler"); diff = mat.node_tree.nodes.get("DiffuseSampler")
 if dmg_textures.bundled_texture_path():
-    check("Fake Damage BumpSampler filled from the bundle", bump and bump.image is not None)
-    check("Fake Damage DiffuseSampler filled too", diff and diff.image is not None)
+    check("Edge Wear BumpSampler filled from the bundle", bump and bump.image is not None)
+    check("Edge Wear DiffuseSampler filled too", diff and diff.image is not None)
     check("loaded Non-Color", bump and bump.image and bump.image.colorspace_settings.name=='Non-Color',
           bump.image.colorspace_settings.name if bump and bump.image else None)
     check("not embedded", bump and not bump.texture_properties.embedded)
@@ -102,8 +102,8 @@ dp.set_library_path(os.path.join(bpy.app.tempdir, "Decals"))
 bpy.ops.seto.refresh_decal_library()
 s = bpy.context.scene.seto_decal; s.category="Dirt"; s.texture="dirt_01"; s.width=0.3; s.height=0.3
 
-for label, op in (("Fake AO", bpy.ops.seto.create_fake_ao),
-                  ("Fake Damage", bpy.ops.seto.create_fake_damage),
+for label, op in (("Ambient Occlusion", bpy.ops.seto.create_fake_ao),
+                  ("Edge Wear", bpy.ops.seto.create_fake_damage),
                   ("Smooth Edge", bpy.ops.seto.create_smooth_edge)):
     select_edge0(src); run(op)
     o = bpy.context.active_object

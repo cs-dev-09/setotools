@@ -5,16 +5,16 @@ hint of which one to reach for. They divide cleanly by what they actually
 produce, so the tab now opens on two sections and the tools nest inside them:
 
     Geometry   builds new mesh along the selected edges
-      Fake Damage, Smooth Edge
+      Edge Wear, Smooth Edge
     Surface    puts texture on a surface that already exists
-      Fake AO, Decal Tool, Surface Painter
+      Ambient Occlusion, Decal Tool, Surface Painter
 
 These two panels are the only top-level panels in the add-on. They own no
 settings and draw nothing - a group header is all they are - but they have to
 be **registered before** any tool, because Blender resolves `bl_parent_id` at
 registration time and drops a child whose parent is not there yet.
 
-Fake AO sits under Surface rather than with the other two strip tools: it is a
+Ambient Occlusion sits under Surface rather than with the other two strip tools: it is a
 strip in how it is built, but what it is for is shading a surface, which is how
 the user reaches for it.
 """
@@ -22,6 +22,8 @@ the user reaches for it.
 import bpy
 
 from . import icons
+from . import sollumz_integration as szi
+from . import strip_settings
 
 
 class SETO_PT_geometry_group(bpy.types.Panel):
@@ -36,7 +38,13 @@ class SETO_PT_geometry_group(bpy.types.Panel):
         icons.draw_header(self.layout, "geometry", 'MESH_DATA')
 
     def draw(self, context):
-        pass
+        # The strip's shape, drawn once for both tools below it - see
+        # strip_settings. Nothing when Sollumz is missing: each tool says so
+        # itself, and repeating the warning three times down one tab is worse
+        # than saying it where the buttons are.
+        if not szi.get_status_message()[0]:
+            return
+        strip_settings.draw(self.layout, strip_settings.get(context))
 
 
 class SETO_PT_surface_group(bpy.types.Panel):

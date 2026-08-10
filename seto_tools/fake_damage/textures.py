@@ -4,7 +4,7 @@ Drop a file into:
 
     seto_tools/fake_damage/textures/
 
-and every strip Fake Damage builds picks it up, in both DiffuseSampler and
+and every strip Edge Wear builds picks it up, in both DiffuseSampler and
 BumpSampler. The scanning rules live in shared/bundled_textures.py, which Smooth
 Edge uses too; this module only says where this tool's folder is.
 """

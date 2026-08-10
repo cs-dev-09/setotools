@@ -15,13 +15,13 @@ one material function each needed, so merging them changed no behaviour - the
 material builders are simply named apart now:
 
     find_or_create_decal_material       Decal Tool   decal.sps, library texture
-    find_or_create_damage_material      Fake Damage  decal_normal_only.sps, bundled
+    find_or_create_damage_material      Edge Wear  decal_normal_only.sps, bundled
     find_or_create_smooth_edge_material Smooth Edge  decal_normal_only.sps, bundled
-    find_or_create_fake_ao_material     Fake AO      decal.sps, no texture
+    find_or_create_fake_ao_material     Ambient Occlusion      decal.sps, no texture
 
 Each keeps its own material name and its own reuse rule, which is what stops one
 tool from adopting - and then retexturing - a material another tool (or the
-user) set up. Fake Damage and Smooth Edge use the same shader, so without that
+user) set up. Edge Wear and Smooth Edge use the same shader, so without that
 separation they would fight over each other's materials.
 
 Shared conventions worth knowing:
@@ -383,7 +383,7 @@ def assign_material_to_object(obj, material):
     materials_ops.post_create_shader_update_object(obj, material)
 
 
-# ------------------------------------------------ Fake Damage material
+# ------------------------------------------------ Edge Wear material
 
 BUMP_SAMPLER_NODE = "BumpSampler"
 
@@ -393,10 +393,10 @@ def _assign_bundled_texture(material, texture_path, node_names, colorspace):
 
     Which slots, and which colour space, depend on the shader:
 
-      * decal_normal_only (Fake Damage, Smooth Edge) reads its normal from
+      * decal_normal_only (Edge Wear, Smooth Edge) reads its normal from
         BumpSampler and still expects something in DiffuseSampler, and both want
         Non-Color - reading a normal map through sRGB bends the lighting.
-      * decal.sps (Fake AO) has only DiffuseSampler, and that is a colour
+      * decal.sps (Ambient Occlusion) has only DiffuseSampler, and that is a colour
         texture, so sRGB.
 
     A slot the shader does not have is skipped rather than treated as an error.
@@ -467,7 +467,7 @@ _PARAMETER_NODE_IDNAME = "SOLLUMZ_NT_SHADER_Parameter"
 
 
 def _find_existing_damage_material():
-    """Return a previously created Fake Damage material, or None.
+    """Return a previously created Edge Wear material, or None.
 
     Accepts Blender's automatic ".001" suffixing so a material that got
     renamed on append/link is still recognised.
@@ -483,7 +483,7 @@ def _find_existing_damage_material():
 
 
 def apply_value_parameters(material, parameters=None):
-    """Write the Fake Damage value parameters onto an existing material.
+    """Write the Edge Wear value parameters onto an existing material.
 
     Sollumz stores each shader value parameter as a node named after the
     parameter, so a single pass over the node tree covers all of them. Missing
@@ -507,7 +507,7 @@ def apply_value_parameters(material, parameters=None):
 
 
 def find_or_create_damage_material(texture_path=None, reuse=True):
-    """Find a Fake Damage material to reuse, or create and configure a new one.
+    """Find a Edge Wear material to reuse, or create and configure a new one.
 
     Never invents a shader: decal_normal_only.sps is first confirmed to exist
     in Sollumz's currently mounted ShaderManager (from szio).
@@ -546,13 +546,13 @@ def find_or_create_damage_material(texture_path=None, reuse=True):
     return material, missing, texture_warning
 
 
-# ----------------------------------------------------- Fake AO material
+# ----------------------------------------------------- Ambient Occlusion material
 
 FAKE_AO_MATERIAL_NAME = "seto_fakeao"
 
 
 def _find_existing_fake_ao_material():
-    """A Fake AO material we made earlier, or None.
+    """A Ambient Occlusion material we made earlier, or None.
 
     Name-scoped rather than shader-scoped. Matching on decal.sps alone - which
     is what this used to do - would happily adopt one of the Decal Tool's
@@ -570,14 +570,14 @@ def _find_existing_fake_ao_material():
 
 
 def find_or_create_fake_ao_material(texture_path=None, reuse=True):
-    """Find a Fake AO material to reuse, or create and texture a new one.
+    """Find a Ambient Occlusion material to reuse, or create and texture a new one.
 
     Never invents a shader: first confirms decal.sps exists in Sollumz's
     currently mounted ShaderManager (from szio), and raises SollumzShaderError
     with a clear message if not.
 
     DiffuseSampler is filled from the texture bundled with the add-on
-    (fake_ao/textures/). decal.sps has no BumpSampler, so unlike Fake Damage and
+    (fake_ao/textures/). decal.sps has no BumpSampler, so unlike Edge Wear and
     Smooth Edge only the one slot is set, and as sRGB rather than Non-Color -
     this is a colour texture, not a normal map.
 
@@ -618,10 +618,10 @@ SMOOTH_EDGE_SHADER_FILENAME = "decal_normal_only.sps"
 # Named so it can be recognised for reuse later. Reuse is restricted to our own
 # materials on purpose: matching on the shader filename alone would adopt - and
 # then retexture - a decal_normal_only material the user set up by hand, or the
-# one Fake Damage made.
+# one Edge Wear made.
 SMOOTH_EDGE_MATERIAL_NAME = "seto_smoothedge"
 
-# Same starting point as Fake Damage: this is the same shader doing the same
+# Same starting point as Edge Wear: this is the same shader doing the same
 # job, a normal-map decal laid over an edge.
 SMOOTH_EDGE_VALUE_PARAMETERS = {
     "useTessellation": 0.0,
@@ -635,7 +635,7 @@ SMOOTH_EDGE_VALUE_PARAMETERS = {
 def _find_existing_smooth_edge_material():
     """A Smooth Edge material we made earlier, or None.
 
-    Name-scoped rather than shader-scoped: Fake Damage uses the same shader, so
+    Name-scoped rather than shader-scoped: Edge Wear uses the same shader, so
     matching on decal_normal_only.sps alone would let the two tools adopt - and
     retexture - each other's materials.
     """
@@ -656,7 +656,7 @@ def find_or_create_smooth_edge_material(texture_path=None, reuse=True):
     Never invents a shader: decal_normal_only.sps is first confirmed to exist in
     Sollumz's currently mounted ShaderManager (from szio).
 
-    Unlike Fake Damage, the texture slots are filled in automatically from the
+    Unlike Edge Wear, the texture slots are filled in automatically from the
     normal map bundled with the add-on - that is the whole point of this tool
     being separate. Sollumz's own post_create_shader_add_default_images is still
     never called: it would drop a blank generated image into every *other* slot,

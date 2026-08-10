@@ -8,6 +8,7 @@ from . import object_settings
 from . import properties
 from . import textures
 from ..shared import sollumz_integration as szi
+from ..shared import strip_settings
 
 _NAME_PATTERN = re.compile(r"^smooth_edge_(\d{3,})$")
 
@@ -138,10 +139,11 @@ class SETO_OT_create_smooth_edge(bpy.types.Operator):
         panel = context.scene.seto_smooth_edge
         for name in properties.SETTING_NAMES:
             if not self.properties.is_property_set(name):
-                value = getattr(panel, name)
-                if hasattr(value, "__len__") and not isinstance(value, str):
-                    value = tuple(value)
-                setattr(self, name, value)
+                # Which panel a setting comes from - this tool's, or the
+                # Geometry section that owns the strip's shape - is decided in
+                # one place, so this cannot drift from what the UI draws.
+                setattr(self, name,
+                        strip_settings.panel_value(context, name, panel))
 
     def execute(self, context):
         if not szi.is_sollumz_available():
@@ -285,7 +287,8 @@ class SETO_OT_create_smooth_edge(bpy.types.Operator):
         # Push the values that actually produced this result back onto the
         # N-panel, so a value dialled in through the F9 panel becomes the
         # starting point for the next strip instead of silently reverting.
-        properties.copy_settings(self, context.scene.seto_smooth_edge)
+        strip_settings.write_back(self, context, context.scene.seto_smooth_edge,
+                                  properties.SETTING_NAMES)
 
         msg = (f"Created '{new_name}': {len(chains)} chain(s), "
                f"{len(strip_data.faces)} quad(s).")

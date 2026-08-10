@@ -5,7 +5,7 @@ Drop a file into:
     seto_tools/smooth_edge/textures/
 
 and every strip Smooth Edge builds picks it up. The scanning rules live in
-shared/bundled_textures.py, which Fake Damage uses too; this module only says
+shared/bundled_textures.py, which Edge Wear uses too; this module only says
 where this tool's folder is.
 """
 

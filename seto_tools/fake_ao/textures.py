@@ -4,7 +4,7 @@ Drop a file into:
 
     seto_tools/fake_ao/textures/
 
-and every strip Fake AO builds picks it up, in DiffuseSampler. The scanning
+and every strip Ambient Occlusion builds picks it up, in DiffuseSampler. The scanning
 rules live in shared/bundled_textures.py, shared with the other tools; this
 module only says where this tool's folder is.
 """

@@ -91,7 +91,7 @@ class SETO_PT_surface_painter_panel(bpy.types.Panel):
     bl_idname = "SETO_PT_surface_painter_panel"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
-    # Last of the three Surface tools, under Fake AO (0) and Decal Tool (1).
+    # Last of the three Surface tools, under Ambient Occlusion (0) and Decal Tool (1).
     # The other two place what they make; this one is painted by hand.
     bl_category = "Seto Tools"
     bl_parent_id = groups.SURFACE

@@ -166,7 +166,7 @@ bpy.ops.mesh.primitive_cube_add(size=2)
 for cls in panels:
     draw_panel(cls, "sollumz ok")
 
-print("=== Fake AO's Bevel block, in every state ===")
+print("=== Ambient Occlusion's Bevel block, in every state ===")
 # The pass above only saw the default (on, Source + Strip). Each target draws
 # its own warnings, and switching the block off greys out a different branch.
 fake_ao = bpy.context.scene.seto_fake_ao

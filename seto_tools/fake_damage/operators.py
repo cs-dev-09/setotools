@@ -8,6 +8,7 @@ from . import object_settings
 from . import properties
 from . import textures
 from ..shared import sollumz_integration as szi
+from ..shared import strip_settings
 
 _NAME_PATTERN = re.compile(r"^fake_dmg_(\d{3,})$")
 
@@ -99,9 +100,9 @@ def _set_origin_to_geometry(obj):
 
 
 class SETO_OT_create_fake_damage(bpy.types.Operator):
-    """Generate a separate Fake Damage decal strip along the selected edges"""
+    """Generate a separate Edge Wear decal strip along the selected edges"""
     bl_idname = "seto.create_fake_damage"
-    bl_label = "Create Fake Damage"
+    bl_label = "Create Edge Wear"
     # REGISTER + UNDO is what puts this operator in Blender's "Adjust Last
     # Operation" (F9) panel. Because the settings below are the operator's own
     # properties, dragging a slider there makes Blender undo and re-run
@@ -138,14 +139,15 @@ class SETO_OT_create_fake_damage(bpy.types.Operator):
         panel = context.scene.seto_fake_damage
         for name in properties.SETTING_NAMES:
             if not self.properties.is_property_set(name):
-                value = getattr(panel, name)
-                if hasattr(value, "__len__") and not isinstance(value, str):
-                    value = tuple(value)
-                setattr(self, name, value)
+                # Which panel a setting comes from - this tool's, or the
+                # Geometry section that owns the strip's shape - is decided in
+                # one place, so this cannot drift from what the UI draws.
+                setattr(self, name,
+                        strip_settings.panel_value(context, name, panel))
 
     def execute(self, context):
         if not szi.is_sollumz_available():
-            self.report({'ERROR'}, "Sollumz is not enabled/available. Seto Fake Damage requires Sollumz.")
+            self.report({'ERROR'}, "Sollumz is not enabled/available. Seto Edge Wear requires Sollumz.")
             return {'CANCELLED'}
 
         self._seed_from_panel(context)
@@ -270,7 +272,7 @@ class SETO_OT_create_fake_damage(bpy.types.Operator):
         try:
             _set_origin_to_geometry(new_obj)
         except Exception as e:
-            self.report({'WARNING'}, f"Fake Damage mesh created, but setting Origin to Geometry failed: {e}")
+            self.report({'WARNING'}, f"Edge Wear mesh created, but setting Origin to Geometry failed: {e}")
 
         # Stamp the strip with everything needed to regenerate itself later,
         # so its settings stay live in the panel (see object_settings.py).
@@ -287,7 +289,8 @@ class SETO_OT_create_fake_damage(bpy.types.Operator):
         # Push the values that actually produced this result back onto the
         # N-panel, so a value dialled in through the F9 panel becomes the
         # starting point for the next strip instead of silently reverting.
-        properties.copy_settings(self, context.scene.seto_fake_damage)
+        strip_settings.write_back(self, context, context.scene.seto_fake_damage,
+                                  properties.SETTING_NAMES)
 
         msg = (f"Created '{new_name}': {len(chains)} chain(s), "
                f"{len(strip_data.faces)} quad(s).")
@@ -296,7 +299,7 @@ class SETO_OT_create_fake_damage(bpy.types.Operator):
         self.report({'INFO'}, msg)
 
         if shader_warning:
-            self.report({'WARNING'}, f"Fake Damage mesh created, but {szi.DAMAGE_SHADER_FILENAME} assignment failed: {shader_warning}")
+            self.report({'WARNING'}, f"Edge Wear mesh created, but {szi.DAMAGE_SHADER_FILENAME} assignment failed: {shader_warning}")
         elif missing_params:
             self.report({'WARNING'}, f"Shader parameter(s) not found on {szi.DAMAGE_SHADER_FILENAME}: {', '.join(missing_params)}.")
 

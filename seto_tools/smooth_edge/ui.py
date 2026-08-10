@@ -8,7 +8,7 @@ class SETO_PT_smooth_edge_panel(bpy.types.Panel):
     bl_idname = "SETO_PT_smooth_edge_panel"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
-    # Second of the two Geometry tools, under Fake Damage (0). Same strip, the
+    # Second of the two Geometry tools, under Edge Wear (0). Same strip, the
     # opposite intent: this one rounds the edge off instead of chipping it.
     bl_category = "Seto Tools"
     bl_parent_id = groups.GEOMETRY
@@ -20,28 +20,16 @@ class SETO_PT_smooth_edge_panel(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        settings = context.scene.seto_smooth_edge
 
         if ui_common.draw_sollumz_warning(layout):
             return
 
-        col = layout.column(align=True)
-        col.prop(settings, "width")
-        col.prop(settings, "surface_offset")
-        col.prop(settings, "merge_distance")
-
-        layout.separator()
-        col = layout.column(align=True)
-        col.prop(settings, "alpha_center")
-        col.prop(settings, "alpha_outer")
-        layout.prop(settings, "invert_fade")
-
-        layout.separator()
-        layout.prop(settings, "flip_direction")
-        layout.prop(settings, "material_mode")
-
-        layout.separator()
-        layout.operator("seto.create_smooth_edge", text="Create Smooth Edge", icon='MOD_EDGESPLIT')
+        # This tool has no settings of its own: it builds the same strip Edge
+        # Wear does, from the shape the Geometry section above describes, and
+        # puts a normal map on it instead of a damage texture. Drawing that
+        # shape again here is exactly the duplication that was reported.
+        layout.operator("seto.create_smooth_edge", text="Create Smooth Edge",
+                        icon='MOD_EDGESPLIT')
 
         if context.mode != 'EDIT_MESH':
             layout.label(text="Enter Edit Mode and select edges first.", icon='INFO')

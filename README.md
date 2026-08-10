@@ -6,8 +6,8 @@ and never touches your original mesh.
 
 | Tool | What it makes | Built from |
 | --- | --- | --- |
-| [Fake AO](seto_tools/fake_ao) | Fake ambient-occlusion corner decals | selected edges |
-| [Fake Damage](seto_tools/fake_damage) | Chipped-edge damage decals | selected edges |
+| [Ambient Occlusion](seto_tools/fake_ao) | Ambient-occlusion corner decals | selected edges |
+| [Edge Wear](seto_tools/fake_damage) | Chipped-edge damage decals | selected edges |
 | [Decal Tool](seto_tools/decal_tool) | Surface-aligned decal planes from your own decal library | selected faces |
 | [Smooth Edge](seto_tools/smooth_edge) | Normal-map strips that make a hard edge read as rounded | selected edges |
 | [Surface Painter](seto_tools/surface_painter) | Dirt, grime and graffiti brushed onto a surface | a paint mesh over the whole object |
@@ -86,7 +86,7 @@ Surface Painter is the exception, because it is the one tool that is not
   tool files into its own collection, created on first use: `fake_ao`,
   `fake_dmg`, `smooth_edge`, and `decals` with one child per decal-library
   category.
-- **Bundled textures, where they are small.** Fake AO, Fake Damage and Smooth
+- **Bundled textures, where they are small.** Ambient Occlusion, Edge Wear and Smooth
   Edge each ship their one texture in the tool's own `textures/` folder and
   wire it in automatically — drop a file there and it is picked up. The Decal
   Tool and Surface Painter instead read a library folder you point them at:

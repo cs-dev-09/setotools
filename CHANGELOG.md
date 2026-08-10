@@ -2,6 +2,50 @@
 
 All notable changes to Seto Tools.
 
+## 1.3.0
+
+### Changed — a redrawn icon set
+
+Line-art icons, one per tool and one per section, cropped out of the frames
+they were drawn in — a rounded box around every icon costs about a sixth of a
+32 px tile and reads as a button next to Blender's own frameless icons.
+
+They ship at 55% of the source brightness. A custom icon is never tinted by the
+theme, and this art is pure white line with no darker pixel anywhere in it, so
+above roughly 60% there is nothing for the eye to catch on a light theme.
+
+### Changed — Fake AO and Fake Damage are now Ambient Occlusion and Edge Wear
+
+From a tester: *"in an abstract sense everyone knows we are doing fake things,
+it's a videogame — the interiors themselves are fake, but we don't call MLOs
+Fake Interiors."* Hard to argue with. **Fake AO → Ambient Occlusion**,
+**Fake Damage → Edge Wear**.
+
+Labels, tooltips and messages only. Operators are still `seto.create_fake_ao`
+and `seto.create_fake_damage`, materials are still `seto_fakeao` and
+`seto_fakedamage`, and every strip in an existing .blend keeps its settings.
+
+### Changed — the strip settings are the Geometry section's, not each tool's
+
+Also from a tester: the same seven rows — Width, Surface Offset, Merge
+Distance, the two alphas, Invert Fade, Flip Direction — were listed under Edge
+Wear and then listed again, identically, under Smooth Edge. They build the
+*same* strip; only the texture on it differs.
+
+The **Geometry** section now draws them once, above both tools. Edge Wear keeps
+its UV Scale and UV Offset, Smooth Edge is left with nothing but its Create
+button, and **Material** moves up with the rest.
+
+The values are shared, which is the point: set Width to 4 cm and both tools use
+it. A **finished** strip is unaffected — every created object still carries its
+own copy and rebuilds from that, so a change to the section never reaches back
+into what you already made.
+
+Ambient Occlusion is deliberately not part of this. It lives in the Surface
+section and its Width means something else — the flat shelf the AO fades
+across, 0.25 m against 0.04 m here — so sharing would have the two overwriting
+each other.
+
 ## 1.2.1
 
 ### Changed — the tab has its own icons

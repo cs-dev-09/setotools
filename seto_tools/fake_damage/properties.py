@@ -1,6 +1,7 @@
 import bpy
 
 from ..shared import sollumz_integration as szi
+from ..shared import strip_settings
 from ..shared import vertex_color
 
 
@@ -10,7 +11,7 @@ def settings_annotations(update=None):
     These live in three places:
       * the Scene PropertyGroup below - the N-panel defaults used when
         creating a new strip,
-      * the Create Fake Damage operator - so Blender's "Adjust Last Operation"
+      * the Create Edge Wear operator - so Blender's "Adjust Last Operation"
         (F9) panel can re-run it live,
       * the per-object PropertyGroup in object_settings.py - the settings the
         finished strip keeps, which rebuild it live when dragged.
@@ -130,7 +131,7 @@ def settings_annotations(update=None):
             description=f"How to obtain the {szi.DAMAGE_SHADER_FILENAME} Sollumz material",
             items=[
                 ('AUTO', "Reuse",
-                 "Reuse a Fake Damage material previously created by this tool if one is "
+                 "Reuse a Edge Wear material previously created by this tool if one is "
                  "found, otherwise create a new one"),
                 ('NEW', "Create",
                  f"Always create a new {szi.DAMAGE_SHADER_FILENAME} material"),
@@ -144,6 +145,12 @@ def settings_annotations(update=None):
 # Every setting name, in panel order. Used to copy values between the Scene
 # settings and the operator's own properties.
 SETTING_NAMES = tuple(settings_annotations().keys())
+
+# What this tool alone owns. Everything else describes the strip's shape and
+# fade, which Smooth Edge builds identically, so it lives on the Geometry
+# section instead - see shared/strip_settings.py.
+UNIQUE_NAMES = tuple(n for n in SETTING_NAMES
+                     if n not in strip_settings.SHARED_NAMES)
 
 
 def copy_settings(source, target):
@@ -161,9 +168,12 @@ def copy_settings(source, target):
 
 
 class SETO_PG_fake_damage_settings(bpy.types.PropertyGroup):
-    # Assigned rather than written with `name: bpy.props...` syntax so the
-    # definitions stay shared with the operator - see settings_annotations().
-    __annotations__ = settings_annotations()
+    # Only this tool's own settings. The shared ones are still in
+    # settings_annotations(), because the operator and the finished strip both
+    # need the full set - it is the *panel* that no longer keeps a second copy.
+    __annotations__ = {name: prop
+                       for name, prop in settings_annotations().items()
+                       if name in UNIQUE_NAMES}
 
 
 _classes = (SETO_PG_fake_damage_settings,)

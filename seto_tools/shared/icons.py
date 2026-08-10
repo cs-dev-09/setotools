@@ -1,7 +1,7 @@
 """The add-on's own panel icons.
 
 Blender's built-in icon names are all this used to draw, and two tools ended up
-sharing one: Fake Damage and Smooth Edge both had MOD_EDGESPLIT, which made the
+sharing one: Edge Wear and Smooth Edge both had MOD_EDGESPLIT, which made the
 two hardest tools to tell apart look identical in a collapsed tab. There is no
 built-in icon for "chipped corner" or "dirt brushed onto a wall", so the icons
 now ship with the add-on.
@@ -15,6 +15,18 @@ by a material or exported.
 Unlike a built-in icon, a custom one is not tinted by the theme - what is in
 the PNG is what is drawn. That is why they are mid-grey with one warm accent
 rather than near-white: near-white vanishes on a light theme.
+
+The source art is pure white line, so what ships is that art at **55%**
+brightness, picked by rendering the set against #303030 and #D0D0D0 side by
+side rather than by eye. How far it can be brightened depends on the art: a set
+with darker shading in it survived 80%, but this one has no dark pixel
+anywhere, so above roughly 60% there is nothing left for the eye to catch on a
+light theme. Re-tone from the source slices if the set is redrawn - toning an
+already-toned PNG darkens it twice.
+
+The frames the art was drawn with are cropped off. A rounded box around every
+icon costs about a sixth of a 32px tile and reads as a button next to Blender's
+own frameless icons.
 """
 
 import os

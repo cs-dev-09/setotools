@@ -9,7 +9,7 @@ def settings_annotations(update=None):
     These live in three places:
       * the Scene PropertyGroup below - the N-panel defaults used when
         creating a new strip,
-      * the Create Fake AO operator - so Blender's "Adjust Last Operation"
+      * the Create Ambient Occlusion operator - so Blender's "Adjust Last Operation"
         (F9) panel can re-run it live,
       * the per-object PropertyGroup in object_settings.py - the settings the
         finished strip keeps, which rebuild it live when dragged.

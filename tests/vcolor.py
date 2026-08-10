@@ -16,8 +16,11 @@ check("shared constant is #00B200", tuple(round(c,4) for c in vertex_color.DEFAU
 check("shared alpha centre is 1.0", vertex_color.DEFAULT_ALPHA_CENTER == 1.0)
 check("shared alpha outer is 0.0", vertex_color.DEFAULT_ALPHA_OUTER == 0.0)
 
-for prop, label in (("seto_fake_ao","Fake AO"), ("seto_fake_damage","Fake Damage"),
-                    ("seto_smooth_edge","Smooth Edge")):
+# Ambient Occlusion keeps its own copy of these - its Width means something
+# else, so it is not part of the shared strip. Edge Wear and Smooth Edge read
+# them from the Geometry section, which is why both point at seto_edge_strip.
+for prop, label in (("seto_fake_ao","Ambient Occlusion"),
+                    ("seto_edge_strip","Edge Wear / Smooth Edge")):
     g = getattr(bpy.context.scene, prop)
     check(f"{label} RGB default is #00B200",
           tuple(round(c,4) for c in g.color_rgb) == EXPECTED_RGB, str(tuple(g.color_rgb)))
@@ -54,8 +57,8 @@ def verify(obj, label, expect_alpha_range=True):
         check(f"{label} alpha is 0 on the border and 1 inside", alphas == [0.0, 1.0],
               str(alphas))
 
-verify(build(bpy.ops.seto.create_fake_ao, "Fake AO"), "Fake AO")
-verify(build(bpy.ops.seto.create_fake_damage, "Fake Damage"), "Fake Damage")
+verify(build(bpy.ops.seto.create_fake_ao, "Ambient Occlusion"), "Ambient Occlusion")
+verify(build(bpy.ops.seto.create_fake_damage, "Edge Wear"), "Edge Wear")
 verify(build(bpy.ops.seto.create_smooth_edge, "Smooth Edge"), "Smooth Edge")
 
 # Decal Tool

@@ -1,6 +1,7 @@
 import bpy
 
 from ..shared import sollumz_integration as szi
+from ..shared import strip_settings
 from ..shared import vertex_color
 
 
@@ -121,6 +122,13 @@ def settings_annotations(update=None):
 # settings and the operator's own properties.
 SETTING_NAMES = tuple(settings_annotations().keys())
 
+# This tool owns nothing the Geometry section does not already describe - it
+# builds the same strip Edge Wear does and only puts a different texture on it,
+# which is why the two panels used to be identical. The tuple is still computed
+# rather than written as `()`, so adding a setting of its own just works.
+UNIQUE_NAMES = tuple(n for n in SETTING_NAMES
+                     if n not in strip_settings.SHARED_NAMES)
+
 
 def copy_settings(source, target):
     """Copy every setting from `source` to `target`.
@@ -137,9 +145,13 @@ def copy_settings(source, target):
 
 
 class SETO_PG_smooth_edge_settings(bpy.types.PropertyGroup):
-    # Assigned rather than written with `name: bpy.props...` syntax so the
-    # definitions stay shared with the operator - see settings_annotations().
-    __annotations__ = settings_annotations()
+    # Empty today: every setting is shared, so the panel reads them from the
+    # Geometry section. The group stays registered - the operator writes the
+    # last run back through it, and a setting of this tool's own would land
+    # here without any wiring.
+    __annotations__ = {name: prop
+                       for name, prop in settings_annotations().items()
+                       if name in UNIQUE_NAMES}
 
 
 _classes = (SETO_PG_smooth_edge_settings,)

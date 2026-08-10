@@ -1,12 +1,12 @@
 bl_info = {
     "name": "Seto Tools",
     "author": "Seto",
-    "version": (1, 2, 1),
+    "version": (1, 3, 0),
     "blender": (4, 2, 0),
     "location": "View3D > N-Panel > Seto Tools",
     "description": (
         "GTA V / FiveM asset authoring tools that integrate with Sollumz. "
-        "Fake AO corner decals, Fake Damage chipped-edge strips, Smooth Edge "
+        "Ambient Occlusion corner decals, Edge Wear chipped-edge strips, Smooth Edge "
         "normal-map strips, a Decal Tool that places library decals on "
         "selected faces, and a Surface Painter for brushing dirt onto an asset "
         "through a non-destructive mask."
@@ -23,6 +23,7 @@ bl_info = {
 # used to be copy-pasted into each of them, the bundled-texture lookup, and the
 # Color 1 vertex colour they all write.
 from .shared import icons
+from .shared import strip_settings
 from .shared import groups
 from . import fake_ao
 from . import fake_damage
@@ -34,8 +35,8 @@ from . import surface_painter
 # then groups - and that one is not merely tidiness: every tool panel hangs off
 # one of its two sections, and Blender drops a panel whose bl_parent_id is not
 # registered yet.
-_modules = (icons, groups, fake_damage, smooth_edge, fake_ao, decal_tool,
-            surface_painter)
+_modules = (icons, strip_settings, groups, fake_damage, smooth_edge, fake_ao,
+            decal_tool, surface_painter)
 
 
 def register():

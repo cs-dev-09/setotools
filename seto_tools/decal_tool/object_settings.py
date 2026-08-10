@@ -6,7 +6,7 @@ used. Dragging any of those settings recomposes the object's matrix and moves
 its four vertices, so the decal slides, spins and resizes on the surface in real
 time without ever leaving it.
 
-Two deliberate differences from the Fake Damage version of this module:
+Two deliberate differences from the Edge Wear version of this module:
 
   * The frame is stored on the decal, not re-read from the source mesh. A decal
     is a single quad with no topology of its own to re-derive, so there is
@@ -16,7 +16,7 @@ Two deliberate differences from the Fake Damage version of this module:
     untouched. That also means a rebuild can never fail halfway and leave a
     decal without a material.
 
-Like Fake Damage, this uses **no bpy.ops at all** - Blender warns against
+Like Edge Wear, this uses **no bpy.ops at all** - Blender warns against
 calling operators from property update callbacks, which run mid-UI-interaction.
 """
 

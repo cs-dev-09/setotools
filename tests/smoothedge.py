@@ -17,10 +17,10 @@ fake_ao_panel = getattr(bpy.types, "SETO_PT_fake_ao_panel", None)
 damage_panel = getattr(bpy.types, "SETO_PT_fake_damage_panel", None)
 decal_panel = getattr(bpy.types, "SETO_PT_decal_tool_panel", None)
 # The tab is two sections, and a tool is nested under the one matching what it
-# produces. What matters is that this stays in Geometry, below Fake Damage -
+# produces. What matters is that this stays in Geometry, below Edge Wear -
 # not which number it happens to hold. A tool whose parent section is missing
 # is dropped by Blender entirely, so the parent is checked, not just the order.
-check("it is nested under Geometry, below Fake Damage",
+check("it is nested under Geometry, below Edge Wear",
       panel and damage_panel
       and panel.bl_parent_id == "SETO_PT_geometry_group"
       and damage_panel.bl_parent_id == "SETO_PT_geometry_group"
@@ -29,7 +29,7 @@ check("it is nested under Geometry, below Fake Damage",
        for c in (fake_ao_panel, damage_panel, panel, decal_panel) if c})
 check("its operator exists", "create_smooth_edge" in dir(bpy.ops.seto))
 check("its scene settings exist", hasattr(bpy.context.scene, "seto_smooth_edge"))
-check("Fake Damage is untouched and still registered",
+check("Edge Wear is untouched and still registered",
       getattr(bpy.types, "SETO_PT_fake_damage_panel", None) is not None
       and "create_fake_damage" in dir(bpy.ops.seto))
 
@@ -69,7 +69,7 @@ if strips:
           getattr(getattr(mat, "shader_properties", None), "filename", None))
     check("material is named seto_smoothedge",
           mat is not None and mat.name.startswith("seto_smoothedge"), getattr(mat, "name", None))
-    check("does NOT reuse the Fake Damage material",
+    check("does NOT reuse the Edge Wear material",
           mat is not None and not mat.name.startswith("seto_fakedamage"), getattr(mat, "name", None))
     if mat:
         bump = mat.node_tree.nodes.get("BumpSampler")
@@ -93,7 +93,7 @@ if strips:
     w, h = max(us) - min(us), max(vs) - min(vs)
     check("UV island is VERTICAL (taller than wide)", h > w, f"{w:.4f} wide x {h:.4f} tall")
     # The island is deliberately fitted to UV_SIZE (1.5), centred on 0.5 - the
-    # long axis overflows 0..1 on purpose, exactly as Fake Damage has always
+    # long axis overflows 0..1 on purpose, exactly as Edge Wear has always
     # done. What matters is that it is centred and vertical.
     check("UV island is centred on (0.5, 0.5)",
           abs((min(us) + max(us)) / 2 - 0.5) < 1e-4 and abs((min(vs) + max(vs)) / 2 - 0.5) < 1e-4,

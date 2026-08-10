@@ -12,8 +12,8 @@ from seto_tools.fake_ao import textures as ao_tex
 from seto_tools.fake_damage import textures as dmg_tex
 from seto_tools.smooth_edge import textures as se_tex
 
-for label, mod, folder in (("Fake AO", ao_tex, "fake_ao"),
-                           ("Fake Damage", dmg_tex, "fake_damage"),
+for label, mod, folder in (("Ambient Occlusion", ao_tex, "fake_ao"),
+                           ("Edge Wear", dmg_tex, "fake_damage"),
                            ("Smooth Edge", se_tex, "smooth_edge")):
     exists = os.path.isdir(mod.TEXTURE_DIRECTORY)
     check(f"{label} has a textures/ folder", exists, mod.TEXTURE_DIRECTORY)
@@ -46,7 +46,7 @@ def build(op, label, sampler_names, colorspace, mat_prefix):
         check(f"{label} {n} exists on its shader", node is not None)
         if node is None: continue
         has = node.image is not None
-        expected = bool({"Fake AO": ao_tex, "Fake Damage": dmg_tex, "Smooth Edge": se_tex}[label].bundled_texture_path())
+        expected = bool({"Ambient Occlusion": ao_tex, "Edge Wear": dmg_tex, "Smooth Edge": se_tex}[label].bundled_texture_path())
         check(f"{label} {n} image assigned: {expected}", has == expected,
               f"image={node.image.name if node.image else None}")
         if has:
@@ -56,16 +56,16 @@ def build(op, label, sampler_names, colorspace, mat_prefix):
             check(f"{label} {n} is not embedded", not node.texture_properties.embedded)
     return mat
 
-ao_mat = build(bpy.ops.seto.create_fake_ao, "Fake AO", ("DiffuseSampler",), "sRGB", "seto_fakeao")
-dmg_mat = build(bpy.ops.seto.create_fake_damage, "Fake Damage", ("BumpSampler", "DiffuseSampler"), "Non-Color", "seto_fakedamage")
+ao_mat = build(bpy.ops.seto.create_fake_ao, "Ambient Occlusion", ("DiffuseSampler",), "sRGB", "seto_fakeao")
+dmg_mat = build(bpy.ops.seto.create_fake_damage, "Edge Wear", ("BumpSampler", "DiffuseSampler"), "Non-Color", "seto_fakedamage")
 se_mat = build(bpy.ops.seto.create_smooth_edge, "Smooth Edge", ("BumpSampler", "DiffuseSampler"), "Non-Color", "seto_smoothedge")
 
 names = [m for m in (ao_mat, dmg_mat, se_mat) if m]
 check("the three tools never share a material", len({m.name for m in names}) == len(names),
       str([m.name for m in names]))
-check("Fake AO does not adopt a Decal Tool material",
+check("Ambient Occlusion does not adopt a Decal Tool material",
       ao_mat is None or not ao_mat.name.startswith("seto_decal_mat_"), getattr(ao_mat, "name", None))
-check("Fake Damage and Smooth Edge stay apart despite the same shader",
+check("Edge Wear and Smooth Edge stay apart despite the same shader",
       dmg_mat is None or se_mat is None or dmg_mat is not se_mat)
 
 failed=[r for r in R if not r[0]]

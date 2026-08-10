@@ -1,6 +1,6 @@
 """Finding the texture a tool ships with.
 
-Some tools (Fake Damage, Smooth Edge) always want the same normal map, so
+Some tools (Edge Wear, Smooth Edge) always want the same normal map, so
 rather than making the user pick a file every time, the texture travels with
 the add-on in the tool's own `textures/` folder and is wired in automatically.
 That is what makes those tools genuinely one-click, and it means a scene handed

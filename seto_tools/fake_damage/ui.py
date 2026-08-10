@@ -4,7 +4,7 @@ from ..shared import groups, icons, ui_common
 
 
 class SETO_PT_fake_damage_panel(bpy.types.Panel):
-    bl_label = "Fake Damage"
+    bl_label = "Edge Wear"
     bl_idname = "SETO_PT_fake_damage_panel"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
@@ -25,28 +25,15 @@ class SETO_PT_fake_damage_panel(bpy.types.Panel):
         if ui_common.draw_sollumz_warning(layout):
             return
 
-        col = layout.column(align=True)
-        col.prop(settings, "width")
-        col.prop(settings, "surface_offset")
-        col.prop(settings, "merge_distance")
-
-        layout.separator()
-        col = layout.column(align=True)
-        col.prop(settings, "alpha_center")
-        col.prop(settings, "alpha_outer")
-        layout.prop(settings, "invert_fade")
-
-        layout.separator()
-        layout.prop(settings, "flip_direction")
-
+        # Only what this tool alone owns. The strip's shape and fade are drawn
+        # once by the Geometry section above - they were identical here and in
+        # Smooth Edge, which is what made the tab read as the same panel twice.
         col = layout.column(align=True)
         col.prop(settings, "uv_scale")
         col.prop(settings, "uv_offset")
 
-        layout.prop(settings, "material_mode")
-
         layout.separator()
-        layout.operator("seto.create_fake_damage", text="Create Fake Damage", icon='MOD_EDGESPLIT')
+        layout.operator("seto.create_fake_damage", text="Create Edge Wear", icon='MOD_EDGESPLIT')
 
         if context.mode != 'EDIT_MESH':
             layout.label(text="Enter Edit Mode and select edges first.", icon='INFO')
@@ -55,9 +42,9 @@ class SETO_PT_fake_damage_panel(bpy.types.Panel):
 
 
 class SETO_PT_fake_damage_object_panel(bpy.types.Panel):
-    """Settings of the selected Fake Damage strip, editable after the fact.
+    """Settings of the selected Edge Wear strip, editable after the fact.
 
-    Nested under the Fake Damage section rather than given its own tab, and
+    Nested under the Edge Wear section rather than given its own tab, and
     only drawn when the active object is actually one of our strips.
     """
     bl_label = "Selected Strip"

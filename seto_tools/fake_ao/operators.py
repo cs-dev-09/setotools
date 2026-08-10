@@ -98,9 +98,9 @@ def _set_origin_to_geometry(obj):
 
 
 class SETO_OT_create_fake_ao(bpy.types.Operator):
-    """Generate a separate Fake AO decal strip along the selected edges"""
+    """Generate a separate Ambient Occlusion decal strip along the selected edges"""
     bl_idname = "seto.create_fake_ao"
-    bl_label = "Create Fake AO"
+    bl_label = "Create Ambient Occlusion"
     # REGISTER + UNDO is what puts this operator in Blender's "Adjust Last
     # Operation" (F9) panel. Because the settings below are the operator's own
     # properties, dragging a slider there re-runs execute() live.
@@ -136,7 +136,7 @@ class SETO_OT_create_fake_ao(bpy.types.Operator):
 
     def execute(self, context):
         if not szi.is_sollumz_available():
-            self.report({'ERROR'}, "Sollumz is not enabled/available. Seto Fake AO & Decals requires Sollumz.")
+            self.report({'ERROR'}, "Sollumz is not enabled/available. Seto Ambient Occlusion requires Sollumz.")
             return {'CANCELLED'}
 
         self._seed_from_panel(context)
@@ -295,7 +295,7 @@ class SETO_OT_create_fake_ao(bpy.types.Operator):
         try:
             _set_origin_to_geometry(new_obj)
         except Exception as e:
-            self.report({'WARNING'}, f"Fake AO mesh created, but setting Origin to Geometry failed: {e}")
+            self.report({'WARNING'}, f"Ambient Occlusion mesh created, but setting Origin to Geometry failed: {e}")
 
         # Stamp the strip with everything needed to regenerate itself later,
         # so its settings stay live in the panel (see object_settings.py).
@@ -331,7 +331,7 @@ class SETO_OT_create_fake_ao(bpy.types.Operator):
         self.report({'INFO'}, msg)
 
         if shader_warning:
-            self.report({'WARNING'}, f"Fake AO mesh created, but {szi.DECAL_SHADER_FILENAME} assignment failed: {shader_warning}")
+            self.report({'WARNING'}, f"Ambient Occlusion mesh created, but {szi.DECAL_SHADER_FILENAME} assignment failed: {shader_warning}")
 
         if texture_warning:
             self.report({'WARNING'}, texture_warning)

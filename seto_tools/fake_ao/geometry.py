@@ -1,4 +1,4 @@
-"""Pure mesh-generation logic for the Fake AO strip.
+"""Pure mesh-generation logic for the Ambient Occlusion strip.
 
 This module has no knowledge of Sollumz. It only knows how to turn a set of
 selected BMesh edges (in the source object's local space) into a lightweight

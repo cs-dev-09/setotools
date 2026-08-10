@@ -19,7 +19,7 @@ SMOOTH_EDGE_BEFORE = {"useTessellation": 0.0, "bumpiness": 1.00,
                       "specularIntensityMult": 0.00, "specularFalloffMult": 40.00,
                       "specularFresnel": 0.75}
 
-check("Fake Damage constants match GTA's reference", szi.VALUE_PARAMETERS == REFERENCE,
+check("Edge Wear constants match GTA's reference", szi.VALUE_PARAMETERS == REFERENCE,
       str(szi.VALUE_PARAMETERS))
 check("Smooth Edge constants are untouched",
       szi.SMOOTH_EDGE_VALUE_PARAMETERS == SMOOTH_EDGE_BEFORE,
@@ -45,11 +45,11 @@ def read_params(mat, names):
         out[n] = round(node.get(0), 4) if node is not None else None
     return out
 
-dmg = build(bpy.ops.seto.create_fake_damage, "Fake Damage")
+dmg = build(bpy.ops.seto.create_fake_damage, "Edge Wear")
 if dmg:
     got = read_params(dmg, REFERENCE)
     for k, v in REFERENCE.items():
-        check(f"Fake Damage material {k} = {v}", got[k] is not None and abs(got[k]-v) < 1e-4,
+        check(f"Edge Wear material {k} = {v}", got[k] is not None and abs(got[k]-v) < 1e-4,
               f"{got[k]}")
 
 se = build(bpy.ops.seto.create_smooth_edge, "Smooth Edge")
