@@ -138,6 +138,21 @@ class SETO_AP_decal_tool(bpy.types.AddonPreferences):
         default=12.0, min=4.0, max=40.0, subtype='FACTOR',
     )
 
+    # The kill switch for the updater's once-per-start version check. On by
+    # default and said out loud everywhere it matters (the Updates panel,
+    # the README): a check that is loud about existing and trivial to turn
+    # off is the honest version of a notification.
+    auto_check_updates: bpy.props.BoolProperty(
+        name="Check for updates on startup",
+        description=(
+            "Once per Blender start, ask github.com whether a newer Seto "
+            "Tools release exists so the Updates panel can say so. The "
+            "request carries nothing about you or your files. Turn it off "
+            "and the Check for Updates button still works on demand"
+        ),
+        default=True,
+    )
+
     # Normally empty: every tool finds Sollumz by itself. This is the escape
     # hatch for the machine where it does not - a fork, a dev build, a folder
     # named something nobody anticipated - so the answer there is "point at it"
@@ -158,6 +173,7 @@ class SETO_AP_decal_tool(bpy.types.AddonPreferences):
         layout = self.layout
         layout.prop(self, "library_path")
         layout.prop(self, "preview_size")
+        layout.prop(self, "auto_check_updates")
 
         # The other place a user looks for "where do I report this" - and
         # the one they can reach when the tab itself is not drawing.

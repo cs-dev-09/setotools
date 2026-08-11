@@ -10,15 +10,20 @@ read-only Analysis tools graded against vanilla GTA (Density Check,
 Texture Budget, Pre-Flight), and a Support section that reports a bug
 without sending anything anywhere.
 
-**Updating happens from inside Blender.** Support ▸ **Check for Updates**
-asks github.com for the latest release — one request, sent only when the
-button is pressed — and **Install Update** downloads and installs it over
-the running copy; settings survive, and a restart finishes the job. That
-is the shape of the add-on's network promise: not "never online", but
-**never online without being asked**. There is no startup check and no
-timer, the download is accepted only from this repository's own releases,
-and the suite enforces that the update operators are the only code in the
-package that can reach the network at all.
+**Updating happens from inside Blender.** An **Updates** panel sits first
+in the tab; when a new release exists its version appears right on the
+collapsed header, and **Install Update** downloads and installs it over
+the running copy — settings survive, a restart finishes the job. The
+notification comes from one quiet check per Blender start, and the terms
+of that check are stated everywhere and enforced by the test suite: it
+asks github.com for the latest version and nothing else, it carries
+nothing about you or your files, it is silent when offline, it never runs
+in background Blender, and **Check for updates on startup** in the add-on
+preferences turns it off entirely — the Check button still works on
+demand. The download is accepted only from this repository's own
+releases, the zip is inspected for this add-on's own layout before
+install, and the updater package is the only code in the add-on that can
+reach the network at all.
 
 **Everything below this heading is the private development log.** Versions
 0.2 through 1.9 were internal builds that never shipped outside the

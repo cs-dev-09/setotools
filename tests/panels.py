@@ -146,10 +146,11 @@ panels = seto_panels()
 # The tab is three sections and nothing else at the top level; every tool
 # hangs off one of them. A tool whose parent failed to register is not merely
 # misplaced - Blender drops it, and the tab silently loses a tool.
-check("the tab's top level is the three sections, then Support",
+check("the tab's top level is Updates, the three sections, then Support",
       [c.bl_idname for c in panels if not getattr(c, "bl_parent_id", "")]
-      == ["SETO_PT_geometry_group", "SETO_PT_surface_group",
-          "SETO_PT_analysis_group", "SETO_PT_support_panel"],
+      == ["SETO_PT_updates_panel", "SETO_PT_geometry_group",
+          "SETO_PT_surface_group", "SETO_PT_analysis_group",
+          "SETO_PT_support_panel"],
       [c.__name__ for c in panels if not getattr(c, "bl_parent_id", "")])
 
 for parent, expected in (

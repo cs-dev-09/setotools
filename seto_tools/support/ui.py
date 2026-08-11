@@ -13,7 +13,6 @@ report form is only wanted on the day something is wrong.
 import bpy
 
 from ..shared import icons
-from ..updater import ui as updater_ui
 from . import properties
 
 SPONSOR_URL = "https://github.com/sponsors/seto3d"
@@ -49,7 +48,7 @@ class SETO_PT_support_panel(bpy.types.Panel):
     bl_region_type = 'UI'
     bl_category = "Seto Tools"
     # Last in the tab, after the three tool sections.
-    bl_order = 3
+    bl_order = 4
     bl_options = {'DEFAULT_CLOSED'}
 
     # No Sollumz poll: the day someone most needs the bug report form is
@@ -61,10 +60,6 @@ class SETO_PT_support_panel(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         settings = context.scene.seto_support
-
-        # Updates first: "am I current" is the question people open this
-        # panel for most often once the tool is installed.
-        updater_ui.draw(layout, context)
 
         box = layout.box()
         box.label(text="Report a bug", icon='ERROR')

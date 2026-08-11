@@ -33,9 +33,13 @@ zip → enable it → restart Blender.
 Requires Blender 4.2+ and Sollumz with its dependencies installed. Verified in
 Blender 5.0.1 and 5.2.0 LTS.
 
-**Updating** — **Support ▸ Check for Updates** in the N-panel does it from
-inside Blender: one request to github.com when you press it, never
-automatically, and Install Update keeps your settings.
+**Updating** — the **Updates** panel at the top of the tab does it from
+inside Blender: when a new release exists, its version appears on the
+panel header and **Install Update** brings it in with your settings
+intact. The notification comes from one version check per Blender start —
+it carries nothing about you, it is the only network traffic in the
+add-on (the test suite enforces that), and *Check for updates on startup*
+in the preferences turns it off.
 
 > These used to be three separate add-ons (`seto_fake_ao`, `seto_fake_dmg`,
 > `seto_decal_tool`). If you have any of them installed, **disable and remove

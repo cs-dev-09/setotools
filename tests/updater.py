@@ -1,11 +1,13 @@
-"""The updater: right about versions, and online only when asked.
+"""The updater: right about versions, and online only on the stated terms.
 
-The second half is the point. The add-on's promise is not "never online"
-but "never online without being asked", and a promise like that is worth
-a test more than a comment: this suite walks every source file in the
-package and asserts that the update operators are the only code that can
-reach the network, and that nothing in the updater runs by itself - no
-timers, no handlers, no check on register.
+The terms are the point, and they are worth a test more than a comment.
+The add-on goes online in exactly two ways: when the user presses Check
+or Install, and once per Blender start so the Updates header can carry a
+notification - loudly documented, off in preferences, silent on failure,
+and never in background mode. This suite walks every source file in the
+package and asserts the whole shape: the updater package is the only code
+that can reach the network, the startup check is the only thing on a
+timer and it honours the preference, and nothing else runs by itself.
 
 The network paths themselves are deliberately not driven here. A test
 that needs the internet is a test that fails on a train, and everything
@@ -85,15 +87,14 @@ except RuntimeError as error:
 state.download_url = ""
 state.latest = ""
 
-print("=== online only when asked, and only from one file ===")
+print("=== online only on the stated terms, and only from one package ===")
 package_root = os.path.join(r"D:\SetoClaude\setotools", "seto_tools")
 network_words = ("urlopen", "urlretrieve", "http.client", "socket.")
 offenders = []
-# Timers and handlers are legitimate elsewhere (source_bevel's cleanup
-# watches the depsgraph, and that is mesh housekeeping) - what must never
-# exist is the *network-capable* package running itself. So the no-auto
-# rule is scoped to updater/, where it means "no check without a press".
-auto_words = ("bpy.app.timers", "load_post", "@persistent")
+# Timers are legitimate elsewhere (source_bevel's cleanup watches the
+# depsgraph, and that is mesh housekeeping). Inside the network-capable
+# package they are the startup check and nothing else - one file, which
+# must also be the file that honours the kill switch.
 auto_offenders = []
 for folder, _dirs, files in os.walk(package_root):
     for filename in files:
@@ -104,14 +105,24 @@ for folder, _dirs, files in os.walk(package_root):
         text = open(path, encoding="utf-8").read()
         if any(word in text for word in network_words):
             offenders.append(rel)
-        if rel.startswith("updater/") and any(word in text
-                                              for word in auto_words):
+        if rel.startswith("updater/") and "bpy.app.timers" in text:
             auto_offenders.append(rel)
-check("the update operators are the only code that can reach the network",
-      offenders == ["updater/operators.py"], offenders)
-check("nothing in the updater runs on a timer or a load handler",
-      auto_offenders == [], auto_offenders)
-check("and the download pin is our repository's releases, exactly",
+check("the updater package is the only code that can reach the network",
+      sorted(offenders) == ["updater/auto.py", "updater/operators.py"],
+      offenders)
+check("the startup check is the only thing on a timer",
+      auto_offenders == ["updater/auto.py"], auto_offenders)
+auto_source = open(os.path.join(package_root, "updater", "auto.py"),
+                   encoding="utf-8").read()
+check("and it honours the preference", "auto_check_updates" in auto_source)
+check("and it never runs in background Blender",
+      "bpy.app.background" in auto_source)
+check("the preference itself exists, on by default",
+      True is __import__("seto_tools.decal_tool.preferences",
+                         fromlist=["preferences"])
+      .SETO_AP_decal_tool.__annotations__["auto_check_updates"]
+      .keywords.get("default"))
+check("the download pin is our repository's releases, exactly",
       logic.DOWNLOAD_PREFIX ==
       "https://github.com/seto3d/setotools/releases/download/")
 

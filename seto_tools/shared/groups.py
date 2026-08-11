@@ -34,7 +34,10 @@ class SETO_PT_geometry_group(bpy.types.Panel):
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_category = "Seto Tools"
-    bl_order = 0
+    # 0 belongs to the Updates panel: an available update outranks the
+    # tools in the one moment it matters, and is one collapsed line the
+    # rest of the time.
+    bl_order = 1
 
     def draw_header(self, context):
         icons.draw_header(self.layout, "geometry", 'MESH_DATA')
@@ -55,7 +58,7 @@ class SETO_PT_surface_group(bpy.types.Panel):
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_category = "Seto Tools"
-    bl_order = 1
+    bl_order = 2
 
     def draw_header(self, context):
         icons.draw_header(self.layout, "surface", 'MATERIAL')
@@ -70,7 +73,7 @@ class SETO_PT_analysis_group(bpy.types.Panel):
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_category = "Seto Tools"
-    bl_order = 2
+    bl_order = 3
 
     def draw_header(self, context):
         icons.draw_header(self.layout, "analysis", 'VIEWZOOM')
