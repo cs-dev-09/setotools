@@ -1,34 +1,76 @@
-"""Open the report, and copy it if the URL will not carry it.
+"""Open the report on GitHub, and empty the form afterwards.
 
-Neither operator sends anything. The first opens GitHub's own new-issue
-form with the fields already filled in, which is where the user reads
-what they wrote and presses GitHub's Submit themselves; the second puts
-the same text on the clipboard for the times a browser would choke on a
-URL that long.
+Nothing here sends anything. The report operator shows what it is about
+to hand over, then opens GitHub's own new-issue form with the fields
+already filled in - which is where the user reads it once more and
+presses GitHub's Submit themselves.
+
+There is no picture handling at all, deliberately. An image cannot travel
+in a URL, so a file field here would only have collected something the
+user still had to drag onto the issue by hand: the same work, after a
+detour. The body carries a Screenshot heading instead, and the panel says
+where to drop it.
 """
 
 import bpy
 
-from . import report
+from ..shared import ui_common
+from . import properties, report
 
 
 class SETO_OT_support_report(bpy.types.Operator):
     bl_idname = "seto.support_report"
-    bl_label = "Open Prefilled Issue"
-    bl_description = ("Open GitHub's new-issue form with everything above "
-                      "already filled in. Nothing is sent until you press "
-                      "Submit there")
+    bl_label = "Send Report to GitHub"
+    bl_description = ("Show the report, then open it on GitHub with every "
+                      "field already filled in. Nothing leaves your machine "
+                      "until you press Submit there")
     bl_options = {'INTERNAL'}
+
+    def invoke(self, context, event):
+        # Read it before it goes anywhere. The report carries versions the
+        # user never typed and a body assembled out of a dozen fields, and
+        # "what exactly is this about to publish" is a fair question to
+        # want answered on this side of the browser.
+        return context.window_manager.invoke_props_dialog(self, width=420)
+
+    def draw(self, context):
+        settings = context.scene.seto_support
+        layout = self.layout
+
+        layout.label(text="This is what will be filled in on GitHub:",
+                     icon='INFO')
+        box = layout.box()
+        col = box.column(align=True)
+        col.scale_y = 0.8
+        title = settings.title.strip() or "Bug report"
+        col.label(text=title, icon='BOOKMARKS')
+        col.separator()
+        body = report.build_body(properties.text_of(settings, "steps"),
+                                 properties.text_of(settings, "result"),
+                                 properties.text_of(settings, "expected"),
+                                 settings.include_environment)
+        for line in body.splitlines():
+            for wrapped in ui_common.wrap(line, 60) if line else [""]:
+                col.label(text=wrapped)
+
+        note = layout.column(align=True)
+        note.scale_y = 0.8
+        note.label(text="Pressing OK opens GitHub with this ready to "
+                        "post.")
+        note.label(text="It is still yours to edit there, and nothing is")
+        note.label(text="sent until you press Submit on that page.")
 
     def execute(self, context):
         settings = context.scene.seto_support
-        if not settings.title.strip() and not settings.result.strip():
+        result = properties.text_of(settings, "result")
+        if not settings.title.strip() and not result.strip():
             self.report({'ERROR'},
                         "Fill in a title or what happened first.")
             return {'CANCELLED'}
 
-        body = report.build_body(settings.steps, settings.result,
-                                 settings.expected,
+        body = report.build_body(properties.text_of(settings, "steps"),
+                                 result,
+                                 properties.text_of(settings, "expected"),
                                  settings.include_environment)
         url = report.build_url(settings.title, body)
 
@@ -42,30 +84,26 @@ class SETO_OT_support_report(bpy.types.Operator):
             return {'FINISHED'}
 
         bpy.ops.wm.url_open(url=url)
-        self.report({'INFO'}, "Check it over on GitHub, then press Submit.")
+        self.report({'INFO'}, "Add a screenshot on GitHub, then press "
+                              "Submit.")
         return {'FINISHED'}
 
 
-class SETO_OT_support_copy(bpy.types.Operator):
-    bl_idname = "seto.support_copy"
-    bl_label = "Copy to Clipboard"
-    bl_description = ("Put the report on the clipboard, to paste wherever "
-                      "you like - an issue, a Discord thread, an email")
-    bl_options = {'INTERNAL'}
+class SETO_OT_support_clear(bpy.types.Operator):
+    bl_idname = "seto.support_clear"
+    bl_label = "Clear"
+    bl_description = "Empty the form, ready for the next report"
+    bl_options = {'UNDO', 'INTERNAL'}
 
     def execute(self, context):
         settings = context.scene.seto_support
-        body = report.build_body(settings.steps, settings.result,
-                                 settings.expected,
-                                 settings.include_environment)
-        title = settings.title.strip()
-        context.window_manager.clipboard = (f"**{title}**\n\n{body}"
-                                            if title else body)
-        self.report({'INFO'}, "Copied.")
+        properties.clear(settings)
+        settings.title = ""
+        self.report({'INFO'}, "Report cleared.")
         return {'FINISHED'}
 
 
-_classes = (SETO_OT_support_report, SETO_OT_support_copy)
+_classes = (SETO_OT_support_report, SETO_OT_support_clear)
 
 
 def register():

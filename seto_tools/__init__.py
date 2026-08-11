@@ -1,7 +1,7 @@
 bl_info = {
     "name": "Seto Tools",
     "author": "Seto",
-    "version": (1, 8, 0),
+    "version": (1, 9, 0),
     "blender": (4, 2, 0),
     "location": "View3D > N-Panel > Seto Tools",
     "description": (

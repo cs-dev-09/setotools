@@ -269,6 +269,31 @@ finally:
 # from the UI thread exactly like a panel's - so it has the same way of
 # passing every logic test and exploding on first click. Driven here for
 # every check that exists, not only the one a finding happened to carry.
+# The bug report's preview dialog is an Operator draw() too, called from
+# the UI thread exactly like a panel's - and it is the last thing a user
+# sees before their report leaves for GitHub, so it exploding there would
+# be the worst possible moment.
+report_cls = getattr(bpy.types, "SETO_OT_support_report", None)
+check("the report operator is registered", report_cls is not None)
+if report_cls is not None:
+    support = bpy.context.scene.seto_support
+    for label, filled in (("empty", False), ("filled in", True)):
+        if filled:
+            support.title = "Something is wrong"
+            support.steps_0 = "opened the file"
+            support.result_0 = "it went grey"
+        shim = type("Shim", (), {})()
+        shim.layout = StubLayout()
+        try:
+            report_cls.draw.__get__(shim)(bpy.context)
+            check(f"the report preview draws [{label}]", True)
+        except Exception as e:
+            import traceback; traceback.print_exc()
+            check(f"the report preview draws [{label}]", False, e)
+    from seto_tools.support import properties as support_properties
+    support_properties.clear(support)
+    support.property_unset("title")
+
 from seto_tools.preflight import checks as preflight_checks
 fix_cls = getattr(bpy.types, "SETO_OT_preflight_fix", None)
 check("the How to fix operator is registered", fix_cls is not None)

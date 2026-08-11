@@ -24,8 +24,10 @@ print("=== the body says what a maintainer asks for first ===")
 body = report.build_body("pressed Analyze", "everything went grey",
                          "colours", include_environment=True)
 for heading in ("What I did", "What happened", "What I expected",
-                "Versions"):
+                "Screenshot", "Versions"):
     check(f"the body has a {heading} heading", heading in body, body)
+check("and the screenshot heading says where to drop the picture",
+      "drag your screenshot" in body, body)
 check("what was typed is in it", "everything went grey" in body)
 check("an empty field says so rather than leaving a blank heading",
       "_(not filled in)_" in report.build_body("", "", "", False))
@@ -65,20 +67,6 @@ print("=== a report too long for a URL falls back rather than truncating ===")
 check("a normal report is not too long", not report.too_long(url), len(url))
 check("a huge one is", report.too_long(report.build_url("t", "x" * 9000)))
 
-print("=== the operator refuses an empty report ===")
-# The one path that can be driven here without opening a browser. The
-# success path ends in `wm.url_open`, which is exactly what a test must
-# not run - so what it would have opened is asserted above, on the pure
-# builder it uses.
-settings = bpy.context.scene.seto_support
-settings.title = ""
-settings.result = ""
-try:
-    bpy.ops.seto.support_report()
-    check("an empty report is refused", False, "operator ran")
-except RuntimeError as error:
-    check("an empty report is refused", "Fill in" in str(error), error)
-
 print("=== nothing here reaches the network on its own ===")
 import inspect
 from seto_tools.support import operators as support_operators
@@ -89,27 +77,58 @@ for forbidden in ("urlopen", "requests", "socket", "http.client"):
 check("the only host it ever opens is this repository",
       report.NEW_ISSUE.startswith("https://github.com/seto3d/setotools/"))
 
-print("=== Copy puts the same report where it can be pasted ===")
-settings.title = "Test report"
-settings.result = "it did the wrong thing"
-settings.steps = "pressed the button"
-settings.expected = "the right thing"
-check("Copy runs", bpy.ops.seto.support_copy() == {'FINISHED'})
+print("=== the operator refuses an empty report ===")
+# The one path that can be driven here without opening a browser. The
+# success path ends in `wm.url_open`, which is exactly what a test must
+# not run - so what it would have opened is asserted above, on the pure
+# builder it uses.
+settings = bpy.context.scene.seto_support
+settings.title = ""
+try:
+    bpy.ops.seto.support_report()
+    check("an empty report is refused", False, "operator ran")
+except RuntimeError as error:
+    check("an empty report is refused", "Fill in" in str(error), error)
 
-# Background Blender has no system clipboard to write to, so reading it
-# back proves nothing about the operator - it is the environment that is
-# missing, not the code. Where a clipboard does exist, the round trip is
-# checked properly.
-bpy.context.window_manager.clipboard = "seto-clipboard-probe"
-if bpy.context.window_manager.clipboard == "seto-clipboard-probe":
-    bpy.ops.seto.support_copy()
-    clipboard = bpy.context.window_manager.clipboard
-    check("the body is on the clipboard",
-          "it did the wrong thing" in clipboard, clipboard[:120])
-    check("and the title goes with it", "Test report" in clipboard,
-          clipboard[:120])
-else:
-    print("[SKIP] no clipboard in this Blender - background mode")
+print("=== the add-on does not touch pictures or folders at all ===")
+# An image cannot travel in a URL, so there is no file field, nothing
+# that captures the screen and nothing that opens a folder - only the
+# heading in the body that says where to drop one.
+check("nothing takes a screenshot", "screen.screenshot" not in source)
+check("nothing opens a folder on disk", "path_open" not in source)
+check("there is no screenshot field to fill in",
+      "screenshot_path" not in settings.bl_rna.properties,
+      list(settings.bl_rna.properties.keys()))
+check("and no folder operator left behind",
+      not hasattr(bpy.types, "SETO_OT_support_open_folder"))
+
+print("=== Clear empties the form ===")
+settings.title = "something"
+settings.steps_0 = "a line"
+bpy.ops.seto.support_clear()
+check("the title went", settings.title == "", settings.title)
+check("the answers went", settings.steps_0 == "", settings.steps_0)
+
+print("=== each question is one field, and the plumbing knows it ===")
+from seto_tools.support import properties as support_properties
+# One line per question is the settled answer - every taller shape either
+# moved the panel under the user's hands or sat unfilled. The stack
+# machinery stays for the day that changes, exercised at whatever LINES
+# currently is.
+check("a question is a single field", support_properties.LINES == 1,
+      support_properties.LINES)
+check("every question has its declared stack",
+      all(f"{name}_{index}" in settings.bl_rna.properties
+          for name, _label in support_properties.FIELDS
+          for index in range(support_properties.LINES)))
+settings.steps_0 = "opened the file"
+check("what is typed is what the report carries",
+      support_properties.text_of(settings, "steps") == "opened the file",
+      support_properties.text_of(settings, "steps"))
+support_properties.clear(settings)
+check("clearing empties every question",
+      not any(support_properties.text_of(settings, name)
+              for name, _label in support_properties.FIELDS))
 
 failed = [r for r in RESULTS if not r[0]]
 print("\n" + "=" * 60)

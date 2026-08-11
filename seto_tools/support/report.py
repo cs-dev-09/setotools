@@ -55,6 +55,12 @@ def build_body(steps, result, expected, include_environment=True):
         lines.append(f"**{heading}**")
         lines.append(text.strip() or "_(not filled in)_")
         lines.append("")
+    # A place for the picture. GitHub takes images by dropping them onto
+    # the box, which a prefilled URL cannot do - so the body asks for it
+    # where it should go instead of leaving the reporter to remember.
+    lines.append("**Screenshot**")
+    lines.append("_(drag your screenshot onto this box)_")
+    lines.append("")
     if include_environment:
         lines.append("**Versions**")
         for name, value in environment():
