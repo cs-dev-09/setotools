@@ -5,6 +5,10 @@ __pycache__/
 # Built addon zips - published as GitHub Release assets, not tracked here
 *.zip
 
+# Built documentation - GitHub Actions builds and publishes it, see
+# .github/workflows/docs.yml. The source is docs/.
+site/
+
 # Blender
 *.blend1
 *.blend2

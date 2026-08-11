@@ -1,0 +1,64 @@
+name: Documentation
+
+# Builds the MkDocs site and publishes it to GitHub Pages. The site is built on
+# every push and pull request so a broken nav entry or a bad link fails here
+# rather than on the published page; only main is deployed.
+on:
+  push:
+    branches: [main]
+    paths:
+      - docs/**
+      - mkdocs.yml
+      - .github/workflows/docs.yml
+  pull_request:
+    paths:
+      - docs/**
+      - mkdocs.yml
+      - .github/workflows/docs.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deployment at a time; a queued run is not cancelled, so a push that lands
+# during a deploy still gets published.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      # Pinned - see the note in the file. An unpinned install would one day
+      # pick up MkDocs 2.0 and fail on a docs change unrelated to it.
+      - run: pip install -r docs/requirements.txt
+
+      # --strict turns warnings into errors: a nav entry pointing at a file
+      # that does not exist, or a link to a page that was renamed, stops the
+      # build instead of publishing a broken site.
+      - run: mkdocs build --strict
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

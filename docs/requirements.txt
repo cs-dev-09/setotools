@@ -1,0 +1,7 @@
+# What builds the documentation site. Pinned, and worth keeping pinned:
+# MkDocs 2.0 removes the plugin system and rewrites theming, with no migration
+# path, so an unpinned build would one day fail on a docs change that had
+# nothing to do with it. Bump these deliberately, and check the site still
+# builds with --strict.
+mkdocs==1.6.1
+mkdocs-material==9.7.7

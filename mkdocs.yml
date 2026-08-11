@@ -1,0 +1,94 @@
+site_name: Seto Tools
+site_description: >-
+  GTA V / FiveM asset authoring for Blender, built on Sollumz. Decal strips,
+  surface painting and read-only scene analysis — none of it touches your mesh.
+site_url: https://seto3d.github.io/setotools/
+repo_url: https://github.com/seto3d/setotools
+repo_name: seto3d/setotools
+edit_uri: edit/main/docs/
+copyright: Seto Tools is free software. Documentation built from the repository it documents.
+
+theme:
+  name: material
+  language: en
+  icon:
+    repo: fontawesome/brands/github
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.sections
+    - navigation.top
+    - navigation.footer
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.action.edit
+    - toc.follow
+  palette:
+    # The docs follow the reader's system theme, the way the add-on's own
+    # panels follow Blender's.
+    - media: "(prefers-color-scheme)"
+      toggle:
+        icon: material/brightness-auto
+        name: Follow system theme
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: teal
+      accent: teal
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: teal
+      accent: teal
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+
+nav:
+  - Home: index.md
+  - Getting started:
+      - Installation: installation.md
+      - The tab: the-tab.md
+      - What every tool shares: concepts.md
+  - Geometry tools:
+      - Edge Wear: tools/edge-wear.md
+      - Smooth Edge: tools/smooth-edge.md
+  - Surface tools:
+      - Ambient Occlusion: tools/ambient-occlusion.md
+      - Decal Tool: tools/decal-tool.md
+      - Surface Painter: tools/surface-painter.md
+      - Edge Dirt: tools/edge-dirt.md
+  - Analysis tools:
+      - Density Check: tools/density-check.md
+      - Texture Budget: tools/texture-budget.md
+      - Pre-Flight: tools/pre-flight.md
+  - Reference:
+      - Troubleshooting: troubleshooting.md
+      - Updating: updating.md
+      - Development: development.md
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/seto3d/setotools
+      name: Seto Tools on GitHub
