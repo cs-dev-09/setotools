@@ -1,7 +1,10 @@
 bl_info = {
     "name": "Seto Tools",
     "author": "Seto",
-    "version": (1, 9, 0),
+    # Public versioning starts at 1.0.0 with the launch. The changelog's
+    # 0.2-1.9 entries were private development builds that never shipped;
+    # their numbers stay in the log as history, not as releases.
+    "version": (1, 0, 0),
     "blender": (4, 2, 0),
     "location": "View3D > N-Panel > Seto Tools",
     "description": (

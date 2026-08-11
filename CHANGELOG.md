@@ -2,7 +2,20 @@
 
 All notable changes to Seto Tools.
 
-## 1.9.0
+## 1.0.0 — the first public release
+
+Nine tools, one N-panel tab: six authoring tools (Ambient Occlusion, Edge
+Dirt, Edge Wear, Smooth Edge, Decal Tool, Surface Painter), three
+read-only Analysis tools graded against vanilla GTA (Density Check,
+Texture Budget, Pre-Flight), and a Support section that reports a bug
+without sending anything anywhere.
+
+**Everything below this heading is the private development log.** Versions
+0.2 through 1.9 were internal builds that never shipped outside the
+machine they were written on; their numbers remain here as history. Public
+versioning starts at 1.0.0 and continues upward from it.
+
+## 1.9.0 *(internal)*
 
 ### Added — report a bug without leaving Blender
 
@@ -31,7 +44,7 @@ opens a modelling tool wanting to be asked for money and this one is free
 either way. The same links live in **Edit > Preferences > Add-ons**,
 which is where somebody whose tab is not drawing can still reach them.
 
-## 1.8.0
+## 1.8.0 *(internal)*
 
 ### Added — Texture Budget: what the scene costs in VRAM, and which prop is why
 
@@ -148,7 +161,7 @@ session that remembers what those colours were is now shared
 of saving its verdict as "the user's own colour", and finishing either
 hands back what was really there.
 
-## 1.7.0
+## 1.7.0 *(internal)*
 
 ### Added — Density Check, a triangle-budget heatmap
 
@@ -202,7 +215,7 @@ it: with both rounds live off one set of settings there is nothing left to
 choose. Strips saved with a target still load — the setting is simply no longer
 read.
 
-## 1.6.1
+## 1.6.1 *(internal)*
 
 ### Fixed — two tools' Bevels on one wall rounded each other's edges
 
@@ -234,7 +247,7 @@ figure stale — the strip travelled with its parent correctly, but typing into
 the Offset field teleported it back to where the Drawable used to be. It is
 remembered in the strip's own transform now, which parenting leaves alone.
 
-## 1.6.0
+## 1.6.0 *(internal)*
 
 ### Added — a hand-moved strip stays where it was put
 
@@ -256,7 +269,7 @@ moves it, carrying the offset along. For the specific case of lifting a strip
 vertically, Ambient Occlusion's **Ground Level** was already an answer and
 still is.
 
-## 1.5.1
+## 1.5.1 *(internal)*
 
 ### Fixed — Edge Wear and Smooth Edge threw on their Selected Strip panel
 
@@ -269,7 +282,7 @@ unless one of the tool's own objects is active, so its draw() was never run.
 tool first, then draws its panel. These are the panels with the most in them
 and the only ones anyone looks at while dragging a value.
 
-## 1.5.0
+## 1.5.0 *(internal)*
 
 ### Added — Bevel on Edge Wear and Smooth Edge
 
@@ -289,7 +302,7 @@ again, so the three tools cannot drift into rounding things three different
 ways, and `source_bevel.py` now serves all of them — a tool differs only by
 which per-object group its strips live in and what its modifier is called.
 
-## 1.4.0
+## 1.4.0 *(internal)*
 
 ### Changed — one layout for the whole tab
 
@@ -460,7 +473,7 @@ dropdown. A dropdown can only show a thumbnail for the row the pointer happens
 to be over, and choosing a decal is choosing a picture. The texture enum is
 still there under the preview, so nothing that scripted against it breaks.
 
-## 1.3.1
+## 1.3.1 *(internal)*
 
 ### Fixed — Sollumz Development was reported as not installed
 
@@ -491,7 +504,7 @@ empty and nothing changes.
 The preferences now show what was detected, and the "Sollumz not available"
 warning in every panel has a button that opens them.
 
-## 1.3.0
+## 1.3.0 *(internal)*
 
 ### Changed — a redrawn icon set
 
@@ -535,7 +548,7 @@ section and its Width means something else — the flat shelf the AO fades
 across, 0.25 m against 0.04 m here — so sharing would have the two overwriting
 each other.
 
-## 1.2.1
+## 1.2.1 *(internal)*
 
 ### Changed — the tab has its own icons
 
@@ -560,7 +573,7 @@ are greyed out until there is something behind them. The placeholder text stays
 — it says what to do about it — and **Refresh** stays live, since it is the way
 out of that state.
 
-## 1.2.0
+## 1.2.0 *(internal)*
 
 ### Removed — the lighting module is gone
 
@@ -666,7 +679,7 @@ Width. Existing strips keep the value they stored; it is simply no longer read.
 a z-fighting nudge; past a few centimetres the strip is not on the wall any
 more.
 
-## 1.1.1
+## 1.1.1 *(internal)*
 
 ### Fixed — Sollumz was not detected when installed from the repository
 
@@ -716,7 +729,7 @@ along with the label-wrapping helper that had been copy-pasted five times.
   while a panel explodes on first redraw; that had happened three times before
   this existed, and each time a user found it rather than the suite.
 
-## 1.1.0
+## 1.1.0 *(internal)*
 
 ### Added — Surface Painter
 
