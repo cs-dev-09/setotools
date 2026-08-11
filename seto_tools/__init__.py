@@ -38,6 +38,7 @@ from . import surface_painter
 from . import density_checker
 from . import texture_budget
 from . import preflight
+from . import support
 
 # Panel order. icons first because every panel header asks it for an icon id,
 # then groups - and that one is not merely tidiness: every tool panel hangs off
@@ -46,7 +47,7 @@ from . import preflight
 # kind of reason: both of them read scene.seto_grade, which it declares.
 _modules = (icons, strip_settings, manual_offset, viewport_grade, groups,
             fake_damage, smooth_edge, fake_ao, decal_tool, surface_painter,
-            edge_dirt, density_checker, texture_budget, preflight)
+            edge_dirt, density_checker, texture_budget, preflight, support)
 
 
 def register():

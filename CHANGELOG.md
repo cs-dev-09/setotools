@@ -111,6 +111,30 @@ a draw call and in GTA those are often dearer than the triangles under
 them. Vanilla is blunt about it: the median mesh in Franklin's house has
 exactly **one** material. Past four, the panel says merging would help.
 
+### Added — report a bug without leaving Blender
+
+A collapsed **Support** panel at the foot of the tab. Write the report
+where the bug happened — a title, what you did, what happened, what you
+expected — and **Open Prefilled Issue** opens GitHub's own new-issue form
+with all of it already filled in, plus the versions nobody remembers to
+include: Blender, Seto Tools, and whether Sollumz was even found.
+
+**Nothing is sent by the add-on.** It fills in GitHub's form and the
+browser opens there; what goes out is what you read on screen and submit
+yourself, signed in as yourself. There is no token, no account, and no
+code here that can reach the network — the suite asserts that last part.
+A report too long for a URL goes to the clipboard instead of being
+truncated, and **Copy to Clipboard** is there for pasting into Discord.
+
+The panel also carries **Report a Bug**, which opens the existing issues,
+and **Become a Sponsor**. Both go through Blender's own `wm.url_open`.
+
+They are there rather than repeated inside every tool because a sponsor
+button at the foot of six panels is nagging, and a bug report link is only
+wanted on the day something is wrong. The same two buttons are in **Edit >
+Preferences > Add-ons**, which is where somebody whose tab is not drawing
+can still reach them.
+
 ### Changed — one grading session, shared
 
 Density Check and Texture Budget paint into the same object colours, so the

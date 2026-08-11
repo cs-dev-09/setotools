@@ -159,6 +159,12 @@ class SETO_AP_decal_tool(bpy.types.AddonPreferences):
         layout.prop(self, "library_path")
         layout.prop(self, "preview_size")
 
+        # The other place a user looks for "where do I report this" - and
+        # the one they can reach when the tab itself is not drawing.
+        layout.separator()
+        from ..support import ui as support_ui
+        support_ui.draw_links(layout)
+
         box = layout.box()
         box.label(text="Sollumz", icon='PLUGIN')
         available, message = _sollumz_status()

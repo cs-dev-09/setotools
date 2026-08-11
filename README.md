@@ -177,4 +177,9 @@ Follow the [releases](../../releases) — each of these lands as its own version
 ## Support
 
 Seto Tools is free and stays free. If it saves you time, you can support its
-development through **GitHub Sponsors** — the button at the top of this repo.
+development through **GitHub Sponsors** — the button at the top of this repo,
+or **Support > Become a Sponsor** at the foot of the N-panel tab.
+
+Found something broken? **Support > Report a Bug** opens
+[the issues](../../issues). A report with a .blend attached is worth more than
+any of it.
