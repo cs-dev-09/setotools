@@ -21,6 +21,7 @@ if getattr(bpy.types, "SETO_PT_density_checker_panel", None) is None:
     seto_tools.register()
 
 from seto_tools.density_checker import geometry, operators
+from seto_tools.shared import viewport_grade as vg
 
 print("=== the maths, before any scene is involved ===")
 check("the budget grows with the square root of area",
@@ -85,7 +86,8 @@ check("the dense grid went red - ten times its budget",
       dense.color[0] > dense.color[1], tuple(dense.color))
 check("the source mesh was not touched",
       len(sparse.data.vertices) == sparse_verts)
-check("the panel's active flag is up", settings.active)
+check("the shared grading session names this tool",
+      scene.seto_grade.owner == "DENSITY", scene.seto_grade.owner)
 
 print("=== world space and the evaluated mesh, not the raw one ===")
 # The same plane four times as wide covers four times the floor - if the
@@ -140,9 +142,27 @@ check("the user's own colour came back",
       tuple(sparse.color))
 check("every measurement property is gone",
       all(operators.TRIS_PROP not in o and operators.AREA_PROP not in o
-          and operators.SAVED_COLOUR_PROP not in o
+          and vg.SAVED_COLOUR_PROP not in o
           for o in (sparse, dense, wide, modified, loose)))
-check("the panel's active flag is down again", not settings.active)
+check("the session is free again", scene.seto_grade.owner == "")
+
+print("=== the two grading tools do not lose each other's colours ===")
+# Texture Budget paints into the same object colours. Starting it while a
+# density analysis is up must hand the *user's* colour back at the end, not
+# the green the Density Check had painted over it.
+deselect_all()
+sparse.select_set(True)
+analyze()
+bpy.context.scene.seto_texture_budget.scope = 'SELECTED'
+bpy.ops.seto.texture_analyze()
+check("the second tool took the session over",
+      scene.seto_grade.owner == "TEXTURE", scene.seto_grade.owner)
+check("and the first tool's measurements were cleared",
+      operators.TRIS_PROP not in sparse)
+bpy.ops.seto.texture_clear()
+check("finishing still returns the user's own colour",
+      all(abs(a - b) < 1e-5 for a, b in zip(sparse.color, (0.2, 0.3, 0.4, 1.0))),
+      tuple(sparse.color))
 
 print("=== an empty scope refuses instead of pretending ===")
 deselect_all()

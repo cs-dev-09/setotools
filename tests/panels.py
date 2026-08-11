@@ -159,7 +159,8 @@ for parent, expected in (
          ["SETO_PT_fake_ao_panel", "SETO_PT_decal_tool_panel",
           "SETO_PT_surface_painter_panel", "SETO_PT_edge_dirt_panel"]),
         ("SETO_PT_analysis_group",
-         ["SETO_PT_density_checker_panel"])):
+         ["SETO_PT_density_checker_panel", "SETO_PT_texture_budget_panel",
+          "SETO_PT_preflight_panel"])):
     got = [c.bl_idname for c in panels
            if getattr(c, "bl_parent_id", "") == parent]
     check(f"{parent} holds its tools, in order", got == expected, got)
@@ -224,17 +225,65 @@ finally:
     fake_ao.property_unset("bevel_target")
     fake_ao.property_unset("bevel_width")
 
-print("=== Density Check, mid-analysis ===")
-# The pass above drew it idle. With an analysis on screen the panel changes
-# shape entirely: Finish Analysis, the viewport-colour note, the verdict line.
-density = bpy.context.scene.seto_density_checker
+print("=== the Analysis tools, mid-run ===")
+# The pass above drew them idle. Showing a result changes each panel's shape
+# entirely - Finish Analysis, the scene totals, the verdict lines, the
+# findings list - and none of that was drawn by anything above.
+grade = bpy.context.scene.seto_grade
+preflight = bpy.context.scene.seto_preflight
+for tool, match in (('DENSITY', "density"), ('TEXTURE', "texture_budget")):
+    try:
+        grade.owner = tool
+        for cls in panels:
+            if match in cls.bl_idname:
+                draw_panel(cls, f"{match} active")
+    finally:
+        grade.property_unset("owner")
+
 try:
-    density.active = True
+    preflight.has_run = True
     for cls in panels:
-        if "density" in cls.bl_idname:
-            draw_panel(cls, "analysis active")
+        if "preflight" in cls.bl_idname:
+            draw_panel(cls, "preflight all clear")
+    finding = preflight.findings.add()
+    finding.object_name = bpy.context.active_object.name
+    finding.check = "Scale"
+    finding.severity = "BROKEN"
+    finding.message = "Non-uniform scale not applied"
+    for cls in panels:
+        if "preflight" in cls.bl_idname:
+            draw_panel(cls, "preflight with findings")
+    # Collapsed as well as open: a heading that is closed takes the other
+    # branch through the drawing, and that branch has never been drawn by
+    # anything else here.
+    preflight.expanded = [False] * len(preflight.expanded)
+    for cls in panels:
+        if "preflight" in cls.bl_idname:
+            draw_panel(cls, "preflight collapsed")
+    preflight.property_unset("expanded")
 finally:
-    density.property_unset("active")
+    preflight.findings.clear()
+    preflight.property_unset("has_run")
+
+# Pre-Flight's How to fix popup is an Operator draw(), which Blender calls
+# from the UI thread exactly like a panel's - so it has the same way of
+# passing every logic test and exploding on first click. Driven here for
+# every check that exists, not only the one a finding happened to carry.
+from seto_tools.preflight import checks as preflight_checks
+fix_cls = getattr(bpy.types, "SETO_OT_preflight_fix", None)
+check("the How to fix operator is registered", fix_cls is not None)
+if fix_cls is not None:
+    for name, _fn in preflight_checks.CHECKS:
+        shim = type("Shim", (), {})()
+        shim.layout = StubLayout()
+        shim.check = name
+        shim.object_name = "some_object"
+        try:
+            fix_cls.draw.__get__(shim)(bpy.context)
+            check(f"How to fix draws for {name}", True)
+        except Exception as e:
+            import traceback; traceback.print_exc()
+            check(f"How to fix draws for {name}", False, e)
 
 print("=== every panel draws when Sollumz is missing ===")
 # The tester's state. Every tool must say so rather than drawing buttons that

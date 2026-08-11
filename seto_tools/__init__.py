@@ -1,7 +1,7 @@
 bl_info = {
     "name": "Seto Tools",
     "author": "Seto",
-    "version": (1, 7, 0),
+    "version": (1, 8, 0),
     "blender": (4, 2, 0),
     "location": "View3D > N-Panel > Seto Tools",
     "description": (
@@ -9,8 +9,9 @@ bl_info = {
         "Ambient Occlusion corner decals, Edge Dirt strips, Edge Wear "
         "chipped-edge strips, Smooth Edge normal-map strips, a Decal Tool that "
         "places library decals on selected faces, a Surface Painter for "
-        "brushing dirt onto an asset through a non-destructive mask, and a "
-        "Density Check that colours the scene by triangle budget."
+        "brushing dirt onto an asset through a non-destructive mask, and an "
+        "Analysis section that grades triangles and texture memory against "
+        "vanilla GTA and checks an asset before it is exported."
     ),
     "category": "Object",
 }
@@ -26,6 +27,7 @@ bl_info = {
 from .shared import icons
 from .shared import strip_settings
 from .shared import manual_offset
+from .shared import viewport_grade
 from .shared import groups
 from . import fake_ao
 from . import edge_dirt
@@ -34,14 +36,17 @@ from . import smooth_edge
 from . import decal_tool
 from . import surface_painter
 from . import density_checker
+from . import texture_budget
+from . import preflight
 
 # Panel order. icons first because every panel header asks it for an icon id,
 # then groups - and that one is not merely tidiness: every tool panel hangs off
 # one of its sections, and Blender drops a panel whose bl_parent_id is not
-# registered yet.
-_modules = (icons, strip_settings, manual_offset, groups, fake_damage,
-            smooth_edge, fake_ao, decal_tool, surface_painter, edge_dirt,
-            density_checker)
+# registered yet. viewport_grade comes before the Analysis tools for the same
+# kind of reason: both of them read scene.seto_grade, which it declares.
+_modules = (icons, strip_settings, manual_offset, viewport_grade, groups,
+            fake_damage, smooth_edge, fake_ao, decal_tool, surface_painter,
+            edge_dirt, density_checker, texture_budget, preflight)
 
 
 def register():

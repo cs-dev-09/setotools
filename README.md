@@ -14,6 +14,8 @@ reads.
 | [Smooth Edge](seto_tools/smooth_edge) | Normal-map strips that make a hard edge read as rounded | selected edges |
 | [Surface Painter](seto_tools/surface_painter) | Dirt, grime and graffiti brushed onto a surface | a paint mesh over the whole object |
 | [Density Check](seto_tools/density_checker) | A triangle-budget heatmap graded against vanilla GTA | the whole scene, read-only |
+| [Texture Budget](seto_tools/texture_budget) | The same heatmap for texture resolution, plus what the scene costs in VRAM | the whole scene, read-only |
+| [Pre-Flight](seto_tools/preflight) | The export test you would otherwise run in game — missing UVs, unapplied scale, non-DDS textures | the whole scene, read-only |
 
 They all live in the **Seto Tools** N-panel tab, each as its own collapsible
 section, the way Sollumz Tools is laid out. The sections are grouped by what a
@@ -53,6 +55,8 @@ seto_tools/
     smooth_edge/
     surface_painter/
     density_checker/ the read-only triangle-budget heatmap
+    texture_budget/  the same, for texture resolution and VRAM
+    preflight/       the read-only export checklist
 ```
 
 Blender allows exactly one `AddonPreferences` class per add-on, and that class

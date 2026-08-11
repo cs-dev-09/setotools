@@ -1,6 +1,6 @@
 import bpy
 
-from ..shared import groups, icons, panel_layout as pl
+from ..shared import groups, icons, panel_layout as pl, viewport_grade as vg
 from . import geometry, legend, operators
 
 
@@ -25,6 +25,30 @@ def _verdict(fraction):
     return 'MOD_DECIM', "Well above vanilla. A LOD or retopo would help."
 
 
+def _draw_calls(layout, obj):
+    """The other half of what a mesh costs, and the cheaper half to fix.
+
+    Each material on an object is a draw call, and in GTA those are often
+    dearer than the triangles under them. Vanilla is blunt about it: across
+    Franklin's house the median mesh has exactly **one** material and two
+    thirds have no more than one, so a prop carrying eight is not detailed,
+    it is unmerged. Reported as a line rather than folded into the colour -
+    the colour is the triangle verdict, and one number per colour is what
+    makes it readable.
+    """
+    count = len([slot for slot in obj.material_slots if slot.material])
+    empty = len(obj.material_slots) - count
+    row = layout.row()
+    row.label(text=f"{count} material{'s' if count != 1 else ''}"
+                   f" = {count} draw call{'s' if count != 1 else ''}")
+    if count > 4:
+        layout.label(text="Vanilla's median is 1. Merging would help.",
+                     icon='INFO')
+    if empty:
+        layout.label(text=f"{empty} empty material slot"
+                          f"{'s' if empty != 1 else ''}.", icon='INFO')
+
+
 class SETO_PT_density_checker_panel(bpy.types.Panel):
     bl_label = "Density Check"
     bl_idname = "SETO_PT_density_checker_panel"
@@ -46,16 +70,17 @@ class SETO_PT_density_checker_panel(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         settings = context.scene.seto_density_checker
+        active = vg.is_active(context, operators.TOOL)
 
         col = pl.section(layout, "Budget", 'MESH_DATA')
         col.prop(settings, "budget")
         col.prop(settings, "scope")
 
         pl.create_button(layout, "seto.density_analyze",
-                         "Re-Analyze" if settings.active else "Analyze Density",
+                         "Re-Analyze" if active else "Analyze Density",
                          'SHADING_SOLID')
 
-        if not settings.active:
+        if not active:
             pl.hint(layout, "Colours every mesh by what vanilla GTA spends.")
             return
 
@@ -84,6 +109,8 @@ class SETO_PT_density_checker_panel(bpy.types.Panel):
                 col.label(text=f"{value:.1f}× of the GTA budget")
                 icon, advice = _verdict(geometry.fraction(value))
                 col.label(text=advice, icon=icon)
+            col.separator()
+            _draw_calls(col, obj)
         else:
             pl.hint(layout, "Select an analyzed object for its numbers.")
 

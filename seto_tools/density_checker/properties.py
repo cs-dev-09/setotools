@@ -16,6 +16,8 @@ for stricter projects; the colour scale rides along.
 
 import bpy
 
+from ..shared import viewport_grade as vg
+
 
 class SETO_PG_density_checker(bpy.types.PropertyGroup):
     budget: bpy.props.FloatProperty(
@@ -29,19 +31,12 @@ class SETO_PG_density_checker(bpy.types.PropertyGroup):
     scope: bpy.props.EnumProperty(
         name="Scope",
         description="Which objects Analyze measures",
-        items=(
-            ('VISIBLE', "Visible", "Every visible mesh object in the view layer"),
-            ('SELECTED', "Selected", "Only the selected mesh objects"),
-        ),
+        items=vg.SCOPE_ITEMS,
         default='VISIBLE',
     )
-    # The viewport colour mode Analyze found, so Finish can put it back instead
-    # of guessing that everyone runs the default Material shading.
-    saved_shading: bpy.props.StringProperty(default="", options={'HIDDEN'})
-    # An analysis is on screen right now. What the panel keys its two states
-    # off: saved_shading cannot serve, because it stays empty when the
-    # viewport was already showing Object colours when Analyze ran.
-    active: bpy.props.BoolProperty(default=False, options={'HIDDEN'})
+    # Whether an analysis is on screen is not kept here: the grading session
+    # is shared with Texture Budget, so it lives on scene.seto_grade - see
+    # shared/viewport_grade.py.
 
 
 _classes = (SETO_PG_density_checker,)

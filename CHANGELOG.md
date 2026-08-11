@@ -2,6 +2,123 @@
 
 All notable changes to Seto Tools.
 
+## 1.8.0
+
+### Added — Texture Budget: what the scene costs in VRAM, and which prop is why
+
+Triangles were only half of what an asset costs, and in FiveM rarely the
+half that hurts. **Analyze Textures** colours every mesh by the texture
+resolution it carries *for its physical size* — texel density, `√(pixels /
+area)`, which is what an artist sees as sharpness — and totals the scene's
+texture memory above it.
+
+The target is vanilla again, and vanilla is stricter here than anyone
+expects: of the 601 textures in Franklin's house **592 are 512×512 or
+smaller** — 331 of them 256², 109 of them 128² — with exactly two 1024²
+sheets in the entire interior, which comes to about 55 MB all told. At
+1024 texels per metre its meshes grade at a median of 0.42× and a p75 of
+0.90×, the same shape as the triangle budget. When something is over, the
+panel names the power-of-two size that would fit rather than telling
+anyone off.
+
+Scene totals count a shared texture **once** — a sheet worn by forty props
+is streamed once, and totalling it per object would report a cost nobody
+pays. An untextured mesh is greyed out, not failed: a blockout has nothing
+to answer for.
+
+### Added — Pre-Flight: the export test you would otherwise run in game
+
+**Run Pre-Flight** checks every mesh in scope for the handful of things
+that pass in Blender and fail after export: no UV map, empty material
+slots, unapplied scale, textures that are not DDS, zero-area faces, loose
+vertices. Each finding lists the object, a button that selects it, and a
+**How to fix** popup with the actual steps — a finding with no route out
+is a complaint, not a report.
+
+A mesh with **no material at all** is deliberately not reported. An
+imported MLO is full of them — collision bounds, helpers, blockouts — and
+flagging every one buried the findings that mattered under hundreds that
+did not. An *empty slot* still is, because that is debris either way.
+
+The findings are filed under collapsible headings — **Scale issues (11)**,
+**Texture issues (6)**, **Geometry issues**, **UV issues**, **Material
+issues** — with the groups that can be fixed in a click first, all closed
+to begin with. Forty rows in one column is a wall nobody scrolls; the same
+forty under counted headings is a report, and you open the one you came
+for. Each heading carries its own **Fix** button for the rows underneath
+it: what a user decides about eleven unapplied scales is not what they
+decide about six textures, and one button over everything asks for both
+answers at once.
+
+Four of the six checks also get a **Fix** button that does it: delete loose
+vertices, drop zero-area faces, remove material slots nothing points at,
+apply a scale. Each is one undo step and reports in the status bar what it
+changed, and **Fix All** clears every one of them at once — running up to
+three passes, because dropping a zero-area face leaves the vertices that
+were in it loose. The list is sorted with the fixable rows first, so what
+can be dealt with in a click is never buried under thirty explanations.
+
+The jump button does more than select now: it frames the object in the
+viewport and, where the finding belongs to one material — a .png in the
+third shader, an empty slot — makes that the active slot and turns the
+Properties editor to its Material tab, whichever tab it was on. The other three deliberately have no button — an automatic
+unwrap produces a layout no GTA asset would ship with, which shader a mesh
+wants is what the author knows and the tool does not, and Blender cannot
+write a DDS at all. A fixer that refuses says why, **on the row that refused** — before this
+the button simply looked broken. Two cases are worth knowing:
+
+*Linked duplicates.* Applying a scale writes it into the mesh, so every
+object sharing that mesh would resize. Fix asks first, exactly as
+Blender's own Ctrl+A does, and gives the object its own copy if you agree
+— saying plainly that this ends the instancing for it. The dialog counts
+how many other rows are waiting on the same answer and offers to do them
+all, so six lamp posts are one question rather than six; only the copies
+actually needed are made, since the last object reached is no longer
+sharing anything and keeps the original mesh. **Fix All never makes that
+trade for you**; it leaves those rows with their reason on them.
+
+*Empty slots.* If every slot on the object is empty, all of them go —
+nothing can be mis-assigned when there is no other material to inherit.
+Otherwise the empty slots are popped highest-index first and the faces are
+left alone, because `materials.pop()` already renumbers them — shifting
+them again by hand left the object wearing its neighbours' textures, and
+handing the job to Blender's own **Remove Unused Slots** operator quietly
+did nothing at all on a real MLO. An empty slot faces still point at, on
+an object
+that has real materials too, is refused: which material those faces
+should get is the author's answer, not the tool's. The non-DDS finding names
+the **material** holding the image, not just the image, because that is the
+shader you have to open.
+
+N-gons are deliberately **not** checked: Sollumz triangulates on export,
+so flagging one on every box-modelled asset would be the noise that
+teaches people to ignore a checker. Non-DDS textures are, because GTA
+streams mip-mapped, block-compressed DDS and a PNG has neither — it
+shimmers at distance and inflates the `.ytd` it is embedded into.
+
+Every check earns its place by being something **vanilla barely does** —
+261 of Franklin's 265 render meshes come back with nothing said about them,
+and the four that do trip only the mildest check — so a finding is not a
+matter of taste. Non-uniform scale is graded worse
+than uniform, because that is the case where normals and tangents disagree
+and a normal map comes out wrong on an export that looked fine.
+
+
+### Added — draw calls, in the Density Check
+
+The object's line now reports its material count, because each material is
+a draw call and in GTA those are often dearer than the triangles under
+them. Vanilla is blunt about it: the median mesh in Franklin's house has
+exactly **one** material. Past four, the panel says merging would help.
+
+### Changed — one grading session, shared
+
+Density Check and Texture Budget paint into the same object colours, so the
+session that remembers what those colours were is now shared
+(`shared/viewport_grade.py`). Starting one ends the other cleanly instead
+of saving its verdict as "the user's own colour", and finishing either
+hands back what was really there.
+
 ## 1.7.0
 
 ### Added — Density Check, a triangle-budget heatmap
