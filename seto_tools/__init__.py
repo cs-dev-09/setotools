@@ -41,6 +41,7 @@ from . import surface_painter
 from . import density_checker
 from . import texture_budget
 from . import preflight
+from . import updater
 from . import support
 
 # Panel order. icons first because every panel header asks it for an icon id,
@@ -50,7 +51,8 @@ from . import support
 # kind of reason: both of them read scene.seto_grade, which it declares.
 _modules = (icons, strip_settings, manual_offset, viewport_grade, groups,
             fake_damage, smooth_edge, fake_ao, decal_tool, surface_painter,
-            edge_dirt, density_checker, texture_budget, preflight, support)
+            edge_dirt, density_checker, texture_budget, preflight, updater,
+            support)
 
 
 def register():

@@ -33,6 +33,10 @@ zip → enable it → restart Blender.
 Requires Blender 4.2+ and Sollumz with its dependencies installed. Verified in
 Blender 5.0.1 and 5.2.0 LTS.
 
+**Updating** — **Support ▸ Check for Updates** in the N-panel does it from
+inside Blender: one request to github.com when you press it, never
+automatically, and Install Update keeps your settings.
+
 > These used to be three separate add-ons (`seto_fake_ao`, `seto_fake_dmg`,
 > `seto_decal_tool`). If you have any of them installed, **disable and remove
 > them first** — they register the same operators and panels as this one.
