@@ -4,6 +4,41 @@ All notable changes to Void Tools.
 
 ## Unreleased
 
+### Added — Edge Wear has a Strength slider
+
+How loudly the damage reads was the one thing deciding whether a strip
+could be seen in game, and it was the one thing the tab could not set. It
+lived as `bumpiness` and `specularIntensityMult` in the material
+properties, three clicks outside the tool that made the strip — so
+"invisible in game" was diagnosed by hand, in the shader, every time.
+
+**Strength** now drives both, from a new collapsed **Material** panel
+under Edge Wear (for the next strip) and live in **Selected Strip** (for
+this one). It is linear from GTA's own numbers: 1.0 is exactly what
+`hn_apt_hall_blk_milo` uses, 4.0 is bumpiness 2.0 with the specular
+opened to 0.5, and both stop at a ceiling rather than running away.
+
+**New strips ship at Strength 4.0**, not at GTA's 1.0. The reference
+values read too faintly on a softly lit interior wall — which is where
+this tool is mostly used — and that was dialled in in the game itself
+rather than guessed. 1.0 is one drag away for anything meant to sit
+exactly where vanilla sits.
+
+The
+two values it is setting are printed under the slider — those are the
+numbers that go in a bug report, and the ones a default gets moved to
+once a value has been dialled in in the game itself.
+
+Dragging it writes to the material and **does not rebuild the mesh**:
+Strength is a shader value, and there is nothing in the geometry to
+regenerate. The other three shader values stay where GTA has them —
+Strength is the effect's volume, not its character.
+
+Because a reused material is never rewritten, a new strip that adopts one
+shows **that material's** Strength rather than the panel's, and says so
+in the status bar. The strip also reports when its material is shared, so
+it is clear that a drag changes every strip wearing it.
+
 ### Changed - the add-on is called Void Tools
 
 The N-panel tab, the add-on's name in Preferences, the documentation and every

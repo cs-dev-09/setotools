@@ -285,6 +285,28 @@ def _on_setting_changed(self, context):
     self.status = rebuild(obj) or ""
 
 
+def _on_material_changed(self, context):
+    """Strength changed - write it to the material, do not touch the mesh.
+
+    Strength is a shader value, so there is nothing in the geometry to
+    regenerate; rebuilding here would throw the strip away and build the same
+    one back on every mouse move of the drag.
+
+    Every Edge Wear material on the object is written, not just the first slot,
+    and only ours: a strip the user has given a second, hand-made material must
+    keep it. The rebuild guard is respected for the same reason it exists - the
+    create operator stamps this value on, and that is not the user dragging it.
+    """
+    obj = getattr(self, "id_data", None)
+    if obj is None or not isinstance(obj, bpy.types.Object):
+        return
+    if _rebuilding or not self.is_fake_damage:
+        return
+    for material in obj.data.materials:
+        if szi.is_damage_material(material):
+            szi.apply_damage_strength(material, self.strength)
+
+
 def _object_annotations():
     """Bookkeeping properties, plus the tool's settings wired to rebuild the
     object as soon as they change."""
@@ -319,7 +341,8 @@ def _object_annotations():
         ),
     }
     annotations.update(manual_offset.annotations())
-    annotations.update(properties.settings_annotations(update=_on_setting_changed))
+    annotations.update(properties.settings_annotations(
+        update=_on_setting_changed, material_update=_on_material_changed))
     return annotations
 
 

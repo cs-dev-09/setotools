@@ -5,7 +5,7 @@ from ..shared import strip_settings
 from ..shared import vertex_color
 
 
-def settings_annotations(update=None):
+def settings_annotations(update=None, material_update=None):
     """Build a fresh set of property definitions for the tool's settings.
 
     These live in three places:
@@ -23,6 +23,12 @@ def settings_annotations(update=None):
     `update` is the callback Blender fires when a value changes; the
     per-object copy passes its rebuild function here, the other two leave it
     None so nothing happens until the operator runs.
+
+    `material_update` is the same thing for the settings that live on the
+    *material* rather than in the geometry - Strength. They need their own
+    callback because Blender hands an update function no clue which property
+    called it, and regenerating the mesh to change a shader value would be pure
+    cost on every mouse move of a drag.
     """
     annotations = {
         "width": bpy.props.FloatProperty(
@@ -145,6 +151,26 @@ def settings_annotations(update=None):
             ],
             default='AUTO',
             update=update,
+        ),
+        # Not geometry: this one writes to the material, which is why it takes
+        # material_update instead of the rebuild callback.
+        "strength": bpy.props.FloatProperty(
+            name="Strength",
+            description=(
+                "How loudly the damage reads in game. Drives the material's bumpiness and "
+                "specularIntensityMult together - 1.0 is exactly what GTA's own damage strips "
+                "use, higher bends the normal further and lets more light answer it. This is a "
+                "material value, so every strip sharing the material changes with it"
+            ),
+            # 4.0, not GTA's own 1.0: the strips read too faintly on a softly lit
+            # interior wall at the reference values, which is where this tool is
+            # actually used. Dialled in in game, 12 Aug 2026 - bumpiness 2.0 with
+            # the specular opened to 0.5. Strength 1.0 is still there, one drag
+            # away, for anything meant to sit exactly where vanilla sits.
+            default=4.0,
+            min=0.0,
+            soft_max=6.0,
+            update=material_update if material_update is not None else update,
         ),
     }
 

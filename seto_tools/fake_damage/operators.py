@@ -276,10 +276,12 @@ class SETO_OT_create_fake_damage(bpy.types.Operator):
         shader_warning = None
         missing_params = []
         texture_warning = None
+        material = None
         try:
             material, missing_params, texture_warning = szi.find_or_create_damage_material(
                 texture_path=textures.bundled_texture_path(),
                 reuse=(settings.material_mode == 'AUTO'),
+                strength=settings.strength,
             )
             szi.assign_material_to_object(new_obj, material)
         except szi.SollumzShaderError as e:
@@ -298,12 +300,20 @@ class SETO_OT_create_fake_damage(bpy.types.Operator):
         # so its settings stay live in the panel (see object_settings.py).
         # Suppressed: each assignment below fires the live-rebuild callback,
         # which would regenerate the mesh and discard the unwrap just applied.
+        # What the material is actually set to, which is not always what was
+        # asked for: a reused material is never rewritten. Read back so the
+        # strip's slider shows the truth - a slider that lies jumps on its first
+        # drag, and the value it jumps to is the one already in the viewport.
+        actual_strength = szi.read_damage_strength(material) if material else None
+
         with object_settings.suppress_rebuild():
             obj_data = new_obj.seto_fake_damage_data
             obj_data.is_fake_damage = True
             obj_data.source_object = source_obj
             obj_data.edge_keys = object_settings.serialise_edge_keys(edges)
             properties.copy_settings(self, obj_data)
+            if actual_strength is not None:
+                obj_data.strength = actual_strength
             obj_data.status = ""
             # Where the tool put it. A rebuild records this too, but the strip
             # can be dragged and pinned before one ever runs, and then there
@@ -329,6 +339,15 @@ class SETO_OT_create_fake_damage(bpy.types.Operator):
 
         if texture_warning:
             self.report({'WARNING'}, texture_warning)
+
+        # Said out loud rather than left as a slider that reads differently to
+        # the one that made it: reuse keeping the material's own values is the
+        # rule, but silently ignoring a Strength the user just set is not.
+        if actual_strength is not None and abs(actual_strength - settings.strength) > 1e-3:
+            self.report({'WARNING'},
+                        f"Reused material '{material.name}' kept its own Strength "
+                        f"({actual_strength:.2f}). Drag Strength on the strip to change it, "
+                        f"or set Material to Create for a fresh one.")
 
         return {'FINISHED'}
 

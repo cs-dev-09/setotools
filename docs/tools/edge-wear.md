@@ -47,6 +47,51 @@ the same reasoning.
     on the current texture, these two are the reason — and reporting what
     values work is genuinely useful.
 
+### Material
+
+**Strength** — how loudly the wear reads in game. One slider driving the two
+shader values that decide it:
+
+| Strength | `bumpiness` | `specularIntensityMult` | |
+| --- | --- | --- | --- |
+| 1.0 | 0.50 | 0.125 | what GTA's own damage strips use |
+| 2.0 | 1.00 | 0.250 | |
+| **4.0** | **2.00** | **0.500** | **the shipped default** |
+
+Both values are printed under the slider, so they can be compared against a
+vanilla material or quoted in a bug report.
+
+**The default is 4.0, not GTA's 1.0.** At the reference values a strip reads
+too faintly on a softly lit interior wall, which is where this tool is mostly
+used — so it ships louder, and 1.0 is one drag away for anything meant to sit
+exactly where vanilla sits.
+
+`specularIntensityMult` is the one that matters. `decal_normal_only` carries no
+colour of its own — it only bends the surface normal — so the crease is visible
+only through the light's specular answer to that bend. Set it to `0` and the
+strip is very nearly invisible on a softly lit interior wall, however strong the
+normal map is and however high `bumpiness` goes. That is the single commonest
+cause of "the damage does not show up in game".
+
+The other three shader values stay where GTA has them (`specularFalloffMult`
+100, `specularFresnel` 0.97, `useTessellation` off). Strength is the effect's
+volume, not its character.
+
+Dragging Strength writes straight to the material and does **not** rebuild the
+mesh — there is nothing in the geometry to regenerate.
+
+!!! warning "It is a material value, not a strip value"
+
+    Strips reuse one `seto_fakedamage` material by default, so a drag changes
+    every strip wearing it — the panel says how many. And because a reused
+    material is never rewritten, a new strip that adopts one shows *that
+    material's* Strength rather than the panel's, and says so when it is
+    created. Set **Material** to **Create** in the Geometry section for a strip
+    with a Strength of its own.
+
+The **Material** panel under Edge Wear holds the same slider for the *next*
+strip; on an existing strip, use this one.
+
 ### Position and Bevel
 
 Shared with the other strip tools — see

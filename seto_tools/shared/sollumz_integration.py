@@ -553,18 +553,28 @@ VALUE_PARAMETERS = {
 _PARAMETER_NODE_IDNAME = "SOLLUMZ_NT_SHADER_Parameter"
 
 
-def _find_existing_damage_material():
-    """Return a previously created Edge Wear material, or None.
+def is_damage_material(mat):
+    """Whether `mat` is an Edge Wear material this tool made.
 
-    Accepts Blender's automatic ".001" suffixing so a material that got
-    renamed on append/link is still recognised.
+    Name-scoped, not shader-scoped: Smooth Edge uses the same shader, so
+    matching on decal_normal_only.sps alone would let one tool retexture the
+    other's material. Blender's automatic ".001" suffix still counts as ours -
+    an appended or linked material gets renamed, and it is still the one we
+    made.
     """
+    if mat is None:
+        return False
+    if not (mat.name == MATERIAL_NAME or mat.name.startswith(MATERIAL_NAME + ".")):
+        return False
+    if not _is_shader_material(mat):
+        return False
+    return mat.shader_properties.filename == DAMAGE_SHADER_FILENAME
+
+
+def _find_existing_damage_material():
+    """Return a previously created Edge Wear material, or None."""
     for mat in bpy.data.materials:
-        if not (mat.name == MATERIAL_NAME or mat.name.startswith(MATERIAL_NAME + ".")):
-            continue
-        if not _is_shader_material(mat):
-            continue
-        if mat.shader_properties.filename == DAMAGE_SHADER_FILENAME:
+        if is_damage_material(mat):
             return mat
     return None
 
@@ -593,7 +603,60 @@ def apply_value_parameters(material, parameters=None):
     return missing
 
 
-def find_or_create_damage_material(texture_path=None, reuse=True):
+# The two values Strength drives, out of the five above. They are the ones that
+# decide how loudly the strip reads: bumpiness is how far the normal is bent,
+# specularIntensityMult is how much of the light answers the bend. The other
+# three are the shader's character rather than its volume, and Strength leaves
+# them where GTA has them.
+STRENGTH_PARAMETERS = ("bumpiness", "specularIntensityMult")
+
+# What a value must not pass however far Strength is pushed. specularIntensity
+# Mult is a multiplier the shader expects at or below 1; bumpiness past ~4 stops
+# reading as a chipped edge and starts reading as noise over the whole strip.
+STRENGTH_CEILINGS = {"bumpiness": 4.0, "specularIntensityMult": 1.0}
+
+
+def damage_strength_parameters(strength):
+    """The Strength-driven values, scaled from the GTA-matched base.
+
+    Linear, so Strength 1.0 is exactly what hn_apt_hall_blk_milo uses and every
+    number stays traceable to a real GTA material. Strength 4 lands on
+    bumpiness 2.0 / specularIntensityMult 0.5 - the loud end of the same effect,
+    not a different one.
+    """
+    return {name: min(VALUE_PARAMETERS[name] * strength, STRENGTH_CEILINGS[name])
+            for name in STRENGTH_PARAMETERS}
+
+
+def apply_damage_strength(material, strength):
+    """Write only the Strength-driven values onto an existing material.
+
+    Reports missing parameters rather than raising, like apply_value_parameters
+    and for the same reason - and it must stay this cheap: this runs from a
+    slider's update callback, on every mouse move of a drag.
+    """
+    return apply_value_parameters(material, damage_strength_parameters(strength))
+
+
+def read_damage_strength(material):
+    """The Strength a material is currently set to, or None if unreadable.
+
+    Read back from bumpiness, the one Strength always moves - specular reaches
+    its ceiling first and stops telling them apart. Needed because a reused
+    material is never rewritten: a strip's slider has to show what its material
+    actually is, not what the panel asked for, or the first drag jumps.
+    """
+    base = VALUE_PARAMETERS["bumpiness"]
+    tree = getattr(material, "node_tree", None)
+    if tree is None or not base:
+        return None
+    node = tree.nodes.get("bumpiness")
+    if node is None or node.bl_idname != _PARAMETER_NODE_IDNAME:
+        return None
+    return node.get(0) / base
+
+
+def find_or_create_damage_material(texture_path=None, reuse=True, strength=1.0):
     """Find a Edge Wear material to reuse, or create and configure a new one.
 
     Never invents a shader: decal_normal_only.sps is first confirmed to exist
@@ -607,7 +670,9 @@ def find_or_create_damage_material(texture_path=None, reuse=True):
 
     Returns (material, missing_parameters, texture_warning). A reused material
     is left exactly as the user has it - neither its parameters nor its textures
-    are rewritten - so hand tweaks survive.
+    are rewritten - so hand tweaks survive. `strength` therefore only reaches a
+    material this call creates; for a reused one the caller reads back what it
+    already is (read_damage_strength).
     """
     try:
         shader_module = importlib.import_module("szio.gta5.shader")
@@ -629,6 +694,10 @@ def find_or_create_damage_material(texture_path=None, reuse=True):
     material = shader_materials.create_shader(DAMAGE_SHADER_FILENAME)
     material.name = MATERIAL_NAME
     missing = apply_value_parameters(material)
+    # After the full set, so Strength 1.0 leaves it at exactly GTA's values and
+    # anything else overrides only the two it owns.
+    missing += [name for name in apply_damage_strength(material, strength)
+                if name not in missing]
     texture_warning = _assign_normal_map(material, texture_path)
     return material, missing, texture_warning
 
