@@ -212,6 +212,12 @@ class SETO_PT_decal_material_panel(_DecalChildPanel, bpy.types.Panel):
         row.label(text=f"Shader: {szi.DECAL_SHADER_FILENAME}")
         layout.prop(settings, "material_mode", text="")
 
+        col = pl.section(layout, "Vertex Colour", 'COLOR')
+        col.prop(settings, "color_preset", text="")
+        row = col.row()
+        row.enabled = settings.color_preset == 'CUSTOM'
+        row.prop(settings, "color_rgb", text="")
+
         # How tall the texture browser is. It lives here rather than beside the
         # list itself: it is set once to taste, and a row of its own above the
         # list would push the decal you are choosing further down the panel.
@@ -269,6 +275,12 @@ class SETO_PT_decal_object_panel(pl.SelectedPanel, bpy.types.Panel):
         col.separator()
         col.prop(data, "offset_u")
         col.prop(data, "offset_v")
+
+        col = pl.section(layout, "Vertex Colour", 'COLOR')
+        col.prop(data, "color_preset", text="")
+        row = col.row()
+        row.enabled = data.color_preset == 'CUSTOM'
+        row.prop(data, "color_rgb", text="")
 
         col = pl.section(layout, "Corner Alpha (Color 1)", 'IMAGE_ALPHA')
         # Laid out as the decal actually sits: top row above bottom row, so the

@@ -34,6 +34,7 @@ from . import properties
 from . import source_bevel
 from ..shared import manual_offset
 from ..shared import sollumz_integration as szi
+from ..shared import vertex_color
 
 # Span of the UV island's longer axis once fitted into the 0..1 square. Kept
 # here rather than imported from operators.py, which imports this module.
@@ -367,6 +368,7 @@ def rebuild(obj, data=None):
         materials = list(old_mesh.materials)
 
         new_mesh = geometry.create_mesh_from_strip_data(old_mesh.name, strip_data)
+        vertex_color.apply_preset(data, data.color_preset)
         loop_uv, loop_rgba = geometry.compute_loop_uv_and_alpha(
             new_mesh, strip_data, color_rgb=tuple(data.color_rgb)
         )

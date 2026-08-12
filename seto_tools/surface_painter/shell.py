@@ -164,7 +164,7 @@ def resolve(obj):
 # ------------------------------------------------------------------- creation
 
 def create(wall, texture_stem, texture_path, spacing=0.35, surface_offset=0.005,
-           index=0):
+           index=0, color_rgb=vertex_color.DEFAULT_RGB):
     """Build the dirt shell over `wall` and return it.
 
     The wall's mesh is copied so the shell hugs the actual surface, but its
@@ -283,7 +283,7 @@ def create(wall, texture_stem, texture_path, spacing=0.35, surface_offset=0.005,
     # Color 1: the repo's standard RGB, alpha 0 = fully invisible until painted.
     attribute = mesh.color_attributes.new(name=COLOR_ATTR, type='BYTE_COLOR',
                                           domain='CORNER')
-    rgba = np.tile(np.array([*vertex_color.DEFAULT_RGB, 0.0], dtype=np.float32),
+    rgba = np.tile(np.array([*color_rgb, 0.0], dtype=np.float32),
                    len(attribute.data))
     attribute.data.foreach_set("color_srgb", rgba)
     mesh.color_attributes.active_color = attribute

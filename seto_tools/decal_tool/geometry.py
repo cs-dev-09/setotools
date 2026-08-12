@@ -240,11 +240,9 @@ def surface_basis(normal, tangent, along=None):
     does it fall back to the face's own edge tangent.
 
     `along` overrides all of that with a direction the decal's local X must
-    follow, whatever the face is doing. Nothing passes it today - it was built
-    for Contact Decals, which laid decals along the line where two objects meet,
-    and that feature was removed. Kept because it is the answer for any caller
-    that has a line to follow: "upright" is the wrong idea when the decal has to
-    line up with something.
+    follow, whatever the face is doing. Contact decals use it to run their width
+    along the line where two objects meet - "upright" is the wrong idea there,
+    because the line is the thing the decal has to line up with.
 
     This is the *base* frame, with no Rotation applied. Rotation is applied in
     compose_matrix() instead, so that Offset U/V stay measured in a frame that
@@ -702,7 +700,7 @@ def decal_loop_color(width, height, edge_fade, alphas=UNIFORM_ALPHA,
 
 
 def set_decal_alpha(mesh, width, height, edge_fade, alphas, color_attr_name,
-                    border_alphas=DEFAULT_BORDER_ALPHA):
+                    border_alphas=DEFAULT_BORDER_ALPHA, color_rgb=None):
     """Rewrite a decal's per-vertex alpha in place.
 
     The inner rectangle takes the four corner values and the border ring takes the
@@ -722,6 +720,8 @@ def set_decal_alpha(mesh, width, height, edge_fade, alphas, color_attr_name,
 
     for element, alpha in zip(attr.data, loop_alphas):
         colour = list(element.color_srgb)
+        if color_rgb is not None:
+            colour[:3] = color_rgb
         colour[3] = alpha
         element.color_srgb = colour
     mesh.update()

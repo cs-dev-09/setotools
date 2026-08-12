@@ -28,6 +28,7 @@ from mathutils import Vector
 
 from . import geometry
 from ..shared import sollumz_integration as szi
+from ..shared import vertex_color
 
 # Guards against a rebuild triggering another rebuild through the same
 # property callbacks.
@@ -132,6 +133,7 @@ def rebuild(obj):
 
     _rebuilding = True
     try:
+        vertex_color.apply_preset(data, data.color_preset)
         if not geometry.set_decal_size(obj.data, data.width, data.height,
                                        data.edge_fade, szi.get_uv_map_name(0)):
             return "Mesh is no longer a Seto decal grid - it cannot be resized."
@@ -139,7 +141,8 @@ def rebuild(obj):
         if not geometry.set_decal_alpha(obj.data, data.width, data.height,
                                         data.edge_fade, tuple(data.corner_alpha),
                                         szi.get_color_attr_name(0),
-                                        border_alphas=tuple(data.border_alpha)):
+                                        border_alphas=tuple(data.border_alpha),
+                                        color_rgb=tuple(data.color_rgb)):
             return "Mesh has no usable 'Color 1' attribute - corner alpha cannot be applied."
 
         # Offset U/V are folded into `position` here, and into the walk below, so
@@ -179,7 +182,7 @@ def _on_setting_changed(self, context):
 
 def store_placement(obj, placement, source_object, texture_stem,
                     corner_alpha=geometry.UNIFORM_ALPHA, texture_path="",
-                    edge_fade=0.1):
+                    edge_fade=0.1, color_preset='GREEN', color_rgb=vertex_color.DEFAULT_RGB):
     """Stamp a freshly created decal with everything it needs to edit itself."""
     with suppress_rebuild():
         data = obj.seto_decal_data
@@ -189,6 +192,8 @@ def store_placement(obj, placement, source_object, texture_stem,
         data.texture_path = texture_path
         data.corner_alpha = corner_alpha
         data.edge_fade = edge_fade
+        data.color_preset = color_preset
+        data.color_rgb = color_rgb
 
         data.frame_center = placement.center
         data.frame_normal = placement.normal
@@ -239,6 +244,21 @@ class SETO_PG_decal_object(bpy.types.PropertyGroup):
         name="Status",
         description="Why the last update could not run, if it could not",
         default="",
+    )
+
+    color_preset: bpy.props.EnumProperty(
+        name="Color Preset",
+        description="Quick-pick a named vertex colour, or choose Custom to set your own",
+        items=vertex_color.enum_items(),
+        default='GREEN',
+        update=_on_setting_changed,
+    )
+    color_rgb: bpy.props.FloatVectorProperty(
+        name="Color 1 RGB",
+        description="RGB written to Color 1 for every vertex",
+        subtype='COLOR', size=3, min=0.0, max=1.0,
+        default=vertex_color.DEFAULT_RGB,
+        update=_on_setting_changed,
     )
 
     # The surface frame the decal was placed on, in world space. Stored as plain

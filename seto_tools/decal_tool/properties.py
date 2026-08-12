@@ -6,6 +6,7 @@ from bpy.app.handlers import persistent
 from . import library
 from . import preferences
 from ..shared import sollumz_integration as szi
+from ..shared import vertex_color
 
 
 def rebuild_browser(settings):
@@ -101,6 +102,19 @@ class SETO_PG_decal_settings(bpy.types.PropertyGroup):
             "instead of one decal per quad. Turn off to get one decal per selected face"
         ),
         default=True,
+    )
+
+    color_preset: bpy.props.EnumProperty(
+        name="Color Preset",
+        description="Quick-pick a named vertex colour, or choose Custom to set your own",
+        items=vertex_color.enum_items(),
+        default='GREEN',
+    )
+    color_rgb: bpy.props.FloatVectorProperty(
+        name="Color 1 RGB",
+        description="RGB written to Color 1 for every vertex",
+        subtype='COLOR', size=3, min=0.0, max=1.0,
+        default=vertex_color.DEFAULT_RGB,
     )
 
     width: bpy.props.FloatProperty(

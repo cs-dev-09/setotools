@@ -11,6 +11,7 @@ from . import source_bevel
 from . import textures
 from ..shared import manual_offset
 from ..shared import sollumz_integration as szi
+from ..shared import vertex_color
 
 # What a generated strip is called. The tool is Ambient Occlusion, so that is
 # what its output says - "fake_ao_003" in the outliner named a tool that no
@@ -285,6 +286,7 @@ class SETO_OT_create_fake_ao(bpy.types.Operator):
 
         new_name = _next_fake_ao_name()
         new_mesh = geometry.create_mesh_from_strip_data(new_name, strip_data)
+        vertex_color.apply_preset(settings, settings.color_preset)
         loop_uv, loop_rgba = geometry.compute_loop_uv_and_alpha(
             new_mesh, strip_data, color_rgb=tuple(settings.color_rgb)
         )
