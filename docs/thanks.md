@@ -29,12 +29,19 @@ The PR arrived tested, followed the project's conventions closely, and passed
 the whole suite on both supported Blender versions on the first run. That is
 rarer than it should be, and it is why it went in the same day.
 
-### gecu
+### [@gecu3d](https://github.com/gecu3d)
 
-Testing and feedback — the part that happens before anything is written down,
-and the reason several things here were built the way round they were.
+**[Material Maker](tools/material-maker.md)** — height, normal and specular
+maps from a single diffuse image.
 
-No link, because not everyone thanked here has an account to point at.
+Written as a standalone add-on, with its own numpy image pipeline, its four
+panels and a settings page deep enough to have a guide inside it, and handed
+over whole. It came in as its own thing and became the **Materials** section:
+the one tool here that makes a texture rather than putting one onto geometry.
+
+The algorithms are ported from Bounding Box Software's Materialize, which is
+why this add-on is GPL-3.
+
 
 ## Sponsors
 

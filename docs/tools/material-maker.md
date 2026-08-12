@@ -73,5 +73,5 @@ Box Software, which is GPL-3. This tool is therefore GPL-3, and so is the
 add-on that contains it — see
 [LICENSE](https://github.com/seto3d/void-tools/blob/main/LICENSE).
 
-It was contributed as a standalone add-on and folded in here; see
-[Thanks](../thanks.md).
+Written by [@gecu3d](https://github.com/gecu3d) as a standalone add-on and
+folded in here; see [Thanks](../thanks.md).

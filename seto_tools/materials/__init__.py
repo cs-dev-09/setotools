@@ -5,8 +5,8 @@ The **Materials** section: the tool that makes the texture, rather than the
 geometry the texture goes on. Everything else in this add-on starts from an
 image you already have; this is where that image comes from.
 
-Contributed as a standalone add-on (`velxor_materialize`) and folded in here
-with its module layout intact:
+Written by gecu (https://github.com/gecu3d) as a standalone add-on
+(`velxor_materialize`) and folded in here with its module layout intact:
 
     imageops.py     pure numpy - blur pyramid, contrast remap, HSL colour mask
     imageio.py      bpy.types.Image <-> numpy, and the colour-space crossing

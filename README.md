@@ -209,7 +209,8 @@ Void Tools is built in the open, and it is better for the people who turn up.
   is a preset list on the object, and the alpha cannot be touched by picking a
   colour.
 
-- **gecu** — testing and feedback.
+- [@gecu3d](https://github.com/gecu3d) — **Material Maker**: height, normal and specular maps from a
+  single diffuse image, written as a standalone add-on and folded in here.
 
 **Sponsors**
 
