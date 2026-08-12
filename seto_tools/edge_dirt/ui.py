@@ -114,6 +114,12 @@ class SETO_PT_edge_dirt_object_panel(pl.SelectedPanel, bpy.types.Panel):
         col.prop(data, "alpha_bottom")
         col.prop(data, "alpha_top")
 
+        col = pl.section(layout, "Vertex Colour", 'COLOR')
+        col.prop(data, "color_preset", text="")
+        row = col.row()
+        row.enabled = data.color_preset == 'CUSTOM'
+        row.prop(data, "color_rgb", text="")
+
         manual_offset.draw(layout, data, "seto_edge_dirt_data")
 
         if data.edge_keys:

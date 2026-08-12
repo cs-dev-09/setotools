@@ -11,6 +11,7 @@ from ..fake_ao import geometry
 from ..fake_ao import source_bevel
 from ..shared import manual_offset
 from ..shared import sollumz_integration as szi
+from ..shared import vertex_color
 
 _NAME_PATTERN = re.compile(r"^edge_dirt_(\d{3,})$")
 # Span of the UV island's longer axis once fitted into the 0..1 square.
@@ -271,6 +272,7 @@ class SETO_OT_create_edge_dirt(bpy.types.Operator):
 
         new_name = _next_edge_dirt_name()
         new_mesh = geometry.create_mesh_from_strip_data(new_name, strip_data)
+        vertex_color.apply_preset(settings, settings.color_preset)
         loop_uv, loop_rgba = geometry.compute_loop_uv_and_alpha(
             new_mesh, strip_data, color_rgb=tuple(settings.color_rgb)
         )

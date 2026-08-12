@@ -11,6 +11,7 @@ from ..shared import manual_offset
 from ..shared import run_fade
 from ..shared import sollumz_integration as szi
 from ..shared import strip_settings
+from ..shared import vertex_color
 
 _NAME_PATTERN = re.compile(r"^smooth_edge_(\d{3,})$")
 
@@ -196,6 +197,7 @@ class SETO_OT_create_smooth_edge(bpy.types.Operator):
 
         new_name = _next_smooth_edge_name()
         new_mesh = geometry.create_mesh_from_strip_data(new_name, strip_data)
+        vertex_color.apply_preset(settings, settings.color_preset)
         loop_uv, loop_rgba = geometry.compute_loop_uv_and_alpha(
             new_mesh, strip_data, color_rgb=tuple(settings.color_rgb)
         )

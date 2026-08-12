@@ -347,7 +347,13 @@ class SETO_PT_surface_shell_panel(_SurfaceChildPanel, bpy.types.Panel):
         layout = self.layout
         settings = context.scene.seto_surface
 
-        col = layout.column(align=True)
+        col = pl.section(layout, "Vertex Colour", 'COLOR')
+        col.prop(settings, "color_preset", text="")
+        row = col.row()
+        row.enabled = settings.color_preset == 'CUSTOM'
+        row.prop(settings, "color_rgb", text="")
+
+        col = pl.section(layout, "Geometry", 'MESH_DATA')
         col.prop(settings, "shell_spacing")
         col.prop(settings, "shell_offset")
 

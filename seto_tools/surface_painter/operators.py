@@ -13,7 +13,9 @@ from mathutils import Vector
 
 from . import brush
 from . import library
+from . import properties
 from . import shell
+from ..shared import vertex_color
 
 
 def _mesh_object(context):
@@ -170,6 +172,7 @@ class SETO_OT_surface_start_paint(bpy.types.Operator):
 
     def execute(self, context):
         settings = context.scene.seto_surface
+        vertex_color.apply_preset(settings, settings.color_preset)
         obj = _mesh_object(context)
         if obj is None:
             self.report({'ERROR'}, "Select a mesh object first.")
@@ -217,6 +220,7 @@ class SETO_OT_surface_start_paint(bpy.types.Operator):
                     # stacked layers draw in order instead of z-fighting.
                     surface_offset=settings.shell_offset * (index + 1),
                     index=index,
+                    color_rgb=tuple(settings.color_rgb),
                 )
             except (shell.ShellError, Exception) as e:
                 self.report({'ERROR'}, str(e))

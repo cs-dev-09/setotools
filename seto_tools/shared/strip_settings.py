@@ -37,6 +37,7 @@ SHARED_NAMES = (
     "alpha_bottom",
     "alpha_top",
     "invert_fade",
+    "color_preset",
     "color_rgb",
     "flip_direction",
     "material_mode",
@@ -143,6 +144,13 @@ def annotations(update=None):
                 "Alpha Outer"
             ),
             default=False,
+            update=update,
+        ),
+        "color_preset": bpy.props.EnumProperty(
+            name="Color Preset",
+            description="Quick-pick a named vertex colour, or choose Custom to set your own",
+            items=vertex_color.enum_items(),
+            default='GREEN',
             update=update,
         ),
         "color_rgb": bpy.props.FloatVectorProperty(

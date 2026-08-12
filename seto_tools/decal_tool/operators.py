@@ -11,6 +11,7 @@ from . import object_settings
 from . import properties
 from . import preferences
 from ..shared import sollumz_integration as szi
+from ..shared import vertex_color
 
 # Generated decals go into "decals", and inside that into one child collection
 # per library category, so a scene full of decals stays sorted the same way the
@@ -200,7 +201,7 @@ class _DecalBuilder:
             szi.write_uv_and_color(
                 mesh,
                 geometry.decal_loop_uv(placement.width, placement.height, fade),
-                geometry.decal_loop_color(placement.width, placement.height, fade),
+                geometry.decal_loop_color(placement.width, placement.height, fade, rgb=tuple(settings.color_rgb)),
             )
 
             obj = bpy.data.objects.new(name, mesh)
@@ -215,7 +216,9 @@ class _DecalBuilder:
             object_settings.store_placement(obj, placement, source_obj,
                                             placement.texture_stem,
                                             texture_path=placement.texture_path,
-                                            edge_fade=fade)
+                                            edge_fade=fade,
+                                            color_preset=settings.color_preset,
+                                            color_rgb=tuple(settings.color_rgb))
         except _PLACEMENT_ERRORS as e:
             _rollback(obj, mesh)
             failures.append((os.path.basename(placement.texture_path), str(e)))
@@ -248,6 +251,7 @@ class SETO_OT_create_decal(_DecalBuilder, bpy.types.Operator):
 
     def execute(self, context):
         settings = context.scene.seto_decal
+        vertex_color.apply_preset(settings, settings.color_preset)
 
         available, status_msg = szi.get_status_message()
         if not available:

@@ -22,6 +22,7 @@ import bpy
 from . import brush
 from . import library
 from . import shell
+from ..shared import vertex_color
 
 
 def _owner_object(prop_group):
@@ -174,6 +175,19 @@ class SETO_PG_surface_painter(bpy.types.PropertyGroup):
             "already painted"
         ),
         items=library.texture_items,
+    )
+
+    color_preset: bpy.props.EnumProperty(
+        name="Color Preset",
+        description="Quick-pick a named vertex colour, or choose Custom to set your own",
+        items=vertex_color.enum_items(),
+        default='GREEN',
+    )
+    color_rgb: bpy.props.FloatVectorProperty(
+        name="Color 1 RGB",
+        description="RGB written to Color 1 for every vertex",
+        subtype='COLOR', size=3, min=0.0, max=1.0,
+        default=vertex_color.DEFAULT_RGB,
     )
 
     # ------------------------------------------------------------------ brush

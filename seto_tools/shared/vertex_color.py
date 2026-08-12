@@ -23,6 +23,41 @@ conversion on the way to bytes - but not for the 0.0 / 1.0 alphas above.
 # (R, G, B) written to Color 1 on every generated vertex.
 DEFAULT_RGB = (0.0, 0.7, 0.0)
 
+# Named presets for quick selection. Each is (enum_id, label, description, rgb).
+# 'CUSTOM' lets the user pick any colour via the Color 1 RGB swatch.
+COLOR_PRESETS = (
+    ('GREEN',   "Green",   "Default green (0, 0.7, 0)",         (0.0, 0.7, 0.0)),
+    ('RED',     "Red",     "Red (1, 0, 0)",                     (1.0, 0.0, 0.0)),
+    ('WHITE',   "White",   "White (1, 1, 1)",                   (1.0, 1.0, 1.0)),
+    ('BLUE',    "Blue",    "Blue (0, 0, 0.1)",                  (0.0, 0.0, 0.1)),
+    ('YELLOW',  "Yellow",  "Yellow (0.8, 0.7, 0)",              (0.8, 0.7, 0.0)),
+    ('CUSTOM',  "Custom",  "Pick any colour with the swatch",   None),
+)
+
+
+def enum_items():
+    """EnumProperty items list built from COLOR_PRESETS."""
+    return [(pid, label, desc) for pid, label, desc, _rgb in COLOR_PRESETS]
+
+
+def rgb_for_preset(preset_id):
+    """Return the (R, G, B) tuple for a preset, or None for CUSTOM."""
+    for pid, _label, _desc, rgb in COLOR_PRESETS:
+        if pid == preset_id:
+            return rgb
+    return None
+
 # Alpha at the corner/centre of a strip, and at its outer edge.
 DEFAULT_ALPHA_CENTER = 1.0
 DEFAULT_ALPHA_OUTER = 0.0
+
+
+def apply_preset(data, preset_id):
+    """Set data.color_rgb to match the named preset, if it is not CUSTOM.
+
+    Called from property update callbacks so the swatch stays in sync with the
+    dropdown.  Does nothing for CUSTOM - the user is in control.
+    """
+    rgb = rgb_for_preset(preset_id)
+    if rgb is not None:
+        data.color_rgb = rgb
