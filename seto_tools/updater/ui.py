@@ -11,6 +11,7 @@ import bpy
 
 from ..shared import icons, ui_common
 from . import logic
+from ..shared import panel_layout as pl
 
 
 class SETO_PT_updates_panel(bpy.types.Panel):
@@ -18,7 +19,7 @@ class SETO_PT_updates_panel(bpy.types.Panel):
     bl_idname = "SETO_PT_updates_panel"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
-    bl_category = "Seto Tools"
+    bl_category = pl.TAB
     # First in the tab - the groups start at 1 to leave this slot.
     bl_order = 0
     bl_options = {'DEFAULT_CLOSED'}
@@ -39,7 +40,7 @@ class SETO_PT_updates_panel(bpy.types.Panel):
         layout = self.layout
         state = context.window_manager.seto_updater
 
-        layout.label(text=f"Seto Tools {logic.current_str()}",
+        layout.label(text=f"Void Tools {logic.current_str()}",
                      icon='BLENDER')
 
         if state.update_available:

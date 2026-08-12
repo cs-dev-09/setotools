@@ -117,7 +117,7 @@ class SETO_OT_update_install(bpy.types.Operator):
         except zipfile.BadZipFile:
             looks_right = False
         if not looks_right:
-            state.status = ("The download did not look like Seto Tools - "
+            state.status = ("The download did not look like Void Tools - "
                             "nothing was installed.")
             self.report({'ERROR'}, state.status)
             return {'CANCELLED'}

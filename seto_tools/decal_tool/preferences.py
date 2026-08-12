@@ -202,6 +202,11 @@ class SETO_AP_decal_tool(bpy.types.AddonPreferences):
                 icon='ERROR',
             )
 
+        # Who the add-on is better because of. Here rather than only in the
+        # README, which is not where somebody using the tool is looking.
+        from ..support import credits
+        credits.draw(layout)
+
 
 _classes = (SETO_AP_decal_tool,)
 

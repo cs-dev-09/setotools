@@ -49,6 +49,6 @@ def draw_sollumz_warning(layout):
     # tries every enabled add-on, so reaching this at all means either it is
     # not enabled or it is somewhere unusual - and the second case is fixable
     # right here.
-    box.operator("preferences.addon_show", text="Open Seto Tools Preferences",
+    box.operator("preferences.addon_show", text="Open Void Tools Preferences",
                  icon='PREFERENCES').module = addon_prefs.ADDON_PACKAGE
     return True

@@ -234,12 +234,12 @@ def get_status_message():
         # "not installed" alone sends people to reinstall something they have.
         return False, ("No enabled Sollumz add-on found. Install it and tick "
                        "its checkbox in Preferences > Add-ons - or, if it "
-                       "lives somewhere unusual, point Seto Tools at it in "
-                       "Preferences > Add-ons > Seto Tools > Sollumz Module.")
+                       "lives somewhere unusual, point Void Tools at it in "
+                       "Preferences > Add-ons > Void Tools > Sollumz Module.")
     if not verified:
         return False, (f"Found '{base}', but it does not import as Sollumz. If "
                        "that is not your Sollumz, name the right one in "
-                       "Preferences > Add-ons > Seto Tools > Sollumz Module.")
+                       "Preferences > Add-ons > Void Tools > Sollumz Module.")
     try:
         importlib.import_module(f"{base}.ydr.shader_materials")
     except Exception as error:

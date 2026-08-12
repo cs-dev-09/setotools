@@ -66,7 +66,7 @@ class SETO_PT_decal_tool_panel(bpy.types.Panel):
     bl_region_type = 'UI'
     # Second of the three Surface tools, between Ambient Occlusion (0) and Surface
     # Painter (2). Both of those shade a surface; this one puts an image on it.
-    bl_category = "Seto Tools"
+    bl_category = pl.TAB
     bl_parent_id = groups.SURFACE
     bl_options = {'DEFAULT_CLOSED'}
     bl_order = 1

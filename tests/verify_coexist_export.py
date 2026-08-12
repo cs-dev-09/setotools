@@ -69,8 +69,8 @@ def main():
         panels[name] = getattr(bpy.types, name, None)
         check(f"{name} is registered", panels[name] is not None)
 
-    check("every panel shares the 'Seto Tools' tab",
-          all(p is not None and p.bl_category == "Seto Tools" for p in panels.values()),
+    check("every panel shares the 'Void Tools' tab",
+          all(p is not None and p.bl_category == "Void Tools" for p in panels.values()),
           str({k: getattr(v, "bl_category", None) for k, v in panels.items()}))
 
     check("the two sections are the tab's top level",

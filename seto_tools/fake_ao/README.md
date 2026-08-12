@@ -1,6 +1,6 @@
 # Fake AO
 
-Part of **Seto Tools**, built on [Sollumz](https://docs.sollumz.org). Generates
+Part of **Void Tools**, built on [Sollumz](https://docs.sollumz.org). Generates
 fake ambient-occlusion decals for GTA V / FiveM assets. Select an edge, press a
 button, get a ready-to-export corner decal — your original mesh is never touched.
 
@@ -44,7 +44,7 @@ that the slot was left for you.
 ## Usage
 
 1. Select your mesh, enter **Edit Mode**, select one or more corner edges.
-2. Open **N-Panel > Seto Tools > Fake AO**, adjust settings if needed.
+2. Open **N-Panel > Void Tools > Fake AO**, adjust settings if needed.
 3. Press **Create Fake AO**.
 
 A new `fake_ao_00N` object is created: wraps the corner (or lies flat

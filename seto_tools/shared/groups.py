@@ -1,4 +1,4 @@
-"""The sections the "Seto Tools" tab is split into.
+"""The sections the "Void Tools" tab is split into.
 
 Six tools side by side in one tab is a wall of collapsible headers with no
 hint of which one to reach for. They divide cleanly by what they actually
@@ -26,6 +26,7 @@ import bpy
 from . import icons
 from . import sollumz_integration as szi
 from . import strip_settings
+from . import panel_layout as pl
 
 
 class SETO_PT_geometry_group(bpy.types.Panel):
@@ -33,7 +34,7 @@ class SETO_PT_geometry_group(bpy.types.Panel):
     bl_idname = "SETO_PT_geometry_group"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
-    bl_category = "Seto Tools"
+    bl_category = pl.TAB
     # 0 belongs to the Updates panel: an available update outranks the
     # tools in the one moment it matters, and is one collapsed line the
     # rest of the time.
@@ -57,7 +58,7 @@ class SETO_PT_surface_group(bpy.types.Panel):
     bl_idname = "SETO_PT_surface_group"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
-    bl_category = "Seto Tools"
+    bl_category = pl.TAB
     bl_order = 2
 
     def draw_header(self, context):
@@ -72,7 +73,7 @@ class SETO_PT_analysis_group(bpy.types.Panel):
     bl_idname = "SETO_PT_analysis_group"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
-    bl_category = "Seto Tools"
+    bl_category = pl.TAB
     bl_order = 3
 
     def draw_header(self, context):
@@ -93,7 +94,7 @@ class SETO_PT_materials_group(bpy.types.Panel):
     bl_idname = "SETO_PT_materials_group"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
-    bl_category = "Seto Tools"
+    bl_category = pl.TAB
     bl_order = 4
 
     def draw_header(self, context):

@@ -1,12 +1,17 @@
 bl_info = {
-    "name": "Seto Tools",
+    "name": "Void Tools",
     "author": "Seto",
     # Public versioning starts at 1.0.0 with the launch. The changelog's
     # 0.2-1.9 entries were private development builds that never shipped;
     # their numbers stay in the log as history, not as releases.
     "version": (1, 0, 0),
     "blender": (4, 2, 0),
-    "location": "View3D > N-Panel > Seto Tools",
+    "location": "View3D > N-Panel > Void Tools",
+    # Blender turns these two into the Documentation and Report a Bug buttons
+    # on the add-on's own entry in Preferences - the place somebody looks when
+    # the tab itself is not drawing and they cannot reach the Support panel.
+    "doc_url": "https://seto3d.github.io/setotools/",
+    "tracker_url": "https://github.com/seto3d/setotools/issues",
     "description": (
         "GTA V / FiveM asset authoring tools that integrate with Sollumz. "
         "Ambient Occlusion corner decals, Edge Dirt strips, Edge Wear "

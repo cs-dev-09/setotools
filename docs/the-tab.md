@@ -1,11 +1,11 @@
 # The tab
 
-Everything lives in one N-panel tab, **Seto Tools**, split into four sections
+Everything lives in one N-panel tab, **Void Tools**, split into four sections
 by what a tool works on. Ten tools side by side would be a wall of collapsible
 headers with no hint of which one to reach for; the sections are the hint.
 
 ```
-Seto Tools
+Void Tools
 │
 ├── Updates                    only when there is one
 │

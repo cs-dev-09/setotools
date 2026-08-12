@@ -1,6 +1,6 @@
 # Decal Tool
 
-Part of **Seto Tools**, built on [Sollumz](https://docs.sollumz.org), for GTA V /
+Part of **Void Tools**, built on [Sollumz](https://docs.sollumz.org), for GTA V /
 FiveM MLO work. Select faces, pick a decal from your library, press one button —
 you get surface-aligned `decal.sps` decal planes, and your original mesh is never
 touched.
@@ -19,7 +19,7 @@ Select Face → Choose Decal → Create Decal.
 2. Blender: **Edit > Preferences > Add-ons > Install from Disk** → pick the zip.
 3. Enable it, then **restart Blender**.
 
-It shares the **Seto Tools** N-panel tab with the other tools, under **Surface**,
+It shares the **Void Tools** N-panel tab with the other tools, under **Surface**,
 but does not depend on any of them.
 
 ## Decal library
@@ -47,7 +47,7 @@ earning their keep when you want **Random Texture** to pick "any dirt" rather th
 
 ## Usage
 
-1. Open **N-Panel > Seto Tools > Decal Tool**, set **Decal Library** (once), press
+1. Open **N-Panel > Void Tools > Decal Tool**, set **Decal Library** (once), press
    **Refresh Library**.
 2. Select your mesh, enter **Edit Mode**, select one or more faces.
 3. Pick a **Category** and **Texture** — the thumbnail below shows exactly what you

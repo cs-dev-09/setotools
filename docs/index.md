@@ -1,4 +1,4 @@
-# Seto Tools
+# Void Tools
 
 One Blender add-on for GTA V / FiveM asset authoring, built on
 [Sollumz](https://docs.sollumz.org).
@@ -70,6 +70,6 @@ not there.
 
 ## Free, and better for the people who turn up
 
-Seto Tools costs nothing and stays that way. It is improved by pull requests,
+Void Tools costs nothing and stays that way. It is improved by pull requests,
 by bug reports with a .blend attached, and by the people who fund the time —
 see [Thanks](thanks.md).

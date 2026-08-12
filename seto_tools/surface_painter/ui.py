@@ -98,7 +98,7 @@ class SETO_PT_surface_painter_panel(bpy.types.Panel):
     bl_region_type = 'UI'
     # Last of the three Surface tools, under Ambient Occlusion (0) and Decal Tool (1).
     # The other two place what they make; this one is painted by hand.
-    bl_category = "Seto Tools"
+    bl_category = pl.TAB
     bl_parent_id = groups.SURFACE
     bl_options = {'DEFAULT_CLOSED'}
     bl_order = 2
@@ -174,7 +174,7 @@ class SETO_PT_surface_painter_panel(bpy.types.Panel):
                 # problem from not having set one: say what was read and what
                 # counts as a texture there.
                 col.label(text="That folder has no images")
-                col.label(text=f"Seto Tools can read ({', '.join(ext.lstrip('.') for ext in library.IMAGE_EXTENSIONS)}).")
+                col.label(text=f"Void Tools can read ({', '.join(ext.lstrip('.') for ext in library.IMAGE_EXTENSIONS)}).")
                 col.label(text="Loose files and subfolders both work.")
             else:
                 col.label(text="Set your own folder under")

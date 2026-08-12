@@ -54,7 +54,7 @@ class SETO_PT_density_checker_panel(bpy.types.Panel):
     bl_idname = "SETO_PT_density_checker_panel"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
-    bl_category = "Seto Tools"
+    bl_category = pl.TAB
     bl_parent_id = groups.ANALYSIS
     bl_options = {'DEFAULT_CLOSED'}
     bl_order = 0

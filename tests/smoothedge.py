@@ -12,7 +12,7 @@ if getattr(bpy.types, "SETO_PT_smooth_edge_panel", None) is None:
 
 panel = getattr(bpy.types, "SETO_PT_smooth_edge_panel", None)
 check("Smooth Edge panel registered", panel is not None)
-check("it is in the Seto Tools tab", panel and panel.bl_category == "Seto Tools", getattr(panel, "bl_category", None))
+check("it is in the Void Tools tab", panel and panel.bl_category == "Void Tools", getattr(panel, "bl_category", None))
 fake_ao_panel = getattr(bpy.types, "SETO_PT_fake_ao_panel", None)
 damage_panel = getattr(bpy.types, "SETO_PT_fake_damage_panel", None)
 decal_panel = getattr(bpy.types, "SETO_PT_decal_tool_panel", None)

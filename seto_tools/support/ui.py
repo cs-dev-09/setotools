@@ -14,6 +14,7 @@ import bpy
 
 from ..shared import icons
 from . import properties
+from ..shared import panel_layout as pl
 
 SPONSOR_URL = "https://github.com/sponsors/seto3d"
 ISSUES_URL = "https://github.com/seto3d/setotools/issues"
@@ -46,7 +47,7 @@ class SETO_PT_support_panel(bpy.types.Panel):
     bl_idname = "SETO_PT_support_panel"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
-    bl_category = "Seto Tools"
+    bl_category = pl.TAB
     # Last in the tab, after the three tool sections.
     bl_order = 5
     bl_options = {'DEFAULT_CLOSED'}
@@ -114,7 +115,7 @@ class SETO_PT_support_panel(bpy.types.Panel):
 
         note = layout.column(align=True)
         note.scale_y = 0.8
-        note.label(text="Seto Tools is free and always will be.")
+        note.label(text="Void Tools is free and always will be.")
         note.label(text="If it saved you an afternoon, there is a")
         note.label(text="page for that - no pressure either way.")
 

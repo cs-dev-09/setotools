@@ -1,4 +1,4 @@
-"""Every Seto Tools panel, drawn - including the state a new user starts in.
+"""Every Void Tools panel, drawn - including the state a new user starts in.
 
 Blender only calls draw() from the UI thread, so a headless test never draws a
 panel by running the add-on normally: all the logic can pass while the panel
@@ -105,6 +105,12 @@ class StubLayout:
         return self
 
 
+def panel_layout_tab():
+    """The tab name, read from the add-on rather than typed here again."""
+    from seto_tools.shared import panel_layout
+    return panel_layout.TAB
+
+
 def seto_panels():
     """Every panel this add-on registers, in tab order."""
     found = []
@@ -112,7 +118,7 @@ def seto_panels():
         if not name.startswith("SETO_PT_"):
             continue
         cls = getattr(bpy.types, name)
-        if getattr(cls, "bl_category", None) == "Seto Tools":
+        if getattr(cls, "bl_category", None) == panel_layout_tab():
             found.append(cls)
     return sorted(found, key=lambda c: (getattr(c, "bl_order", 0), c.__name__))
 

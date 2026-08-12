@@ -135,7 +135,7 @@ class SETO_PG_surface_painter(bpy.types.PropertyGroup):
         name="Custom Library",
         description=(
             "Folder of texture categories to use instead of the one bundled with "
-            "Seto Tools. Each subfolder is a category (dirt, grunge, mold, ...). "
+            "Void Tools. Each subfolder is a category (dirt, grunge, mold, ...). "
             "Leave empty to use the bundled library"
         ),
         subtype='DIR_PATH',

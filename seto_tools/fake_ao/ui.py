@@ -51,7 +51,7 @@ class SETO_PT_fake_ao_panel(bpy.types.Panel):
     # Under the Surface section, first of its three (Decal Tool 1, Surface
     # Painter 2). It builds a strip like the two Geometry tools do, but what it
     # is for is shading a surface - which is how it gets reached for.
-    bl_category = "Seto Tools"
+    bl_category = pl.TAB
     bl_parent_id = groups.SURFACE
     bl_options = {'DEFAULT_CLOSED'}
     bl_order = 0

@@ -34,7 +34,7 @@ SELECTED = 90
 # The N-panel tab every panel in this add-on lives in. One constant rather than
 # the same string typed into sixteen classes: the tab is the add-on's name in
 # the only place most users ever read it, and renaming it should be one edit.
-TAB = "Seto Tools"
+TAB = "Void Tools"
 
 
 class ToolChildPanel:
@@ -49,7 +49,7 @@ class ToolChildPanel:
     """
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
-    bl_category = "Seto Tools"
+    bl_category = TAB
     bl_options = {'DEFAULT_CLOSED'}
 
     @classmethod
@@ -95,7 +95,7 @@ class SelectedPanel:
     """
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
-    bl_category = "Seto Tools"
+    bl_category = TAB
     bl_order = SELECTED
 
     def draw_header(self, context):

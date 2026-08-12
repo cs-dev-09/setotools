@@ -103,7 +103,7 @@ class SETO_PG_support(bpy.types.PropertyGroup):
         # dragging it onto the issue by hand. The panel says so instead.
         include_environment=bpy.props.BoolProperty(
             name="Include versions",
-            description="Add your Blender, Seto Tools and Sollumz versions "
+            description="Add your Blender, Void Tools and Sollumz versions "
                         "to the report - the first thing anyone will ask for",
             default=True,
         ),

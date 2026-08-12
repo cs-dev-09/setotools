@@ -11,7 +11,7 @@ class SETO_PT_smooth_edge_panel(bpy.types.Panel):
     bl_region_type = 'UI'
     # Second of the two Geometry tools, under Edge Wear (0). Same strip, the
     # opposite intent: this one rounds the edge off instead of chipping it.
-    bl_category = "Seto Tools"
+    bl_category = pl.TAB
     bl_parent_id = groups.GEOMETRY
     bl_options = {'DEFAULT_CLOSED'}
     bl_order = 1

@@ -143,7 +143,7 @@ class SETO_OT_pin_strip_position(bpy.types.Operator):
         obj = context.active_object
         data = getattr(obj, self.data_attr, None)
         if data is None:
-            self.report({'ERROR'}, "This object carries no Seto Tools strip data.")
+            self.report({'ERROR'}, "This object carries no Void Tools strip data.")
             return {'CANCELLED'}
         capture(obj, data)
         if is_pinned(data):
@@ -170,7 +170,7 @@ class SETO_OT_clear_strip_position(bpy.types.Operator):
         obj = context.active_object
         data = getattr(obj, self.data_attr, None)
         if data is None:
-            self.report({'ERROR'}, "This object carries no Seto Tools strip data.")
+            self.report({'ERROR'}, "This object carries no Void Tools strip data.")
             return {'CANCELLED'}
         # Assigned rather than zeroed through the ID-property back door, so the
         # update callback moves the object back.

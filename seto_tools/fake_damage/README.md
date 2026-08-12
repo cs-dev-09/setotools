@@ -1,12 +1,12 @@
 # Fake Damage
 
-Part of **Seto Tools**, built on [Sollumz](https://docs.sollumz.org). Generates
+Part of **Void Tools**, built on [Sollumz](https://docs.sollumz.org). Generates
 chipped-edge damage decals for GTA V / FiveM assets. Select the sharp edges,
 press a button, get a ready-to-export damage strip — your original mesh is
 never touched.
 
 Self-contained: it does not require, and does not talk to, the other tools.
-Both can be installed at the same time — they share one **Seto Tools** N-panel
+Both can be installed at the same time — they share one **Void Tools** N-panel
 tab, each appearing as its own collapsible section, but neither depends on the
 other and either works installed on its own.
 
@@ -75,7 +75,7 @@ Create New*, to pick these up.
 ## Usage
 
 1. Select your mesh, enter **Edit Mode**, select one or more sharp edges.
-2. Open **N-Panel > Seto Tools > Fake Damage**, adjust settings if needed.
+2. Open **N-Panel > Void Tools > Fake Damage**, adjust settings if needed.
 3. Press **Create Fake Damage**.
 
 A new `fake_dmg_00N` object is created: a strip that wraps the edge onto

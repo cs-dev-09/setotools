@@ -1,6 +1,6 @@
 # Smooth Edge
 
-Part of **Seto Tools**, built on [Sollumz](https://docs.sollumz.org). Lays a
+Part of **Void Tools**, built on [Sollumz](https://docs.sollumz.org). Lays a
 normal-map strip along a hard edge so it reads as rounded in game, without
 adding a bevel to the mesh. Select the edges, press a button — your original
 mesh is never touched.
@@ -44,7 +44,7 @@ the slot was left for you.
 ## Usage
 
 1. Select your mesh, enter **Edit Mode**, select the edges you want rounded.
-2. Open **N-Panel > Seto Tools > Smooth Edge**, adjust settings if needed.
+2. Open **N-Panel > Void Tools > Smooth Edge**, adjust settings if needed.
 3. Press **Create Smooth Edge**.
 
 A `smooth_edge_00N` object is created in a **`smooth_edge`** collection: shaded

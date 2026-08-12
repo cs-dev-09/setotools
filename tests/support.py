@@ -39,8 +39,8 @@ environment = dict(report.environment())
 check("Blender's version is reported",
       environment["Blender"] == bpy.app.version_string, environment)
 check("the add-on's own version is found, not a placeholder",
-      environment["Seto Tools"] not in ("", "unknown"), environment)
-check("and it matches bl_info", environment["Seto Tools"]
+      environment["Void Tools"] not in ("", "unknown"), environment)
+check("and it matches bl_info", environment["Void Tools"]
       == ".".join(str(n) for n in seto_tools.bl_info["version"]), environment)
 check("whether Sollumz was found is reported either way",
       environment["Sollumz"].startswith(("found", "not found")), environment)

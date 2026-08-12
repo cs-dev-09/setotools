@@ -11,7 +11,7 @@ class SETO_PT_fake_damage_panel(bpy.types.Panel):
     bl_region_type = 'UI'
     # First of the two Geometry tools, above Smooth Edge (1). Both build mesh
     # along the selected edges; this is the one that breaks the edge up.
-    bl_category = "Seto Tools"
+    bl_category = pl.TAB
     bl_parent_id = groups.GEOMETRY
     bl_options = {'DEFAULT_CLOSED'}
     bl_order = 0

@@ -1,6 +1,6 @@
 """Reading this add-on's preferences, from any tool.
 
-Blender allows exactly one AddonPreferences class per add-on, and Seto Tools'
+Blender allows exactly one AddonPreferences class per add-on, and Void Tools'
 lives in decal_tool/preferences.py for historical reasons - that tool shipped
 first. Settings that belong to the whole add-on rather than to one tool are
 declared there and read through here, so no tool has to import another tool's

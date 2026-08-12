@@ -1,4 +1,4 @@
-# Seto Tools
+# Void Tools
 
 One Blender add-on for GTA V / FiveM asset authoring, built on
 [Sollumz](https://docs.sollumz.org). Every authoring tool builds separate decal
@@ -21,7 +21,7 @@ tool, troubleshooting. Built from [`docs/`](docs) in this repo.
 | [Material Maker](seto_tools/materials) | Height, normal and specular maps from one diffuse image | a diffuse texture |
 | [Pre-Flight](seto_tools/preflight) | The export test you would otherwise run in game — missing UVs, unapplied scale, non-DDS textures | the whole scene, read-only |
 
-They all live in the **Seto Tools** N-panel tab, each as its own collapsible
+They all live in the **Void Tools** N-panel tab, each as its own collapsible
 section, the way Sollumz Tools is laid out. The sections are grouped by what a
 tool works on — the ones that build a strip along selected edges first, then
 the ones that put texture on a surface, then the analysis that only reads —
@@ -170,7 +170,7 @@ so does its exporter.
 
 ## Roadmap
 
-Seto Tools is in active development. What is coming, in order:
+Void Tools is in active development. What is coming, in order:
 
 - **Trash Scatter** — select a floor, pick a preset, and litter (paper,
   cigarette butts, small stones, debris) scatters across it with seed, density
@@ -189,7 +189,7 @@ Follow the [releases](../../releases) — each of these lands as its own version
 
 ## Support
 
-Seto Tools is free and stays free. If it saves you time, you can support its
+Void Tools is free and stays free. If it saves you time, you can support its
 development through **GitHub Sponsors** — the button at the top of this repo,
 or **Support > Become a Sponsor** at the foot of the N-panel tab.
 
@@ -199,7 +199,7 @@ any of it.
 
 ## Thanks
 
-Seto Tools is built in the open, and it is better for the people who turn up.
+Void Tools is built in the open, and it is better for the people who turn up.
 
 **Contributors**
 
@@ -208,6 +208,8 @@ Seto Tools is built in the open, and it is better for the people who turn up.
   hand in Vertex Paint destroyed the alpha the decal shaders blend by. Now it
   is a preset list on the object, and the alpha cannot be touched by picking a
   colour.
+
+- **gecu** — testing and feedback.
 
 **Sponsors**
 

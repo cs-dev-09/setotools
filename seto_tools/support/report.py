@@ -9,7 +9,7 @@ themselves. Posting on somebody's behalf would need a token this add-on
 has no business holding.
 
 Half of a useful report is the half nobody remembers to include: which
-Blender, which Seto Tools, whether Sollumz was even found. That is
+Blender, which Void Tools, whether Sollumz was even found. That is
 collected here so the reporter does not have to know it matters.
 """
 
@@ -39,7 +39,7 @@ def environment():
 
     available, message = szi.get_status_message()
     return (
-        ("Seto Tools", addon_version()),
+        ("Void Tools", addon_version()),
         ("Blender", bpy.app.version_string),
         ("Sollumz", "found" if available else f"not found - {message}"),
         ("OS", f"{platform.system()} {platform.release()}"),

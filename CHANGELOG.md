@@ -1,6 +1,31 @@
 # Changelog
 
-All notable changes to Seto Tools.
+All notable changes to Void Tools.
+
+## Unreleased
+
+### Changed - the add-on is called Void Tools
+
+The N-panel tab, the add-on's name in Preferences, the documentation and every
+label now say **Void Tools**.
+
+**Only the visible name changed.** Operators are still `seto.*`, per-object data
+is still `seto_fake_ao_data`, materials are still `seto_fakeao`, and panel
+classes are still `SETO_PT_*`. Renaming any of those would cost every strip in
+every existing .blend its settings, for a rename nobody's file needs to know
+about - the same reasoning that keeps the packages called `fake_ao/` and
+`fake_damage/` while the UI says Ambient Occlusion and Edge Wear.
+
+The tab name now lives in one constant (`shared/panel_layout.TAB`) instead of
+being typed into sixteen panel classes.
+
+### Added - who this is better because of
+
+A **Thank You** block in the add-on preferences, listing contributors, sponsors
+and what the add-on is built on, with the same rule the README carries: a
+sponsor is named only if their sponsorship is public, a contributor once their
+PR is merged, and anyone can ask to be removed. Blender's own add-on entry also
+gets Documentation and Report a Bug buttons.
 
 ## 1.0.0 — the first public release
 

@@ -1,6 +1,6 @@
 # Edge Dirt
 
-Part of **Seto Tools**, built on [Sollumz](https://docs.sollumz.org).
+Part of **Void Tools**, built on [Sollumz](https://docs.sollumz.org).
 
 Ambient Occlusion with dirt on it. Select an edge, press a button, get a
 ready-to-export strip carrying **your** dirt texture — your original mesh is
@@ -38,7 +38,7 @@ texture dropped into the installed folder is picked up on the next Create.
 ## Usage
 
 1. Select your mesh, enter **Edit Mode**, select the edges the dirt runs along.
-2. Open **N-Panel > Seto Tools > Surface > Edge Dirt**.
+2. Open **N-Panel > Void Tools > Surface > Edge Dirt**.
 3. Press **Create Edge Dirt**.
 
 A new `edge_dirt_00N` object is created, with UVs, a `decal.sps` material,

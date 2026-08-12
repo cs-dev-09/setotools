@@ -8,7 +8,7 @@
 | [Sollumz](https://docs.sollumz.org) | installed, enabled, **with its dependencies** |
 
 Sollumz's dependencies matter: the shader definitions live there, and every
-material Seto Tools builds is a real Sollumz shader material. Without them the
+material Void Tools builds is a real Sollumz shader material. Without them the
 tab draws a "Sollumz not available" notice instead of its buttons.
 
 ## Install
@@ -20,11 +20,11 @@ tab draws a "Sollumz not available" notice instead of its buttons.
 3. Pick the zip, then tick the add-on to enable it.
 4. **Restart Blender.**
 
-The tools appear in the 3D viewport's N-panel, under a **Seto Tools** tab.
+The tools appear in the 3D viewport's N-panel, under a **Void Tools** tab.
 
 !!! warning "Coming from the three separate add-ons"
 
-    Seto Tools used to ship as `seto_fake_ao`, `seto_fake_dmg` and
+    Void Tools used to ship as `seto_fake_ao`, `seto_fake_dmg` and
     `seto_decal_tool`. If any of them is still installed, **disable and remove
     it first** — they register the same operators and panels as this one, and
     Blender will not tell you which copy answered.
@@ -45,7 +45,7 @@ Two kinds, and the difference matters when you open a new file:
 **Add-on preferences** — remembered across files, restarts and updates. The
 decal library folder and the Surface Painter library folder are both here,
 along with the Sollumz override and the update-check switch. Reach them at
-**Edit → Preferences → Add-ons → Seto Tools**.
+**Edit → Preferences → Add-ons → Void Tools**.
 
 **Scene settings** — saved in the .blend, per file. Everything in a tool's
 create panel is one of these: it is the starting point for the next thing you

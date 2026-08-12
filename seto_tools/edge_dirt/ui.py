@@ -36,7 +36,7 @@ class SETO_PT_edge_dirt_panel(bpy.types.Panel):
     # Last of the Surface section (Ambient Occlusion 0, Decal Tool 1, Surface
     # Painter 2). It is built exactly like Ambient Occlusion and sits next to
     # it, which is how it gets reached for: same strip, dirt instead of shadow.
-    bl_category = "Seto Tools"
+    bl_category = pl.TAB
     bl_parent_id = groups.SURFACE
     bl_options = {'DEFAULT_CLOSED'}
     bl_order = 3

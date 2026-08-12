@@ -1,6 +1,6 @@
 # Surface Painter
 
-Part of **Seto Tools**, built on [Sollumz](https://docs.sollumz.org). Brush
+Part of **Void Tools**, built on [Sollumz](https://docs.sollumz.org). Brush
 dirt, grime and graffiti straight onto a surface. Your mesh is never touched —
 not on the first stroke, not on the hundredth.
 
@@ -116,7 +116,7 @@ actually paint with end up in the .blend.
 ## Usage
 
 1. Select the wall.
-2. Open **N-Panel > Seto Tools > Surface Painter**, pick a category and a
+2. Open **N-Panel > Void Tools > Surface Painter**, pick a category and a
    texture.
 3. Press **Start Paint**. A paint mesh appears over the wall and Blender drops
    into Vertex Paint.

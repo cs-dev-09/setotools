@@ -1,6 +1,6 @@
 # Thanks
 
-Seto Tools is free, and it stays free. It is also built in the open, which
+Void Tools is free, and it stays free. It is also built in the open, which
 means it gets better when people turn up — with a pull request, with a bug
 report carrying a .blend, or by funding the time it takes.
 
@@ -29,6 +29,13 @@ The PR arrived tested, followed the project's conventions closely, and passed
 the whole suite on both supported Blender versions on the first run. That is
 rarer than it should be, and it is why it went in the same day.
 
+### gecu
+
+Testing and feedback — the part that happens before anything is written down,
+and the reason several things here were built the way round they were.
+
+No link, because not everyone thanked here has an account to point at.
+
 ## Sponsors
 
 ### [@Zydrec](https://github.com/Zydrec)
@@ -56,6 +63,6 @@ removed, no reason needed.
 
 ## Standing on
 
-Seto Tools would not exist without [Sollumz](https://docs.sollumz.org), which
+Void Tools would not exist without [Sollumz](https://docs.sollumz.org), which
 does the hard part — the shaders, the export, the whole GTA V pipeline inside
 Blender. Everything here builds on top of it.
