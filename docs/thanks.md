@@ -13,7 +13,7 @@ People whose code is in the add-on you installed.
 ### [@cs-dev-09](https://github.com/cs-dev-09)
 
 **The Vertex Colour picker** —
-[#1](https://github.com/seto3d/setotools/pull/1)
+[#1](https://github.com/seto3d/void-tools/pull/1)
 
 Every tool used to write one fixed green into `Color 1`. Changing it meant
 going into Vertex Paint and doing it by hand, which quietly destroyed the alpha
@@ -58,7 +58,7 @@ Contributors are listed once their pull request is merged, since the commit is
 public either way.
 
 Either way: if you would rather not appear here, say so on
-[the issues](https://github.com/seto3d/setotools/issues) and you will be
+[the issues](https://github.com/seto3d/void-tools/issues) and you will be
 removed, no reason needed.
 
 ## Standing on

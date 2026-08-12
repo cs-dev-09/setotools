@@ -71,7 +71,7 @@ The algorithms are ported from
 [Materialize](https://github.com/BoundingBoxSoftware/Materialize) by Bounding
 Box Software, which is GPL-3. This tool is therefore GPL-3, and so is the
 add-on that contains it — see
-[LICENSE](https://github.com/seto3d/setotools/blob/main/LICENSE).
+[LICENSE](https://github.com/seto3d/void-tools/blob/main/LICENSE).
 
 It was contributed as a standalone add-on and folded in here; see
 [Thanks](../thanks.md).

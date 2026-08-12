@@ -5,7 +5,7 @@ One Blender add-on for GTA V / FiveM asset authoring, built on
 geometry and never touches your original mesh — and the one analysis tool only
 reads.
 
-📖 **[Documentation](https://seto3d.github.io/setotools/)** — install, every
+📖 **[Documentation](https://seto3d.github.io/void-tools/)** — install, every
 tool, troubleshooting. Built from [`docs/`](docs) in this repo.
 
 | Tool | What it makes | Built from |

@@ -2,9 +2,9 @@ site_name: Void Tools
 site_description: >-
   GTA V / FiveM asset authoring for Blender, built on Sollumz. Decal strips,
   surface painting and read-only scene analysis — none of it touches your mesh.
-site_url: https://seto3d.github.io/setotools/
-repo_url: https://github.com/seto3d/setotools
-repo_name: seto3d/setotools
+site_url: https://seto3d.github.io/void-tools/
+repo_url: https://github.com/seto3d/void-tools
+repo_name: seto3d/void-tools
 edit_uri: edit/main/docs/
 copyright: Void Tools is free software. Documentation built from the repository it documents.
 
@@ -93,5 +93,5 @@ nav:
 extra:
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/seto3d/setotools
+      link: https://github.com/seto3d/void-tools
       name: Void Tools on GitHub

@@ -14,7 +14,7 @@ tab draws a "Sollumz not available" notice instead of its buttons.
 ## Install
 
 1. Download `seto_tools.zip` from the
-   [latest release](https://github.com/seto3d/setotools/releases). **Do not
+   [latest release](https://github.com/seto3d/void-tools/releases). **Do not
    unzip it.**
 2. In Blender: **Edit → Preferences → Add-ons → Install from Disk**
 3. Pick the zip, then tick the add-on to enable it.

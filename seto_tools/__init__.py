@@ -10,8 +10,8 @@ bl_info = {
     # Blender turns these two into the Documentation and Report a Bug buttons
     # on the add-on's own entry in Preferences - the place somebody looks when
     # the tab itself is not drawing and they cannot reach the Support panel.
-    "doc_url": "https://seto3d.github.io/setotools/",
-    "tracker_url": "https://github.com/seto3d/setotools/issues",
+    "doc_url": "https://seto3d.github.io/void-tools/",
+    "tracker_url": "https://github.com/seto3d/void-tools/issues",
     "description": (
         "GTA V / FiveM asset authoring tools that integrate with Sollumz. "
         "Ambient Occlusion corner decals, Edge Dirt strips, Edge Wear "

@@ -124,7 +124,7 @@ check("the preference itself exists, on by default",
       .keywords.get("default"))
 check("the download pin is our repository's releases, exactly",
       logic.DOWNLOAD_PREFIX ==
-      "https://github.com/seto3d/setotools/releases/download/")
+      "https://github.com/seto3d/void-tools/releases/download/")
 
 failed = [r for r in RESULTS if not r[0]]
 print("\n" + "=" * 60)

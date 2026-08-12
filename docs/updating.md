@@ -27,7 +27,7 @@ it off, **Check for Updates** in the panel still works when you press it.
 ## Installing manually
 
 Nothing stops you doing it the ordinary way: download `seto_tools.zip` from the
-[releases page](https://github.com/seto3d/setotools/releases) and install from
+[releases page](https://github.com/seto3d/void-tools/releases) and install from
 disk over the top. Restart Blender afterwards.
 
 ## After an update

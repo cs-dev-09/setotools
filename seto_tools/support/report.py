@@ -22,7 +22,7 @@ import urllib.parse
 # body on the clipboard instead and says so.
 MAX_URL = 6000
 
-NEW_ISSUE = "https://github.com/seto3d/setotools/issues/new"
+NEW_ISSUE = "https://github.com/seto3d/void-tools/issues/new"
 
 
 def addon_version():

@@ -17,7 +17,7 @@ from . import properties
 from ..shared import panel_layout as pl
 
 SPONSOR_URL = "https://github.com/sponsors/seto3d"
-ISSUES_URL = "https://github.com/seto3d/setotools/issues"
+ISSUES_URL = "https://github.com/seto3d/void-tools/issues"
 
 
 def draw_links(layout, issues=True):

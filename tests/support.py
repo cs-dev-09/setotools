@@ -75,7 +75,7 @@ for forbidden in ("urlopen", "requests", "socket", "http.client"):
     check(f"no {forbidden} anywhere in the support code",
           forbidden not in source)
 check("the only host it ever opens is this repository",
-      report.NEW_ISSUE.startswith("https://github.com/seto3d/setotools/"))
+      report.NEW_ISSUE.startswith("https://github.com/seto3d/void-tools/"))
 
 print("=== the operator refuses an empty report ===")
 # The one path that can be driven here without opening a browser. The

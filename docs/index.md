@@ -66,7 +66,7 @@ not there.
 - **Support → Report a Bug** at the foot of the tab fills in a GitHub issue
   from where the problem happened — read
   [what it sends](troubleshooting.md#reporting-a-bug) before you press it
-- [Issues on GitHub](https://github.com/seto3d/setotools/issues)
+- [Issues on GitHub](https://github.com/seto3d/void-tools/issues)
 
 ## Free, and better for the people who turn up
 

@@ -8,9 +8,9 @@ one screenful that can be read in full.
 
 import sys
 
-RELEASES_LATEST = "https://api.github.com/repos/seto3d/setotools/releases/latest"
-RELEASES_PAGE = "https://github.com/seto3d/setotools/releases/latest"
-DOWNLOAD_PREFIX = "https://github.com/seto3d/setotools/releases/download/"
+RELEASES_LATEST = "https://api.github.com/repos/seto3d/void-tools/releases/latest"
+RELEASES_PAGE = "https://github.com/seto3d/void-tools/releases/latest"
+DOWNLOAD_PREFIX = "https://github.com/seto3d/void-tools/releases/download/"
 ASSET_NAME = "seto_tools.zip"
 
 
