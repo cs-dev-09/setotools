@@ -31,6 +31,11 @@ FIRST_CHILD = 0
 MATERIAL_CHILD = 80
 SELECTED = 90
 
+# The N-panel tab every panel in this add-on lives in. One constant rather than
+# the same string typed into sixteen classes: the tab is the add-on's name in
+# the only place most users ever read it, and renaming it should be one edit.
+TAB = "Seto Tools"
+
 
 class ToolChildPanel:
     """Base for a collapsed settings panel under a tool.
@@ -50,6 +55,35 @@ class ToolChildPanel:
     @classmethod
     def poll(cls, context):
         return szi.is_sollumz_available()
+
+
+class PlainChildPanel:
+    """A collapsed settings panel under a tool that does **not** need Sollumz.
+
+    `ToolChildPanel` hides itself when Sollumz is missing, which is right for
+    every tool that ends up building a Sollumz material. It is wrong for a tool
+    that only touches Blender: the Analysis tools avoid the question by having
+    no children at all, but Materialize genuinely has four, and a machine with
+    no working Sollumz is exactly the one that might still want to turn a
+    diffuse image into a normal map.
+
+    `tests/panels.py` accepts this base as an answer to the Sollumz poll rule.
+    Reach for it only when the tool underneath really does run without Sollumz -
+    the rule exists because Blender draws a child whether or not its parent drew
+    anything, and five panels once came up fully populated under a parent that
+    had just said the tool could not run.
+    """
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    bl_category = TAB
+    bl_options = {'DEFAULT_CLOSED'}
+
+    # Read by tests/panels.py. A subclass is free to write its own poll() - and
+    # Materialize's Settings panel does, on whether an image has been picked -
+    # so the contract cannot be checked by looking at where poll came from.
+    # Declaring it is the honest version: this tool says it does not need
+    # Sollumz, and the test takes it at its word for that panel only.
+    needs_sollumz = False
 
 
 class SelectedPanel:

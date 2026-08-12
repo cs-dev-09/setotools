@@ -143,14 +143,14 @@ def draw_panel(cls, label):
 
 
 panels = seto_panels()
-# The tab is three sections and nothing else at the top level; every tool
+# The tab is four sections and nothing else at the top level; every tool
 # hangs off one of them. A tool whose parent failed to register is not merely
 # misplaced - Blender drops it, and the tab silently loses a tool.
-check("the tab's top level is Updates, the three sections, then Support",
+check("the tab's top level is Updates, the four sections, then Support",
       [c.bl_idname for c in panels if not getattr(c, "bl_parent_id", "")]
       == ["SETO_PT_updates_panel", "SETO_PT_geometry_group",
           "SETO_PT_surface_group", "SETO_PT_analysis_group",
-          "SETO_PT_support_panel"],
+          "SETO_PT_materials_group", "SETO_PT_support_panel"],
       [c.__name__ for c in panels if not getattr(c, "bl_parent_id", "")])
 
 for parent, expected in (
@@ -161,7 +161,8 @@ for parent, expected in (
           "SETO_PT_surface_painter_panel", "SETO_PT_edge_dirt_panel"]),
         ("SETO_PT_analysis_group",
          ["SETO_PT_density_checker_panel", "SETO_PT_texture_budget_panel",
-          "SETO_PT_preflight_panel"])):
+          "SETO_PT_preflight_panel"]),
+        ("SETO_PT_materials_group", ["SETO_PT_material_maker_panel"])):
     got = [c.bl_idname for c in panels
            if getattr(c, "bl_parent_id", "") == parent]
     check(f"{parent} holds its tools, in order", got == expected, got)
@@ -175,7 +176,8 @@ for cls in panels:
     parent = getattr(cls, "bl_parent_id", "")
     if not parent or parent in ("SETO_PT_geometry_group",
                                 "SETO_PT_surface_group",
-                                "SETO_PT_analysis_group"):
+                                "SETO_PT_analysis_group",
+                                "SETO_PT_materials_group"):
         continue          # sections and tools, not the settings children
     name = cls.__name__
     selected = cls.bl_label.startswith("Selected")
@@ -188,6 +190,13 @@ for cls in panels:
         check(f"{name} is not collapsed",
               'DEFAULT_CLOSED' not in getattr(cls, "bl_options", set()),
               getattr(cls, "bl_options", set()))
+    elif getattr(cls, "needs_sollumz", True) is False:
+        # A tool that genuinely runs without Sollumz says so on its base
+        # (panel_layout.PlainChildPanel) and is not asked to hide itself.
+        # Materialize is the one: turning a diffuse image into a normal map is
+        # numpy, and the machine with no working Sollumz is exactly the one
+        # that might still want it.
+        check(f"{name} declares its order", "bl_order" in cls.__dict__, sorted(cls.__dict__))
     else:
         # A child panel is drawn whether or not its parent drew anything, so
         # each one has to answer for Sollumz itself.

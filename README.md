@@ -18,6 +18,7 @@ tool, troubleshooting. Built from [`docs/`](docs) in this repo.
 | [Surface Painter](seto_tools/surface_painter) | Dirt, grime and graffiti brushed onto a surface | a paint mesh over the whole object |
 | [Density Check](seto_tools/density_checker) | A triangle-budget heatmap graded against vanilla GTA | the whole scene, read-only |
 | [Texture Budget](seto_tools/texture_budget) | The same heatmap for texture resolution, plus what the scene costs in VRAM | the whole scene, read-only |
+| [Material Maker](seto_tools/materials) | Height, normal and specular maps from one diffuse image | a diffuse texture |
 | [Pre-Flight](seto_tools/preflight) | The export test you would otherwise run in game — missing UVs, unapplied scale, non-DDS textures | the whole scene, read-only |
 
 They all live in the **Seto Tools** N-panel tab, each as its own collapsible
@@ -68,6 +69,7 @@ seto_tools/
     density_checker/ the read-only triangle-budget heatmap
     texture_budget/  the same, for texture resolution and VRAM
     preflight/       the read-only export checklist
+    materials/       Material Maker - height/normal/specular from a diffuse
 ```
 
 Blender allows exactly one `AddonPreferences` class per add-on, and that class

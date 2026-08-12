@@ -82,6 +82,8 @@ nav:
       - Density Check: tools/density-check.md
       - Texture Budget: tools/texture-budget.md
       - Pre-Flight: tools/pre-flight.md
+  - Materials:
+      - Material Maker: tools/material-maker.md
   - Reference:
       - Troubleshooting: troubleshooting.md
       - Updating: updating.md

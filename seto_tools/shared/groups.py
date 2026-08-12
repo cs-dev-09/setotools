@@ -82,12 +82,34 @@ class SETO_PT_analysis_group(bpy.types.Panel):
         pass
 
 
+class SETO_PT_materials_group(bpy.types.Panel):
+    """Tools that make the texture, rather than the geometry it goes on.
+
+    Last of the four, because it is the step before the others: you author a
+    material here, then run a strip or a decal that uses one. Nothing in it
+    needs Sollumz.
+    """
+    bl_label = "Materials"
+    bl_idname = "SETO_PT_materials_group"
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    bl_category = "Seto Tools"
+    bl_order = 4
+
+    def draw_header(self, context):
+        icons.draw_header(self.layout, "materials", 'NODE_MATERIAL')
+
+    def draw(self, context):
+        pass
+
+
 GEOMETRY = SETO_PT_geometry_group.bl_idname
 SURFACE = SETO_PT_surface_group.bl_idname
 ANALYSIS = SETO_PT_analysis_group.bl_idname
+MATERIALS = SETO_PT_materials_group.bl_idname
 
 _classes = (SETO_PT_geometry_group, SETO_PT_surface_group,
-            SETO_PT_analysis_group)
+            SETO_PT_analysis_group, SETO_PT_materials_group)
 
 
 def register():

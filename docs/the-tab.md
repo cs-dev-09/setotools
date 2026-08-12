@@ -1,7 +1,7 @@
 # The tab
 
-Everything lives in one N-panel tab, **Seto Tools**, split into three sections
-by what a tool works on. Nine tools side by side would be a wall of collapsible
+Everything lives in one N-panel tab, **Seto Tools**, split into four sections
+by what a tool works on. Ten tools side by side would be a wall of collapsible
 headers with no hint of which one to reach for; the sections are the hint.
 
 ```
@@ -23,6 +23,9 @@ Seto Tools
 │     ├── Density Check
 │     ├── Texture Budget
 │     └── Pre-Flight
+│
+├── Materials                  makes the texture, not the geometry
+│     └── Material Maker
 │
 └── Support                    report a bug, or fund the next tool
 ```

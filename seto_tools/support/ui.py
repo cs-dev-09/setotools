@@ -48,7 +48,7 @@ class SETO_PT_support_panel(bpy.types.Panel):
     bl_region_type = 'UI'
     bl_category = "Seto Tools"
     # Last in the tab, after the three tool sections.
-    bl_order = 4
+    bl_order = 5
     bl_options = {'DEFAULT_CLOSED'}
 
     # No Sollumz poll: the day someone most needs the bug report form is

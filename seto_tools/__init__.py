@@ -14,7 +14,9 @@ bl_info = {
         "places library decals on selected faces, a Surface Painter for "
         "brushing dirt onto an asset through a non-destructive mask, and an "
         "Analysis section that grades triangles and texture memory against "
-        "vanilla GTA and checks an asset before it is exported."
+        "vanilla GTA and checks an asset before it is exported, plus "
+        "Materialize, which generates height, normal and specular maps from a "
+        "single diffuse image."
     ),
     "category": "Object",
 }
@@ -41,6 +43,7 @@ from . import surface_painter
 from . import density_checker
 from . import texture_budget
 from . import preflight
+from . import materials
 from . import updater
 from . import support
 
@@ -51,8 +54,8 @@ from . import support
 # kind of reason: both of them read scene.seto_grade, which it declares.
 _modules = (icons, strip_settings, manual_offset, viewport_grade, groups,
             fake_damage, smooth_edge, fake_ao, decal_tool, surface_painter,
-            edge_dirt, density_checker, texture_budget, preflight, updater,
-            support)
+            edge_dirt, density_checker, texture_budget, preflight, materials,
+            updater, support)
 
 
 def register():
