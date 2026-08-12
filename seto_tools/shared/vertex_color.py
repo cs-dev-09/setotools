@@ -1,19 +1,26 @@
 """The Color 1 vertex colour every Seto tool writes.
 
-Kept in one place so the tools cannot drift apart: they all write the same RGB,
-and differ only in the alpha they fade between.
+Kept in one place so the tools cannot drift apart: they all start from the same
+RGB, and differ only in the alpha they fade between.
 
-    RGB    0.0, 0.7, 0.0   (#00B200)
+    RGB    0.0, 0.7, 0.0   (#00B200), the default - selectable per object
     alpha  1.0 at the centre of the strip, 0.0 at its outer edge
 
 The alpha is the part that does the work - it is what the decal shaders use as
 their blend factor, so full at the crease and zero at the edge is what makes a
 strip fade out instead of ending on a visible border.
 
-The RGB is not read by the shaders these tools use: decal.sps takes its base
-colour from the texture, and decal_normal_only only perturbs the normal. It is
-fixed here anyway so every generated strip carries the same, recognisable value
-rather than whatever each tool happened to default to.
+**What is known about the RGB, and what is not.** This file used to state flatly
+that the shaders do not read it. That was too strong, and it was never verified.
+What has been checked: `Colour0` is in both decal shaders' vertex layout in
+szio's `Shaders.xml`, so the value is exported, and a strip exported to YDR and
+opened in CodeWalker shows the chosen colour intact - the round trip does not
+drop it. What has *not* been checked is whether the game's own pixel shader
+tints by it; CodeWalker's renderer is its own approximation, not the game.
+
+So do not promise a user that the colour will show in game, and do not tell them
+it cannot. Green stays the default because a recognisable, consistent value on
+generated geometry is worth having either way.
 
 Written through Sollumz's create_color_attr, which stores BYTE_COLOR via
 `color_srgb`. That matters for mid-range values - they go through an sRGB

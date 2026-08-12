@@ -66,6 +66,7 @@ Common to all four strip tools:
 | **Shape** | width, surface offset, direction |
 | **Fade** | across the strip, then along its run |
 | **Position** | where the strip sits relative to where the tool puts it — see below |
+| **Vertex Colour** | the RGB written to `Color 1` — a preset or your own swatch. See [choosing the colour](concepts.md#choosing-the-colour) |
 | **Bevel** | rounds the source corner, the strip's own seam, or both |
 
 ### Position, and pinning

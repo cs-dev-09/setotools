@@ -240,9 +240,11 @@ def surface_basis(normal, tangent, along=None):
     does it fall back to the face's own edge tangent.
 
     `along` overrides all of that with a direction the decal's local X must
-    follow, whatever the face is doing. Contact decals use it to run their width
-    along the line where two objects meet - "upright" is the wrong idea there,
-    because the line is the thing the decal has to line up with.
+    follow, whatever the face is doing. Nothing passes it today - it was built
+    for Contact Decals, which laid decals along the line where two objects meet,
+    and that feature was removed. Kept because it is the answer for any caller
+    that has a line to follow: "upright" is the wrong idea when the decal has to
+    line up with something.
 
     This is the *base* frame, with no Rotation applied. Rotation is applied in
     compose_matrix() instead, so that Offset U/V stay measured in a frame that

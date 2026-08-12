@@ -44,16 +44,32 @@ Generated objects are named after the tool that made them —
 
 ## One vertex colour
 
-Every tool writes the same `Color 1`: RGB `#00B200`, alpha 1.0 at the centre of
-a strip fading to 0.0 at its outer edge.
+Every tool writes `Color 1`: RGB `#00B200` by default, alpha 1.0 at the centre
+of a strip fading to 0.0 at its outer edge.
 
 **The alpha is the blend factor.** Sollumz renders `decal.sps` as
 `Color 1 alpha × texture alpha`, so alpha 0 is invisible and 1.0 is as opaque
 as the texture itself allows. If something looks too faint at 1.0, the
 transparency is in the image, not in the tool.
 
-The RGB is not read by either `decal.sps` or `decal_normal_only.sps`. It is
-fixed so generated geometry is recognisable and consistent.
+### Choosing the colour
+
+**Selected … → Vertex Colour** picks the RGB per object: Green, Red, White,
+Blue, Yellow, or Custom with a swatch. The default stays green, so existing
+work is unaffected.
+
+Setting it here rather than by hand matters for one specific reason: changing a
+vertex colour in Vertex Paint mode destroys the alpha unless you remember to
+untick **Affect Alpha** — and the alpha is the part that does the work. Going
+through the panel cannot touch it.
+
+!!! note "What the colour is good for"
+
+    The value is exported and survives the round trip — a strip exported to YDR
+    and opened in CodeWalker shows the colour it was given. Whether the game's
+    own shader tints the decal by it has not been confirmed here, so treat it
+    as a way of colour-coding your own generated geometry, and check in game
+    before relying on it for anything visible.
 
 !!! note
 
