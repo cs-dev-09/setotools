@@ -66,3 +66,9 @@ not there.
   from where the problem happened — read
   [what it sends](troubleshooting.md#reporting-a-bug) before you press it
 - [Issues on GitHub](https://github.com/seto3d/setotools/issues)
+
+## Free, and better for the people who turn up
+
+Seto Tools costs nothing and stays that way. It is improved by pull requests,
+by bug reports with a .blend attached, and by the people who fund the time —
+see [Thanks](thanks.md).

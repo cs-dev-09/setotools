@@ -194,3 +194,26 @@ or **Support > Become a Sponsor** at the foot of the N-panel tab.
 Found something broken? **Support > Report a Bug** opens
 [the issues](../../issues). A report with a .blend attached is worth more than
 any of it.
+
+## Thanks
+
+Seto Tools is built in the open, and it is better for the people who turn up.
+
+**Contributors**
+
+- [@cs-dev-09](https://github.com/cs-dev-09) — the **Vertex Colour** picker
+  ([#1](../../pull/1)): every tool wrote one fixed green, and changing it by
+  hand in Vertex Paint destroyed the alpha the decal shaders blend by. Now it
+  is a preset list on the object, and the alpha cannot be touched by picking a
+  colour.
+
+**Sponsors**
+
+- [@Zydrec](https://github.com/Zydrec) — the first person to fund this work.
+
+A tool that is free either way is not owed that, and it is noticed. Thank you.
+
+Only sponsors who are public on
+[the sponsors page](https://github.com/sponsors/seto3d) are listed here, and
+anyone who would rather not be has only to say so on
+[the issues](../../issues).
