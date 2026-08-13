@@ -35,6 +35,12 @@ def preview_size(context=None):
     return getattr(prefs, "preview_size", DEFAULT_PREVIEW_SIZE)
 
 
+def scatter_library(context=None):
+    """The prop-library folder Trash Scatter appends real models from, or ""."""
+    prefs = get(context)
+    return getattr(prefs, "scatter_library", "")
+
+
 def sollumz_override(context=None):
     """The Sollumz module name or folder the user pinned, or "".
 

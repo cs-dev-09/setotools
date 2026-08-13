@@ -2,7 +2,126 @@
 
 All notable changes to Void Tools.
 
-## Unreleased
+## 1.1.0 — dressing the floor, making the texture, choosing the colour
+
+### Added — Trash Scatter, and the Dressing section it opens
+
+Select the floor faces, press **Scatter**, and vanilla GTA litter lands on
+them — cigarette butts, crumpled paper, crushed cans, bottles, food
+wrappers, or the **Dirt & Leaves** preset's drifts of dead leaves. Not
+uniformly: an **Edge Bias** slider gathers it along the walls and into the
+corners, where litter really collects, and per-prop spacing keeps any two
+pieces from stacking. One **Seed**, one layout — re-rolling the arrangement
+is one click and reproducible.
+
+Each piece is registered as an **MLO entity** on the floor's own
+archetype, attached to the room whose bounds hold it (never to limbo:
+that is GTA's outside, and the engine caps what may attach there). The
+game streams the real props; the interior's own geometry, texture memory
+and draw calls do not move at all. Finding the archetype needs no
+selection help — the floor's ancestry is checked first, then the ytyp
+panel's selection, then the file's only MLO.
+
+**In the viewport the props are real too**, when a **Prop Library** folder
+is set in the add-on preferences: a folder of .blend files whose objects
+are named after archetypes (an asset library extracted from the game).
+Scatter appends each prop's actual mesh and textures from there — once
+per prop, every instance shares the one mesh — and any prop the library
+lacks lands as its measured bounding box in wireframe instead, exporting
+identically. The library is indexed once and cached; indexing a
+few-hundred-blend library measures in minutes, so it never runs on its
+own — only the **Rescan** button scans.
+
+**You do not have to find a library: recent Sollumz builds one.** Its
+**Sollumz Tools → Asset Library → Build Asset Library** turns extracted
+`.ytyp` files into `.blend` libraries in a Shared Assets directory, and
+Prop Library reads those as they are — the objects already carry their
+archetype names, and where Sollumz leaves a Drawable as an empty with the
+mesh parented under it, the scan takes the mesh.
+
+**The settings are live.** A scattered floor carries its own copy of them
+in a **Selected Scatter** panel — dragging Density, Edge Bias, **Prop
+Scale**, Scale Jitter, Seed or switching preset rebuilds the layout in
+place, debounced so a slider drag rebuilds once when the hand stops
+rather than on every mouse move. A Live Update switch and an
+always-available Re-Scatter button cover the rest — Re-Scatter is also
+the answer after resizing or moving the floor itself, which no property
+callback can see. Scatter **replaces** its previous layout on the same
+floor rather than stacking, and **Clear Scatter** takes the proxies and
+their entity rows away together — the active floor's, or every floor's
+when the active object has none.
+
+Two presets: **Trash** (litter — cigarette butts, paper, crushed cans,
+bottles, food wrappers) and **Dirt & Leaves** (drifts of dead leaves and
+the odd stone). A **Topple** slider decides how many of the standing
+props — bottles, cans, cups, chip bags — lie knocked over on their side,
+resting on their rolled bounding box, the way real litter does. It ships
+at 1.0: litter standing to attention reads as staged (field-tested in
+game), so everything topples unless the slider says otherwise.
+
+**The floor's rim is read from its faces, not its edges.** An MLO floor
+is routinely slabbed into pieces that meet exactly but are not welded,
+so every side belonged to exactly one face and the seam between two
+slabs was mistaken for a wall — with Edge Bias piling both the litter
+and the grime along a line straight across the middle of the room
+(visible in game). Sides are now matched by position, so a seam is
+interior and only the real rim attracts anything.
+
+**Clustering** gathers the litter into heaps. At 0 it spreads as
+before; toward 1 the props pile up around a few seeded spots — the
+spots themselves obey Edge Bias, so the heaps form by the walls and
+doorways where litter really accumulates, and spacing still holds
+inside a heap, so it saturates instead of stacking.
+
+**It keeps up with the sliders.** Nearest-wall distance is answered from
+a bucketed index instead of scanning every rim segment, spacing is
+checked through a grid instead of against every prop already placed, and
+the dirt sheet is rebuilt only when something it depends on actually
+moved. On that same 20×14 m floor: a first scatter of 280 props with its
+overlay takes 3.2 s, dragging Density rebuilds in 0.09 s, and a Floor
+Dirt change in 0.23 s.
+
+**The litter follows the grime.** With Floor Dirt on, the same noise
+field that darkens the overlay biases where props land — trash collects
+on the dirty patches and thins out over the clean stretches, so the two
+read as one scene rather than two random layers. And **litter avoids
+furniture**: a short upward ray from every sample drops the spots under
+table tops, crates and counters, so nothing spawns inside a table leg.
+
+**Floor Dirt** grimes the floor itself, the way vanilla actually does
+it. Measured from the game's interior entity data: 176 of GTA's 377
+interiors carry flat, hand-authored dirt overlay sheets
+(`bkr_int01_cm3dirtfloor`, `hei_int_heist_hall_over_dirt`,
+`ex_int_warem_stains`…) floated millimetres over the floor — Rockstar
+does not scatter grime props. Scatter now builds that sheet
+procedurally: a copy of the selected region, lifted 4 mm, wearing the
+bundled dirt texture in a decal material, its blotch pattern written
+into Color 1's alpha from seeded value noise with the same Edge Bias
+pull the litter uses — so the grime pools along the walls exactly where
+the trash does. One **Amount** slider (0 = clean, 1 = write your name
+in it), one **Blotch Size**, both live on the scattered floor; the
+overlay is parented to the floor, replaced per run, and removed by
+Clear with everything else. The source floor is never touched. An
+**Optimize Dirt** button runs Surface Painter's optimizer over the
+sheet — cropped to its grime, thinned to the vertices the pattern
+actually needs, pixel-identical — for when the look is final. Its
+**Tolerance** sits next to it, per floor: how far the pattern may drift
+in exchange for geometry. It defaults to 0.08, much looser than Surface
+Painter's 0.02, because a grime sheet is noise rather than an authored
+stroke — but the trade is yours to make, and the report says which
+tolerance produced which count. Measured on a 20×14 m floor at the
+default: **3033 faces down to 291, 70% of them quads, in 0.08 s.** The working
+vertex spacing follows Blotch Size rather than a fixed number, so the
+mesh is only ever as fine as the pattern on it. The
+sheet's triangles are equalised before the pattern is written: the
+straight fan triangulation showed the grime tracing the floor's own
+edge lines in game, and even triangles are what make noise read as
+blotches instead of topology — then joined back into mostly quads, so
+the sheet edits like authored geometry (Sollumz re-triangulates on
+export, so the game never sees the difference).
+
+Trash Scatter opens **Dressing**, a fifth section for the tools that
+populate the interior rather than build or grade the asset itself.
 
 ### Added — Edge Wear has a Strength slider
 
@@ -38,6 +157,33 @@ Because a reused material is never rewritten, a new strip that adopts one
 shows **that material's** Strength rather than the panel's, and says so
 in the status bar. The strip also reports when its material is shared, so
 it is clear that a drag changes every strip wearing it.
+
+### Added — Material Maker, and the Materials section it lives in
+
+Thanks to [@gecu3d](https://github.com/gecu3d): height, normal and
+specular maps generated from a single diffuse image, inside Blender, with
+no round trip to another program. It arrived as a finished standalone
+add-on — its own numpy image pipeline, four panels and a settings page
+deep enough to carry a guide of its own — and became the tab's fourth
+section, **Materials**: the one tool here that *makes* a texture rather
+than putting one onto geometry. Nothing in it needs Sollumz.
+
+The algorithms are ported from Bounding Box Software's Materialize, which
+is why this add-on is GPL-3.
+
+### Added — the Color 1 colour is a choice now
+
+Thanks to [@cs-dev-09](https://github.com/cs-dev-09)
+([#1](https://github.com/seto3d/void-tools/pull/1)): every tool used to
+write one fixed green into `Color 1`, and changing it meant going into
+Vertex Paint by hand — which quietly destroyed the alpha channel unless
+you remembered to untick **Affect Alpha**. Since the alpha is the part the
+decal shaders actually blend by, the damage was invisible until you went
+looking for it.
+
+It is a preset list on the finished object now — Green, Red, White, Blue,
+Yellow, or Custom with a swatch — and picking a colour **cannot** touch
+the alpha.
 
 ### Changed - the add-on is called Void Tools
 

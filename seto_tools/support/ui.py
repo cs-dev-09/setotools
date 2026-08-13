@@ -48,8 +48,8 @@ class SETO_PT_support_panel(bpy.types.Panel):
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_category = pl.TAB
-    # Last in the tab, after the three tool sections.
-    bl_order = 5
+    # Last in the tab, after the tool sections (Dressing holds 5).
+    bl_order = 6
     bl_options = {'DEFAULT_CLOSED'}
 
     # No Sollumz poll: the day someone most needs the bug report form is

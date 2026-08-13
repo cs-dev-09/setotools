@@ -104,13 +104,38 @@ class SETO_PT_materials_group(bpy.types.Panel):
         pass
 
 
+class SETO_PT_dressing_group(bpy.types.Panel):
+    """Tools that place finished set dressing into the interior.
+
+    The other sections build or read *this asset*; Dressing populates the
+    scene around it - Trash Scatter today, the rest of the roadmap's
+    dressing waves later. After Materials because it is the last step in
+    the order of work: the room exists, the surfaces are done, now live
+    in it.
+    """
+    bl_label = "Dressing"
+    bl_idname = "SETO_PT_dressing_group"
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    bl_category = pl.TAB
+    bl_order = 5
+
+    def draw_header(self, context):
+        icons.draw_header(self.layout, "dressing", 'OUTLINER_OB_POINTCLOUD')
+
+    def draw(self, context):
+        pass
+
+
 GEOMETRY = SETO_PT_geometry_group.bl_idname
 SURFACE = SETO_PT_surface_group.bl_idname
 ANALYSIS = SETO_PT_analysis_group.bl_idname
 MATERIALS = SETO_PT_materials_group.bl_idname
+DRESSING = SETO_PT_dressing_group.bl_idname
 
 _classes = (SETO_PT_geometry_group, SETO_PT_surface_group,
-            SETO_PT_analysis_group, SETO_PT_materials_group)
+            SETO_PT_analysis_group, SETO_PT_materials_group,
+            SETO_PT_dressing_group)
 
 
 def register():

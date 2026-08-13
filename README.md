@@ -8,6 +8,11 @@ reads.
 📖 **[Documentation](https://seto3d.github.io/void-tools/)** — install, every
 tool, troubleshooting. Built from [`docs/`](docs) in this repo.
 
+> **The add-on is called Void Tools now** — it was *Seto Tools*, and the
+> N-panel tab says the new name. Only the visible name changed: operators,
+> per-object data and materials keep their old identifiers, so every existing
+> `.blend` keeps its settings.
+
 | Tool | What it makes | Built from |
 | --- | --- | --- |
 | [Ambient Occlusion](seto_tools/fake_ao) | Ambient-occlusion corner decals | selected edges |
@@ -20,6 +25,37 @@ tool, troubleshooting. Built from [`docs/`](docs) in this repo.
 | [Texture Budget](seto_tools/texture_budget) | The same heatmap for texture resolution, plus what the scene costs in VRAM | the whole scene, read-only |
 | [Material Maker](seto_tools/materials) | Height, normal and specular maps from one diffuse image | a diffuse texture |
 | [Pre-Flight](seto_tools/preflight) | The export test you would otherwise run in game — missing UVs, unapplied scale, non-DDS textures | the whole scene, read-only |
+| [Trash Scatter](seto_tools/scatter) | Vanilla GTA litter scattered over a floor as MLO entities — dense along the walls, seeded, spaced — plus a procedural Floor Dirt overlay, the flat grime sheet vanilla interiors use | selected faces |
+
+## What 1.1.0 looks like
+
+[![Trash Scatter in Blender](docs/images/trash-scatter-blender-poster.jpg)](https://github.com/seto3d/void-tools/releases/download/v1.1.0/trash-scatter-blender.mp4)
+
+**[Trash Scatter ▶](https://github.com/seto3d/void-tools/releases/download/v1.1.0/trash-scatter-blender.mp4)** — litter and floor grime over a
+selected floor, live on the sliders.
+Also: [the same tool on a warehouse floor ▶](https://github.com/seto3d/void-tools/releases/download/v1.1.0/trash-scatter-interior.mp4)
+
+[![Material Maker in game](docs/images/material-maker-in-game-poster.jpg)](https://github.com/seto3d/void-tools/releases/download/v1.1.0/material-maker-in-game.mp4)
+
+**[Material Maker ▶](https://github.com/seto3d/void-tools/releases/download/v1.1.0/material-maker-blender.mp4)** — height, normal and specular from
+one diffuse image, and
+[what it looks like in game ▶](https://github.com/seto3d/void-tools/releases/download/v1.1.0/material-maker-in-game.mp4).
+
+The videos play in the [documentation](https://seto3d.github.io/void-tools/tools/trash-scatter/) too.
+
+> **No prop library? Trash Scatter still works.** The add-on ships no GTA
+> models — only their names and their measured sizes, which is what placement
+> and export actually need. Without a library every prop lands as a wireframe
+> box of the right size, in the right place, registered as the right MLO
+> entity: **the export is identical and the game shows the real prop**, only
+> your viewport shows boxes. To preview the real models, point
+> **Preferences → Add-ons → Void Tools → Prop Library** at a folder of
+> `.blend` files whose objects are named after archetypes (`prop_paper_ball`,
+> `ng_proc_sodacan_01a`, …) and press **Rescan** once. Do not have one?
+> **Recent Sollumz can build it** — *Sollumz Tools → Asset Library → Build
+> Asset Library* turns your extracted game files into exactly this, and Void
+> Tools reads the result as it is. See
+> [the guide](https://seto3d.github.io/void-tools/tools/trash-scatter/#the-prop-library).
 
 They all live in the **Void Tools** N-panel tab, each as its own collapsible
 section, the way Sollumz Tools is laid out. The sections are grouped by what a
@@ -172,9 +208,6 @@ so does its exporter.
 
 Void Tools is in active development. What is coming, in order:
 
-- **Trash Scatter** — select a floor, pick a preset, and litter (paper,
-  cigarette butts, small stones, debris) scatters across it with seed, density
-  and scale control.
 - **Leak / Grime Generator** — pick a start point and a gravity-following
   decal strip grows from it: water stains from a ceiling, rust runs under a
   pipe, damp along a wall–floor junction.

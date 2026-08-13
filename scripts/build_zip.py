@@ -28,7 +28,14 @@ TARGET = os.path.join(ROOT, "seto_tools.zip")
 # `__pycache__` is this machine's Python version and is regenerated on first
 # import anyway.
 SKIP_DIRECTORIES = {"__pycache__", "lighting", ".git"}
-SKIP_SUFFIXES = (".pyc", ".pyo", ".blend1", ".orig", ".rej")
+# `.md` covers the per-package READMEs and smooth_edge/FEEDBACK.md. They are
+# the old documentation, kept in the repository where GitHub renders them and
+# where the docs site is built from - but nobody has ever read a Markdown file
+# inside `scripts/addons/`, and they were 60 KB of the installed add-on. The
+# `.txt` files in the texture folders deliberately stay: those folders are
+# opened by hand to swap a texture, the note explains what belongs there, and
+# an empty folder cannot survive a zip without a file in it.
+SKIP_SUFFIXES = (".pyc", ".pyo", ".blend1", ".orig", ".rej", ".md")
 SKIP_NAMES = {"desktop.ini", "Thumbs.db", ".DS_Store"}
 
 

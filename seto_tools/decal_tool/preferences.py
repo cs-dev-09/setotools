@@ -124,6 +124,31 @@ class SETO_AP_decal_tool(bpy.types.AddonPreferences):
         update=_on_library_path_changed,
     )
 
+    # Trash Scatter's model source: a folder of .blend files whose objects
+    # are named after GTA archetypes (an extracted prop asset library).
+    # Lives here for the same one-AddonPreferences-per-add-on reason as
+    # preview_size below; scatter reads it through shared/addon_prefs.py.
+    scatter_library: bpy.props.StringProperty(
+        name="Prop Library",
+        description=(
+            "Folder of .blend files containing GTA props as objects named "
+            "after their archetypes (e.g. an asset library extracted from "
+            "the game). Trash Scatter appends the real model and textures "
+            "from here; without it, props scatter as wireframe boxes that "
+            "export identically"
+        ),
+        subtype='DIR_PATH',
+        default="",
+        # No update callback: the index cache is stamped with the folder
+        # path, so pointing somewhere else invalidates it by itself.
+    )
+    # The index the folder scan produces, and the folder fingerprint it was
+    # made from - cache, not settings. Hidden: nothing here is a decision.
+    scatter_library_index: bpy.props.StringProperty(
+        default="{}", options={'HIDDEN'})
+    scatter_library_stamp: bpy.props.StringProperty(
+        default="", options={'HIDDEN'})
+
     # Shared by every Seto tool that shows a texture picker. It lives here
     # because Blender allows one AddonPreferences per add-on and this is it;
     # the other tools read it through shared/addon_prefs.py rather than
@@ -172,6 +197,9 @@ class SETO_AP_decal_tool(bpy.types.AddonPreferences):
     def draw(self, context):
         layout = self.layout
         layout.prop(self, "library_path")
+        row = layout.row(align=True)
+        row.prop(self, "scatter_library")
+        row.operator("seto.scatter_rescan", text="", icon='FILE_REFRESH')
         layout.prop(self, "preview_size")
         layout.prop(self, "auto_check_updates")
 

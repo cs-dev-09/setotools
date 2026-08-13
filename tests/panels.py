@@ -152,11 +152,12 @@ panels = seto_panels()
 # The tab is four sections and nothing else at the top level; every tool
 # hangs off one of them. A tool whose parent failed to register is not merely
 # misplaced - Blender drops it, and the tab silently loses a tool.
-check("the tab's top level is Updates, the four sections, then Support",
+check("the tab's top level is Updates, the five sections, then Support",
       [c.bl_idname for c in panels if not getattr(c, "bl_parent_id", "")]
       == ["SETO_PT_updates_panel", "SETO_PT_geometry_group",
           "SETO_PT_surface_group", "SETO_PT_analysis_group",
-          "SETO_PT_materials_group", "SETO_PT_support_panel"],
+          "SETO_PT_materials_group", "SETO_PT_dressing_group",
+          "SETO_PT_support_panel"],
       [c.__name__ for c in panels if not getattr(c, "bl_parent_id", "")])
 
 for parent, expected in (
@@ -168,7 +169,8 @@ for parent, expected in (
         ("SETO_PT_analysis_group",
          ["SETO_PT_density_checker_panel", "SETO_PT_texture_budget_panel",
           "SETO_PT_preflight_panel"]),
-        ("SETO_PT_materials_group", ["SETO_PT_material_maker_panel"])):
+        ("SETO_PT_materials_group", ["SETO_PT_material_maker_panel"]),
+        ("SETO_PT_dressing_group", ["SETO_PT_scatter_panel"])):
     got = [c.bl_idname for c in panels
            if getattr(c, "bl_parent_id", "") == parent]
     check(f"{parent} holds its tools, in order", got == expected, got)
@@ -183,7 +185,8 @@ for cls in panels:
     if not parent or parent in ("SETO_PT_geometry_group",
                                 "SETO_PT_surface_group",
                                 "SETO_PT_analysis_group",
-                                "SETO_PT_materials_group"):
+                                "SETO_PT_materials_group",
+                                "SETO_PT_dressing_group"):
         continue          # sections and tools, not the settings children
     name = cls.__name__
     selected = cls.bl_label.startswith("Selected")

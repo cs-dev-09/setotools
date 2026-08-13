@@ -11,7 +11,7 @@ in this add-on.
 [Install it](installation.md){ .md-button .md-button--primary }
 [Browse the tools](the-tab.md){ .md-button }
 
-## The ten tools
+## The eleven tools
 
 | Tool | What it makes | Built from |
 | --- | --- | --- |
@@ -25,6 +25,7 @@ in this add-on.
 | [Texture Budget](tools/texture-budget.md) | The same heatmap for texture resolution, plus VRAM cost | the scene, read-only |
 | [Pre-Flight](tools/pre-flight.md) | The export test you would otherwise run in game | the scene, read-only |
 | [Material Maker](tools/material-maker.md) | Height, normal and specular maps | one diffuse image |
+| [Trash Scatter](tools/trash-scatter.md) | Vanilla GTA litter placed as MLO entities, plus the floor grime under it | selected floor faces |
 
 ## Why it is shaped like this
 

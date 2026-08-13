@@ -4,7 +4,7 @@ bl_info = {
     # Public versioning starts at 1.0.0 with the launch. The changelog's
     # 0.2-1.9 entries were private development builds that never shipped;
     # their numbers stay in the log as history, not as releases.
-    "version": (1, 0, 0),
+    "version": (1, 1, 0),
     "blender": (4, 2, 0),
     "location": "View3D > N-Panel > Void Tools",
     # Blender turns these two into the Documentation and Report a Bug buttons
@@ -21,7 +21,8 @@ bl_info = {
         "Analysis section that grades triangles and texture memory against "
         "vanilla GTA and checks an asset before it is exported, plus "
         "Materialize, which generates height, normal and specular maps from a "
-        "single diffuse image."
+        "single diffuse image, and Trash Scatter, which litters a floor with "
+        "vanilla GTA props as MLO entities."
     ),
     "category": "Object",
 }
@@ -49,6 +50,7 @@ from . import density_checker
 from . import texture_budget
 from . import preflight
 from . import materials
+from . import scatter
 from . import updater
 from . import support
 
@@ -60,7 +62,7 @@ from . import support
 _modules = (icons, strip_settings, manual_offset, viewport_grade, groups,
             fake_damage, smooth_edge, fake_ao, decal_tool, surface_painter,
             edge_dirt, density_checker, texture_budget, preflight, materials,
-            updater, support)
+            scatter, updater, support)
 
 
 def register():

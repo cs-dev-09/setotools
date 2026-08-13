@@ -1,8 +1,9 @@
 # The tab
 
-Everything lives in one N-panel tab, **Void Tools**, split into four sections
-by what a tool works on. Ten tools side by side would be a wall of collapsible
-headers with no hint of which one to reach for; the sections are the hint.
+Everything lives in one N-panel tab, **Void Tools**, split into five sections
+by what a tool works on. Eleven tools side by side would be a wall of
+collapsible headers with no hint of which one to reach for; the sections are
+the hint.
 
 ```
 Void Tools
@@ -26,6 +27,9 @@ Void Tools
 │
 ├── Materials                  makes the texture, not the geometry
 │     └── Material Maker
+│
+├── Dressing                   populates the room, rather than building it
+│     └── Trash Scatter
 │
 └── Support                    report a bug, or fund the next tool
 ```
