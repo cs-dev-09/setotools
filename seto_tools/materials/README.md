@@ -1,15 +1,21 @@
-# Velxor Materialize
+# Material Maker
 
 Tek bir diffuse görüntüsünden **Height**, **Normal** ve **Specular** haritası üreten
-Blender add-on'u. Algoritmalar [Bounding Box Software'in Materialize](https://github.com/BoundingBoxSoftware/Materialize)
+araç. Algoritmalar [Bounding Box Software'in Materialize](https://github.com/BoundingBoxSoftware/Materialize)
 programından (GPL-3) portlanmıştır.
+
+> Bu araç, [@gecu3d](https://github.com/gecu3d) tarafından **Velxor Materialize**
+> adıyla bağımsız bir eklenti olarak yazıldı ve Void Tools'a olduğu gibi
+> katıldı. Bu dosya o günden kalan geliştirici notlarıdır; kullanım rehberinin
+> güncel hâli **<https://seto3d.github.io/void-tools/tools/material-maker/>**
+> adresindedir.
 
 ## Kurulum
 
-Klasörü `velxor_materialize` adıyla Blender'ın addons dizinine kopyala, ya da
-zip'leyip **Edit > Preferences > Add-ons > Install from Disk** ile yükle.
+Ayrıca kurulum gerekmez: Void Tools'un içinde gelir. Eklentiyi kurmak için
+[kurulum sayfasına](https://seto3d.github.io/void-tools/installation/) bak.
 
-Panel: **3D Viewport > N tuşu > Materialize** sekmesi.
+Panel: **3D Viewport > N tuşu > Void Tools > Materials > Material Maker**.
 
 Bağımlılık yok — Blender'ın kendi NumPy'ı yeterli (scipy/PIL gerekmez).
 
