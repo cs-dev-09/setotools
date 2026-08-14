@@ -5,10 +5,10 @@ def check(n,c,d=""):
     R.append((bool(c),n,d)); print(f"[{'PASS' if c else 'FAIL'}] {n}" + (f"  -- {d}" if d and not c else ""))
     return bool(c)
 
-import seto_tools
+import void_tools
 if getattr(bpy.types, "SETO_PT_smooth_edge_panel", None) is None:
-    seto_tools.register()
-szi = sys.modules["seto_tools.shared.sollumz_integration"]
+    void_tools.register()
+szi = sys.modules["void_tools.shared.sollumz_integration"]
 
 # What GTA's own damage strip (hn_apt_hall_blk_milo) uses - the base Strength
 # scales from, and what Strength 1.0 has to land on exactly.

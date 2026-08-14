@@ -14,7 +14,7 @@ Four things here would each break it silently:
   a backslash in an entry name is the macOS/Linux install failure this project
   already met once with `Compress-Archive`;
 * **the package name.** Blender installs this as `bl_ext.<repo>.void_tools`,
-  so anything that found its own preferences by a hardcoded "seto_tools" would
+  so anything that found its own preferences by a hardcoded "void_tools" would
   quietly lose them - it is enabled here under the real extension name and the
   tab is checked for;
 * **two updaters.** With Blender doing the updating, this add-on's own updater
@@ -60,7 +60,7 @@ sys.path.insert(0, os.path.join(REPO, "scripts"))
 import build_extension  # noqa: E402
 
 VERSION = ".".join(str(part) for part in build_extension.bl_info()["version"])
-ARCHIVE = os.path.join(REPO, "dist", f"{build_extension.EXTENSION_ID}-{VERSION}.zip")
+ARCHIVE = os.path.join(REPO, "dist", build_extension.ARCHIVE_NAME)
 INDEX = os.path.join(REPO, "docs", "repo", "index.json")
 
 print("=== the package exists and is shaped like an extension ===")
@@ -102,12 +102,12 @@ if os.path.exists(INDEX):
         check("and the archive it points at is the release asset, absolute - "
               "a relative URL would mean serving binaries from the docs site",
               url.startswith("https://github.com/seto3d/void-tools/releases/download/")
-              and url.endswith(f"{build_extension.EXTENSION_ID}-{VERSION}.zip"), url)
+              and url.endswith(build_extension.ARCHIVE_NAME), url)
 
 print("=== it installs, and answers to its extension name ===")
 # The legacy copy has to go first: both register the same SETO_* classes, and
 # two of them in one Blender is the crash this project has written down.
-LEGACY = "seto_tools"
+LEGACY = "void_tools"
 legacy_was_enabled = any(module.__name__ == LEGACY
                          for module in addon_utils.modules()
                          if addon_utils.check(module.__name__)[1])

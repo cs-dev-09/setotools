@@ -81,7 +81,7 @@ it installs them, and it shows what the add-on is allowed to reach before
 you install it. There is no zip to download and no folder to find.
 
 **Install from Disk still works exactly as before.** Both artifacts ship
-on every release: `seto_tools.zip` for that, and
+on every release: `void-tools.zip` for that, and
 `void_tools-<version>.zip` for the repository. They cannot be one file —
 an extension carries its manifest at the archive root and Blender names
 the folder itself, where a legacy add-on brings its own folder.
@@ -768,7 +768,7 @@ wall whose object happens to be rotated still fades toward the real floor.
 A sixth tool, at the bottom of the **Surface** section. It is Ambient Occlusion
 with a different texture on it: the same strip, the same Width, alphas, Bevel
 and Ground Level, the same live rebuild on the finished strip — but it takes
-its image from `seto_tools/edge_dirt/textures/` and puts it on a
+its image from `void_tools/edge_dirt/textures/` and puts it on a
 `seto_edgedirt` material of its own.
 
 **The folder is the setting.** Drop a dirt texture in and every strip the tool
@@ -953,7 +953,7 @@ each other.
 ### Changed — the tab has its own icons
 
 All seven panel headers — both sections and all five tools — now draw a PNG
-that ships with the add-on, in `seto_tools/icons/`, loaded through the same
+that ships with the add-on, in `void_tools/icons/`, loaded through the same
 preview mechanism the decal and dirt thumbnails use. Blender's built-in set has
 nothing for "chipped corner" or "dirt brushed onto a wall", and two tools were
 sharing an icon because of it.
@@ -1215,7 +1215,7 @@ size and a missing rotation as three separate failures.
 ### One add-on instead of three
 
 Fake AO, Fake Damage and the new Decal Tool now ship as a single **Seto Tools**
-add-on (`seto_tools/`) rather than three that had to be installed separately.
+add-on (`void_tools/`) rather than three that had to be installed separately.
 They already shared the Seto Tools N-panel tab; now they share a process and,
 more usefully, one copy of the Sollumz integration.
 
@@ -1336,7 +1336,7 @@ does that Fake Damage did not:
 ### Removed
 
 - The `seto_fake_ao/`, `seto_fake_dmg/` and `seto_decal_tool/` folders, and their
-  separate zips, superseded by `seto_tools/`.
+  separate zips, superseded by `void_tools/`.
 
 ### Verified
 

@@ -30,11 +30,11 @@ def check(name, cond, detail=""):
           + (f"  -- {detail}" if detail and not cond else ""))
 
 
-import seto_tools  # noqa: E402
+import void_tools  # noqa: E402
 if getattr(bpy.types, "SETO_PT_vertex_bake_panel", None) is None:
-    seto_tools.register()
+    void_tools.register()
 
-from seto_tools.vertex_bake import core  # noqa: E402
+from void_tools.vertex_bake import core  # noqa: E402
 
 BYTE = 1.5 / 255.0          # BYTE_COLOR quantises; compare with a byte of slack
 

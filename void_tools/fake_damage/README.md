@@ -14,7 +14,7 @@ other and either works installed on its own.
 
 - Blender 4.2+
 - Sollumz installed, enabled, with dependencies already set up.
-- A damage normal map in `seto_tools/fake_damage/textures/` — it is wired into
+- A damage normal map in `void_tools/fake_damage/textures/` — it is wired into
   the generated material automatically. Recommended:
   **`gz_v_ml_wallnormal_n.dds`** (see The texture below).
 
@@ -23,7 +23,7 @@ other and either works installed on its own.
 Drop a damage normal map into:
 
 ```
-seto_tools/fake_damage/textures/
+void_tools/fake_damage/textures/
 ```
 
 It is wired into both `BumpSampler` and `DiffuseSampler` for you, as Non-Color
@@ -68,7 +68,7 @@ Create New*, to pick these up.
 
 ## Install
 
-1. Install `seto_tools.zip` — this tool ships inside it.
+1. Install `void-tools.zip` — this tool ships inside it.
 2. Blender: **Edit > Preferences > Add-ons > Install from Disk** → pick the zip.
 3. Enable it, then **restart Blender**.
 

@@ -24,8 +24,8 @@ Your floor mesh is never touched.
 <video controls muted playsinline preload="none"
        poster="../../images/trash-scatter-blender-poster.jpg"
        style="width:100%;border-radius:.2rem">
-  <source src="https://github.com/seto3d/void-tools/releases/download/v1.1.0/trash-scatter-blender.mp4" type="video/mp4">
-  <a href="https://github.com/seto3d/void-tools/releases/download/v1.1.0/trash-scatter-blender.mp4">Download the video</a>
+  <source src="https://github.com/seto3d/void-tools/releases/download/media/trash-scatter-blender.mp4" type="video/mp4">
+  <a href="https://github.com/seto3d/void-tools/releases/download/media/trash-scatter-blender.mp4">Download the video</a>
 </video>
 
 *Scattering a tiled interior floor: the litter, the grime under it, and the
@@ -34,8 +34,8 @@ sliders driving both.*
 <video controls muted playsinline preload="none"
        poster="../../images/trash-scatter-interior-poster.jpg"
        style="width:100%;border-radius:.2rem">
-  <source src="https://github.com/seto3d/void-tools/releases/download/v1.1.0/trash-scatter-interior.mp4" type="video/mp4">
-  <a href="https://github.com/seto3d/void-tools/releases/download/v1.1.0/trash-scatter-interior.mp4">Download the video</a>
+  <source src="https://github.com/seto3d/void-tools/releases/download/media/trash-scatter-interior.mp4" type="video/mp4">
+  <a href="https://github.com/seto3d/void-tools/releases/download/media/trash-scatter-interior.mp4">Download the video</a>
 </video>
 
 *The same tool on a warehouse floor — the one the in-game shots were taken

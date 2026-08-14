@@ -1,29 +1,28 @@
-"""Build the Blender **extension** package, and the repository index beside it.
+"""Build the add-on package, and the repository index beside it.
 
     python scripts/build_extension.py --blender "D:/Blender52/blender.exe"
 
-Two artifacts come out of `dist/`:
+Two things come out of `dist/`:
 
-  * `void_tools-X.Y.Z.zip` - the extension package, which goes on the GitHub
-    release next to `seto_tools.zip`;
-  * `index.json` - the repository listing, which is copied into `docs/repo/`
-    and served from GitHub Pages.
+  * `void-tools.zip` - the add-on, and the only file that goes on a release;
+  * `index.json` - the repository listing, copied into `docs/repo/` and served
+    from GitHub Pages.
 
 Add that listing's URL once under **Preferences -> Get Extensions ->
 Repositories** and Blender does the updating from then on, which is what a user
 asked for on the Discord.
 
-**Why this is not the same zip as `build_zip.py`'s.** The two formats disagree
-about layout: a legacy add-on zip carries a `seto_tools/` folder that Blender
-copies into `scripts/addons/`, while an extension archive has its
-`blender_manifest.toml` and its Python at the *root* and Blender names the
-directory itself, from the manifest's `id`. One archive cannot be both, so both
-ship - the legacy zip for Install from Disk, the extension for the repository.
+**One archive, both ways of installing.** It is a Blender *extension*: the
+manifest sits at the archive root and Blender names the directory itself, from
+the manifest's `id`. Since 4.2 - which is this add-on's minimum - the same
+archive installs through **Install from Disk** as well, so the legacy add-on zip
+that used to ship beside it is gone. Verified, not assumed: `tests/extension.py`
+installs this file through the operator that button uses and enables it.
 
 **Why the manifest is generated rather than tracked.** It repeats the version,
 the name and the description that `bl_info` already carries, and a manifest
 sitting in the source tree is a second place for them to be wrong. Here it is
-written from `bl_info` at build time, so the extension cannot ship claiming a
+written from `bl_info` at build time, so the package cannot ship claiming a
 version the add-on does not.
 """
 
@@ -38,17 +37,31 @@ import tempfile
 import zipfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SOURCE = os.path.join(ROOT, "seto_tools")
+SOURCE = os.path.join(ROOT, "void_tools")
 DIST = os.path.join(ROOT, "dist")
 DOCS_REPO = os.path.join(ROOT, "docs", "repo")
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from build_zip import SKIP_DIRECTORIES, SKIP_NAMES, SKIP_SUFFIXES  # noqa: E402
+# Nothing here is source. `__pycache__` is this machine's Python version and is
+# regenerated on first import. `.md` covers the per-package READMEs: they are the
+# old documentation, kept in the repository where GitHub renders them, but nobody
+# has ever read a Markdown file inside an installed add-on and they were 60 KB of
+# it. The `.txt` files in the texture folders deliberately stay - those folders
+# are opened by hand to swap a texture, the note explains what belongs there, and
+# an empty folder cannot survive a zip.
+SKIP_DIRECTORIES = {"__pycache__", ".git"}
+SKIP_SUFFIXES = (".pyc", ".pyo", ".blend1", ".orig", ".rej", ".md")
+SKIP_NAMES = {"desktop.ini", "Thumbs.db", ".DS_Store"}
 
 # The extension id. Blender installs the package as `bl_ext.<repo>.<id>`, and
 # every module here reaches its own preferences through `__package__` rather
 # than a hardcoded name, so the rename costs nothing at runtime.
 EXTENSION_ID = "void_tools"
+
+# One asset per release, named the way people expect to find it - the same
+# shape Sollumz's own release page has. The version is inside the manifest,
+# not in the filename: a release page that offers two files makes somebody
+# choose, and there is nothing here to choose between.
+ARCHIVE_NAME = "void-tools.zip"
 
 # Where the built archive actually lives once released. `server-generate` writes
 # a relative URL, which would mean serving the zip from GitHub Pages as well;
@@ -99,7 +112,7 @@ def bl_info():
         if isinstance(node, ast.Assign) and any(
                 getattr(target, "id", "") == "bl_info" for target in node.targets):
             return ast.literal_eval(node.value)
-    raise SystemExit("no bl_info in seto_tools/__init__.py")
+    raise SystemExit("no bl_info in void_tools/__init__.py")
 
 
 def stage(directory):
@@ -150,7 +163,7 @@ def main():
     # pointing at a release that never carried it.
     shutil.rmtree(DIST, ignore_errors=True)
     os.makedirs(DIST, exist_ok=True)
-    filename = f"{EXTENSION_ID}-{version}.zip"
+    filename = ARCHIVE_NAME
     output = os.path.join(DIST, filename)
 
     with tempfile.TemporaryDirectory() as staging:

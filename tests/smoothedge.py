@@ -5,10 +5,10 @@ def check(name, cond, detail=""):
     RESULTS.append((bool(cond), name, detail))
     print(f"[{'PASS' if cond else 'FAIL'}] {name}" + (f"  -- {detail}" if detail and not cond else ""))
 
-import seto_tools
-from seto_tools.smooth_edge import textures
+import void_tools
+from void_tools.smooth_edge import textures
 if getattr(bpy.types, "SETO_PT_smooth_edge_panel", None) is None:
-    seto_tools.register()
+    void_tools.register()
 
 panel = getattr(bpy.types, "SETO_PT_smooth_edge_panel", None)
 check("Smooth Edge panel registered", panel is not None)

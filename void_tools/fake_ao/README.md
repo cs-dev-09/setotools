@@ -21,7 +21,7 @@ Tools included:
 Drop an ambient-occlusion texture into:
 
 ```
-seto_tools/fake_ao/textures/
+void_tools/fake_ao/textures/
 ```
 
 It is wired into `DiffuseSampler` for you, as sRGB (a colour texture, not a
@@ -37,7 +37,7 @@ that the slot was left for you.
 
 ## Install
 
-1. Install `seto_tools.zip` — this tool ships inside it.
+1. Install `void-tools.zip` — this tool ships inside it.
 2. Blender: **Edit > Preferences > Add-ons > Install from Disk** → pick the zip.
 3. Enable it, then **restart Blender**.
 

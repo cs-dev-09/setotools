@@ -32,7 +32,7 @@ own frameless icons.
 `edge_dirt.png` is the one that was not drawn by hand. Its source is
 `scripts/draw_edge_dirt_icon.py`, run through Blender:
 
-    blender -b --python scripts/draw_edge_dirt_icon.py -- seto_tools/icons/edge_dirt.png
+    blender -b --python scripts/draw_edge_dirt_icon.py -- void_tools/icons/edge_dirt.png
 
 Edit that rather than the PNG, and mind the two things it documents: the view
 transform has to be Standard or the white washes out on the way to the file,

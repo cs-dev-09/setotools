@@ -58,9 +58,9 @@ version proves nothing about the other.
 ## Two traps worth knowing
 
 **The scripts import the *installed* add-on, not this folder.** They add the repo
-to `sys.path`, but if `seto_tools` is already enabled in that Blender, Python
+to `sys.path`, but if `void_tools` is already enabled in that Blender, Python
 resolves the installed copy first. After changing code, copy it into
-`scripts/addons/seto_tools` **and verify the copy actually landed** before
+`scripts/addons/void_tools` **and verify the copy actually landed** before
 trusting a run — a sync that silently fails looks exactly like a code regression.
 
 **`bpy.ops` raises when an operator reports `{'ERROR'}`.** That is normal for

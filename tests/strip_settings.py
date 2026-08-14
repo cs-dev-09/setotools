@@ -19,10 +19,10 @@ def check(name, cond, detail=""):
     print(f"[{'PASS' if cond else 'FAIL'}] {name}" + (f"  -- {detail}" if detail and not cond else ""))
     return bool(cond)
 
-import seto_tools
-from seto_tools.shared import strip_settings
+import void_tools
+from void_tools.shared import strip_settings
 if getattr(bpy.types, "SETO_PT_fake_damage_panel", None) is None:
-    seto_tools.register()
+    void_tools.register()
 
 scene = bpy.context.scene
 

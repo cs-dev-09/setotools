@@ -15,7 +15,7 @@ Select Face → Choose Decal → Create Decal.
 
 ## Install
 
-1. Install `seto_tools.zip` — this tool ships inside it.
+1. Install `void-tools.zip` — this tool ships inside it.
 2. Blender: **Edit > Preferences > Add-ons > Install from Disk** → pick the zip.
 3. Enable it, then **restart Blender**.
 

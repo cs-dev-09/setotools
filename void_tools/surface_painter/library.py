@@ -58,7 +58,7 @@ NO_TEXTURE = "NONE"
 # always accepted one; this is the same synthetic category, named the same way.
 ROOT_CATEGORY = "(root)"
 
-# The folder shipped inside the add-on: seto_tools/textures/surface_painter/
+# The folder shipped inside the add-on: void_tools/textures/surface_painter/
 _ADDON_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BUNDLED_ROOT = os.path.join(_ADDON_ROOT, "textures", "surface_painter")
 

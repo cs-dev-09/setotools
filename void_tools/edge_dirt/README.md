@@ -17,7 +17,7 @@ the UVs and the bevel behave.
 Drop an image into:
 
 ```
-seto_tools/edge_dirt/textures/
+void_tools/edge_dirt/textures/
 ```
 
 It is wired into `DiffuseSampler` for you, as **sRGB** (a colour texture, not a

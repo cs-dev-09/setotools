@@ -3,7 +3,7 @@
 ## Layout
 
 ```
-seto_tools/
+void_tools/
     __init__.py      registers the tools, in panel order
     shared/          code every tool uses
     textures/        textures shipped with the add-on
@@ -85,9 +85,9 @@ the other.
 script calls; in the UI it is a red status line. The scripts translate it back.
 
 **The scripts import the *installed* add-on, not the repo.** They add the repo
-to `sys.path`, but if `seto_tools` is already enabled in that Blender, Python
+to `sys.path`, but if `void_tools` is already enabled in that Blender, Python
 resolves the installed copy first. After changing code, copy it into
-`scripts/addons/seto_tools` and **verify the copy landed** before trusting a
+`scripts/addons/void_tools` and **verify the copy landed** before trusting a
 red run — a sync that silently failed looks exactly like a code regression.
 
 **Writing `obj.location` leaves `matrix_world` stale** until the depsgraph is

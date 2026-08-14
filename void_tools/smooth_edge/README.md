@@ -22,7 +22,7 @@ generation, the same live settings. It differs in two things it does for you:
 Drop a normal map into:
 
 ```
-seto_tools/smooth_edge/textures/
+void_tools/smooth_edge/textures/
 ```
 
 The first usable image is used, `.dds` preferred; a file named `smooth_edge.*`
@@ -37,7 +37,7 @@ the slot was left for you.
 
 ## Install
 
-1. Install `seto_tools.zip` — this tool ships inside it.
+1. Install `void-tools.zip` — this tool ships inside it.
 2. Blender: **Edit > Preferences > Add-ons > Install from Disk** → pick the zip.
 3. Enable it, then **restart Blender**.
 

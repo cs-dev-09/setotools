@@ -106,13 +106,13 @@ class SETO_OT_update_install(bpy.types.Operator):
             return {'CANCELLED'}
 
         # The zip has to look like this add-on before it goes anywhere
-        # near the addons folder: one seto_tools/ root with the package
+        # near the addons folder: one void_tools/ root with the package
         # init in it, nothing outside it.
         try:
             with zipfile.ZipFile(path) as archive:
                 names = archive.namelist()
-                looks_right = ("seto_tools/__init__.py" in names
-                               and all(name.startswith("seto_tools/")
+                looks_right = ("void_tools/__init__.py" in names
+                               and all(name.startswith("void_tools/")
                                        for name in names))
         except zipfile.BadZipFile:
             looks_right = False

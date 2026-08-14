@@ -1,12 +1,12 @@
-"""The damage normal map that ships with this tool.
+"""The edge normal map that ships with this tool.
 
 Drop a file into:
 
-    seto_tools/fake_damage/textures/
+    void_tools/smooth_edge/textures/
 
-and every strip Edge Wear builds picks it up, in both DiffuseSampler and
-BumpSampler. The scanning rules live in shared/bundled_textures.py, which Smooth
-Edge uses too; this module only says where this tool's folder is.
+and every strip Smooth Edge builds picks it up. The scanning rules live in
+shared/bundled_textures.py, which Edge Wear uses too; this module only says
+where this tool's folder is.
 """
 
 import os
@@ -17,7 +17,7 @@ TEXTURE_DIRECTORY = os.path.join(os.path.dirname(__file__), "textures")
 
 # A file with this stem wins over anything else in the folder, so the intended
 # texture can be pinned without removing the others.
-PREFERRED_STEM = "fake_damage"
+PREFERRED_STEM = "smooth_edge"
 
 
 def list_textures():

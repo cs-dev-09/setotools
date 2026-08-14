@@ -11,9 +11,9 @@ stub layout.
 """
 import bpy, sys, traceback
 sys.path.append(r"D:\SetoClaude\setotools")
-import seto_tools
+import void_tools
 if getattr(bpy.types, "SETO_PT_fake_damage_panel", None) is None:
-    seto_tools.register()
+    void_tools.register()
 
 class Stub:
     scale_y = scale_x = 1.0

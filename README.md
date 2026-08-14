@@ -17,19 +17,19 @@ tool, troubleshooting. Built from [`docs/`](docs) in this repo.
 
 | Tool | What it makes | Built from |
 | --- | --- | --- |
-| [Ambient Occlusion](void-tools/fake_ao) | Ambient-occlusion corner decals | selected edges |
-| [Edge Dirt](void-tools/edge_dirt) | The same strip, carrying a dirt texture you drop in a folder | selected edges |
-| [Edge Wear](void-tools/fake_damage) | Chipped-edge damage decals | selected edges |
-| [Decal Tool](void-tools/decal_tool) | Surface-aligned decal planes from your own decal library | selected faces |
-| [Smooth Edge](void-tools/smooth_edge) | Normal-map strips that make a hard edge read as rounded | selected edges |
-| [Surface Painter](void-tools/surface_painter) | Dirt, grime and graffiti brushed onto a surface | a paint mesh over the whole object |
-| [Vertex Color Bake](void-tools/vertex_bake) | Procedural AO, dirt, grime and wear baked into `Color 1` — the one tool that writes to your mesh | the selected objects |
-| [Density Check](void-tools/density_checker) | A triangle-budget heatmap graded against vanilla GTA | the whole scene, read-only |
-| [Texture Budget](void-tools/texture_budget) | The same heatmap for texture resolution, plus what the scene costs in VRAM | the whole scene, read-only |
-| [Material Maker](void-tools/materials) | Height, normal and specular maps from one diffuse image | a diffuse texture |
-| [Sign Glow](void-tools/sign_glow) | An emissive halo traced from 3D lettering, on a plane behind it — written out as a `.dds` and a Sollumz emissive shader | the selected lettering |
-| [Pre-Flight](void-tools/preflight) | The export test you would otherwise run in game — missing UVs, unapplied scale, non-DDS textures | the whole scene, read-only |
-| [Trash Scatter](void-tools/scatter) | Vanilla GTA litter scattered over a floor as MLO entities — dense along the walls, seeded, spaced — plus a procedural Floor Dirt overlay, the flat grime sheet vanilla interiors use | selected faces |
+| [Ambient Occlusion](void_tools/fake_ao) | Ambient-occlusion corner decals | selected edges |
+| [Edge Dirt](void_tools/edge_dirt) | The same strip, carrying a dirt texture you drop in a folder | selected edges |
+| [Edge Wear](void_tools/fake_damage) | Chipped-edge damage decals | selected edges |
+| [Decal Tool](void_tools/decal_tool) | Surface-aligned decal planes from your own decal library | selected faces |
+| [Smooth Edge](void_tools/smooth_edge) | Normal-map strips that make a hard edge read as rounded | selected edges |
+| [Surface Painter](void_tools/surface_painter) | Dirt, grime and graffiti brushed onto a surface | a paint mesh over the whole object |
+| [Vertex Color Bake](void_tools/vertex_bake) | Procedural AO, dirt, grime and wear baked into `Color 1` — the one tool that writes to your mesh | the selected objects |
+| [Density Check](void_tools/density_checker) | A triangle-budget heatmap graded against vanilla GTA | the whole scene, read-only |
+| [Texture Budget](void_tools/texture_budget) | The same heatmap for texture resolution, plus what the scene costs in VRAM | the whole scene, read-only |
+| [Material Maker](void_tools/materials) | Height, normal and specular maps from one diffuse image | a diffuse texture |
+| [Sign Glow](void_tools/sign_glow) | An emissive halo traced from 3D lettering, on a plane behind it — written out as a `.dds` and a Sollumz emissive shader | the selected lettering |
+| [Pre-Flight](void_tools/preflight) | The export test you would otherwise run in game — missing UVs, unapplied scale, non-DDS textures | the whole scene, read-only |
+| [Trash Scatter](void_tools/scatter) | Vanilla GTA litter scattered over a floor as MLO entities — dense along the walls, seeded, spaced — plus a procedural Floor Dirt overlay, the flat grime sheet vanilla interiors use | selected faces |
 
 ## What's new in 1.3.1
 
@@ -37,17 +37,17 @@ tool, troubleshooting. Built from [`docs/`](docs) in this repo.
      older clips stay on their own tool pages in the documentation, which is
      where somebody browsing the tools will look for them anyway. -->
 
-[![Sign Glow in Blender](docs/images/sign-glow-poster.jpg)](https://github.com/seto3d/void-tools/releases/download/v1.3.1/sign-glow.mp4)
+[![Sign Glow in Blender](docs/images/sign-glow-poster.jpg)](https://github.com/seto3d/void-tools/releases/download/media/sign-glow.mp4)
 
-**[Sign Glow ▶](https://github.com/seto3d/void-tools/releases/download/v1.3.1/sign-glow.mp4)** — an emissive halo traced from the lettering's own
+**[Sign Glow ▶](https://github.com/seto3d/void-tools/releases/download/media/sign-glow.mp4)** — an emissive halo traced from the lettering's own
 silhouette, on one quad behind it. How a sign reads at night without a single
 light being placed. Contributed by [Molo Modding](https://github.com/molossen).
 
-[![Vertex Color Bake, a whole collection at once](docs/images/vertex-color-bake-collection-poster.jpg)](https://github.com/seto3d/void-tools/releases/download/v1.3.1/vertex-color-bake-collection.mp4)
+[![Vertex Color Bake, a whole collection at once](docs/images/vertex-color-bake-collection-poster.jpg)](https://github.com/seto3d/void-tools/releases/download/media/vertex-color-bake-collection.mp4)
 
-**[Vertex Color Bake ▶](https://github.com/seto3d/void-tools/releases/download/v1.3.1/vertex-color-bake-collection.mp4)** — a whole collection baked in
+**[Vertex Color Bake ▶](https://github.com/seto3d/void-tools/releases/download/media/vertex-color-bake-collection.mp4)** — a whole collection baked in
 one press, with the gradient fading between two colours. Also:
-[AO and the fake sun casting between objects ▶](https://github.com/seto3d/void-tools/releases/download/v1.3.1/vertex-color-bake-global.mp4),
+[AO and the fake sun casting between objects ▶](https://github.com/seto3d/void-tools/releases/download/media/vertex-color-bake-global.mp4),
 so a crate darkens the wall it stands against.
 
 **Every tool has its own page with its own videos** in the
@@ -115,7 +115,7 @@ and *Check for updates on startup* in the preferences turns it off.
 ## Layout
 
 ```
-void-tools/
+void_tools/
     __init__.py      registers the tools, in panel order
     shared/          code every tool uses
         sollumz_integration.py   every call into Sollumz, and the material builders
@@ -190,7 +190,7 @@ its operators only read the scene.
   is what the decal shaders use as their blend factor; the RGB is not read by
   either `decal.sps` or `decal_normal_only.sps`, and is fixed so generated
   geometry is recognisable and consistent. It lives in
-  [`shared/vertex_color.py`](void-tools/shared/vertex_color.py) — change it
+  [`shared/vertex_color.py`](void_tools/shared/vertex_color.py) — change it
   there and all four follow.
 - **Shaded smooth.** Everything these tools generate is set smooth, so a strip
   shows no hard band at its quad boundaries. Applied to the generated object
@@ -269,7 +269,7 @@ Void Tools is built in the open, and it is better for the people who turn up.
   is a preset list on the object, and the alpha cannot be touched by picking a
   colour.
 
-  And **[Vertex Color Bake](void-tools/vertex_bake)** ([#2](../../pull/2)) —
+  And **[Vertex Color Bake](void_tools/vertex_bake)** ([#2](../../pull/2)) —
   ambient occlusion, dirt, grime, wear, noise and a fake sun, stacked and baked
   straight into `Color 1`, with the raycasting cached so the sliders stay live.
   The cheapest wear in the add-on: no texture, no extra object, no draw call.
@@ -279,7 +279,7 @@ Void Tools is built in the open, and it is better for the people who turn up.
 - [@gecu3d](https://github.com/gecu3d) — **Material Maker**: height, normal and specular maps from a
   single diffuse image, written as a standalone add-on and folded in here.
 
-- [Molo Modding](https://github.com/molossen) — **[Sign Glow](void-tools/sign_glow)**:
+- [Molo Modding](https://github.com/molossen) — **[Sign Glow](void_tools/sign_glow)**:
   the halo behind lit 3D lettering. It traces the letters' own silhouette,
   blurs it at two radii — a tight core and a wide bloom — and puts the result
   on an emissive plane just behind them, which is how a sign reads at night in

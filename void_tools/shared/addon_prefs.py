@@ -14,8 +14,8 @@ directly rather than installed (the test harness does exactly that).
 import bpy
 
 # The module name the add-on is registered under. Derived rather than
-# hardcoded, because it differs between a legacy add-on ("seto_tools") and a
-# 4.2+ extension ("bl_ext.user_default.seto_tools").
+# hardcoded, because it differs between a legacy add-on ("void_tools") and a
+# 4.2+ extension ("bl_ext.user_default.void_tools").
 ADDON_PACKAGE = __package__.rpartition(".")[0]
 
 # Height of a texture thumbnail, in UI units, when no preferences are available.

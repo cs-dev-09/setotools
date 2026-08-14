@@ -24,8 +24,8 @@ does — is exactly this: an emissive plane carrying a picture of the glow.
 <video controls muted playsinline preload="none"
        poster="../../images/sign-glow-poster.jpg"
        style="width:100%;border-radius:.2rem">
-  <source src="https://github.com/seto3d/void-tools/releases/download/v1.3.1/sign-glow.mp4" type="video/mp4">
-  <a href="https://github.com/seto3d/void-tools/releases/download/v1.3.1/sign-glow.mp4">Download the video</a>
+  <source src="https://github.com/seto3d/void-tools/releases/download/media/sign-glow.mp4" type="video/mp4">
+  <a href="https://github.com/seto3d/void-tools/releases/download/media/sign-glow.mp4">Download the video</a>
 </video>
 
 *The halo appearing behind a bar's neon and being tuned in place — Molo

@@ -2,7 +2,7 @@
 
 Drop a file into:
 
-    seto_tools/fake_ao/textures/
+    void_tools/fake_ao/textures/
 
 and every strip Ambient Occlusion builds picks it up, in DiffuseSampler. The scanning
 rules live in shared/bundled_textures.py, shared with the other tools; this

@@ -28,10 +28,10 @@ def check(name, cond, detail=""):
     RESULTS.append((bool(cond), name, detail))
     print(f"[{'PASS' if cond else 'FAIL'}] {name}" + (f"  -- {detail}" if detail and not cond else ""))
 
-import seto_tools
-from seto_tools.shared import sollumz_integration as szi
+import void_tools
+from void_tools.shared import sollumz_integration as szi
 if getattr(bpy.types, "SETO_PT_fake_ao_panel", None) is None:
-    seto_tools.register()
+    void_tools.register()
 
 
 def _check_layout_call(fn_name, kwargs):
@@ -107,7 +107,7 @@ class StubLayout:
 
 def panel_layout_tab():
     """The tab name, read from the add-on rather than typed here again."""
-    from seto_tools.shared import panel_layout
+    from void_tools.shared import panel_layout
     return panel_layout.TAB
 
 
@@ -180,7 +180,7 @@ for parent, expected in (
 print("=== the tab's layout contract ===")
 # One vocabulary across six tools - see shared/panel_layout.py. These are the
 # three rules that were each broken by at least one tool before it existed.
-from seto_tools.shared import panel_layout
+from void_tools.shared import panel_layout
 
 for cls in panels:
     parent = getattr(cls, "bl_parent_id", "")
@@ -311,11 +311,11 @@ if report_cls is not None:
         except Exception as e:
             import traceback; traceback.print_exc()
             check(f"the report preview draws [{label}]", False, e)
-    from seto_tools.support import properties as support_properties
+    from void_tools.support import properties as support_properties
     support_properties.clear(support)
     support.property_unset("title")
 
-from seto_tools.preflight import checks as preflight_checks
+from void_tools.preflight import checks as preflight_checks
 fix_cls = getattr(bpy.types, "SETO_OT_preflight_fix", None)
 check("the How to fix operator is registered", fix_cls is not None)
 if fix_cls is not None:
@@ -341,10 +341,10 @@ try:
     for cls in panels:
         draw_panel(cls, "no sollumz")
 
-    from seto_tools.shared import ui_common
+    from void_tools.shared import ui_common
     for tool in ("fake_ao", "edge_dirt", "fake_damage", "smooth_edge",
                  "decal_tool", "surface_painter"):
-        module = __import__(f"seto_tools.{tool}.ui", fromlist=["ui"])
+        module = __import__(f"void_tools.{tool}.ui", fromlist=["ui"])
         check(f"{tool} uses the shared warning, not its own copy",
               "ui_common" in dir(module) and not hasattr(module, "_wrap"))
 
@@ -366,7 +366,7 @@ print("=== the add-on preferences draw too ===")
 # Taken from the module, not from bpy.types: like a PropertyGroup, an
 # AddonPreferences subclass never appears there in Blender 5.x even when it is
 # registered, so `getattr(bpy.types, ...)` is not the test for it.
-from seto_tools.decal_tool import preferences as decal_preferences
+from void_tools.decal_tool import preferences as decal_preferences
 prefs_cls = getattr(decal_preferences, "SETO_AP_decal_tool", None)
 check("the add-on preferences class exists", prefs_cls is not None)
 if prefs_cls is not None:
@@ -381,11 +381,11 @@ if prefs_cls is not None:
             # answer for its properties too - draw() reads them, and the stub
             # layout validates every name against bl_rna. Anything it is asked
             # for goes to the real preferences.
-            from seto_tools.shared import addon_prefs
+            from void_tools.shared import addon_prefs
             real_prefs = addon_prefs.get()
             if real_prefs is None:
                 check("preferences are available to draw", False,
-                      "seto_tools is not enabled in this Blender")
+                      "void_tools is not enabled in this Blender")
                 break
 
             class PrefsShim:

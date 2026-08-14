@@ -16,12 +16,12 @@ def check(name, cond, detail=""):
     RESULTS.append((bool(cond), name, detail))
     print(f"[{'PASS' if cond else 'FAIL'}] {name}" + (f"  -- {detail}" if detail and not cond else ""))
 
-import seto_tools
+import void_tools
 if getattr(bpy.types, "SETO_PT_density_checker_panel", None) is None:
-    seto_tools.register()
+    void_tools.register()
 
-from seto_tools.density_checker import geometry, operators
-from seto_tools.shared import viewport_grade as vg
+from void_tools.density_checker import geometry, operators
+from void_tools.shared import viewport_grade as vg
 
 print("=== the maths, before any scene is involved ===")
 check("the budget grows with the square root of area",

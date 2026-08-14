@@ -8,8 +8,9 @@ you do.
 If it is still missing after a restart, and you installed from a zip you built
 yourself: the zip may have Windows path separators in its entry names, which
 makes the whole add-on extract as a handful of files with backslashes in their
-names on macOS and Linux. Build it with `python scripts/build_zip.py`, never
-with PowerShell's `Compress-Archive`.
+names on macOS and Linux. Build it with
+`python scripts/build_extension.py --blender <path>`, never with PowerShell's
+`Compress-Archive`.
 
 ## "Sollumz not available"
 

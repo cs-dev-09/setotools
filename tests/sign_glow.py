@@ -36,15 +36,15 @@ def check(name, cond, detail=""):
           + (f"  -- {detail}" if detail and not cond else ""))
 
 
-import seto_tools  # noqa: E402
+import void_tools  # noqa: E402
 if getattr(bpy.types, "SETO_PT_sign_glow_panel", None) is None:
-    seto_tools.register()
+    void_tools.register()
 
 import numpy as np  # noqa: E402
 from mathutils import Vector  # noqa: E402
 
-from seto_tools.shared import dds  # noqa: E402
-from seto_tools.sign_glow import geometry, object_settings  # noqa: E402
+from void_tools.shared import dds  # noqa: E402
+from void_tools.sign_glow import geometry, object_settings  # noqa: E402
 
 BYTE = 1.5 / 255.0          # BYTE_COLOR quantises; compare with a byte of slack
 
@@ -149,7 +149,7 @@ check("and a material to see it through", len(glow.material_slots) == 1)
 
 # The point of Create doing the shader itself: a sign that looks right in
 # Blender and arrives in game as a grey quad is the failure this tool is for.
-from seto_tools.shared import sollumz_integration as szi  # noqa: E402
+from void_tools.shared import sollumz_integration as szi  # noqa: E402
 
 created_material = glow.data.materials[0]
 if szi.is_sollumz_available():

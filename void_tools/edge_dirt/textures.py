@@ -1,12 +1,14 @@
-"""The edge normal map that ships with this tool.
+"""The dirt texture that ships with this tool.
 
 Drop a file into:
 
-    seto_tools/smooth_edge/textures/
+    void_tools/edge_dirt/textures/
 
-and every strip Smooth Edge builds picks it up. The scanning rules live in
-shared/bundled_textures.py, which Edge Wear uses too; this module only says
-where this tool's folder is.
+and every strip Edge Dirt builds picks it up, in DiffuseSampler. Nothing to
+pick, nothing to browse: the folder is the setting.
+
+The scanning rules live in shared/bundled_textures.py, shared with the other
+tools; this module only says where this tool's folder is.
 """
 
 import os
@@ -17,7 +19,7 @@ TEXTURE_DIRECTORY = os.path.join(os.path.dirname(__file__), "textures")
 
 # A file with this stem wins over anything else in the folder, so the intended
 # texture can be pinned without removing the others.
-PREFERRED_STEM = "smooth_edge"
+PREFERRED_STEM = "edge_dirt"
 
 
 def list_textures():

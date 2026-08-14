@@ -20,10 +20,10 @@ def check(n, c, d=""):
     R.append((bool(c), n, d)); print(f"[{'PASS' if c else 'FAIL'}] {n}" + (f"  -- {d}" if d and not c else ""))
     return bool(c)
 
-import seto_tools
+import void_tools
 if getattr(bpy.types, "SETO_PT_fake_ao_panel", None) is None:
-    seto_tools.register()
-from seto_tools.fake_ao import object_settings, operators, properties, source_bevel
+    void_tools.register()
+from void_tools.fake_ao import object_settings, operators, properties, source_bevel
 
 BASE = dict(width=0.4, surface_offset=0.0003)
 BEVEL = dict(bevel_mesh=True, bevel_strip=True, bevel_width=0.0833, bevel_segments=4, bevel_profile=0.5)
@@ -221,7 +221,7 @@ check("neither does one whose edges are gone",
 
 # --- 8. The create panel no longer decides any of this ----------------------
 import inspect  # noqa: E402
-import seto_tools.fake_ao.ui as ao_ui  # noqa: E402
+import void_tools.fake_ao.ui as ao_ui  # noqa: E402
 create_draw = inspect.getsource(ao_ui.SETO_PT_fake_ao_panel.draw)
 check("the create panel draws no Bevel block", "_draw_bevel" not in create_draw)
 strip_draw = inspect.getsource(ao_ui.SETO_PT_fake_ao_object_panel.draw)

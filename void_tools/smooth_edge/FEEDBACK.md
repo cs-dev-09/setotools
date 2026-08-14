@@ -22,7 +22,7 @@ _(henüz yok)_
 
 ## Mevcut durum (10 Ağu 2026 itibarıyla)
 
-Modül: `seto_tools/smooth_edge/` — `geometry.py`, `operators.py`,
+Modül: `void_tools/smooth_edge/` — `geometry.py`, `operators.py`,
 `properties.py`, `object_settings.py`, `textures.py`, `ui.py`.
 
 Ayarlar (üç yerde paylaşılıyor: Scene defaults, operatör F9 paneli, obje üstü

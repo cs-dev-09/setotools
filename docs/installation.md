@@ -34,7 +34,7 @@ whether there is a newer release.
 
 Unchanged, and still supported. Every release ships both artifacts.
 
-1. Download `seto_tools.zip` from the
+1. Download `void-tools.zip` from the
    [latest release](https://github.com/seto3d/void-tools/releases). **Do not
    unzip it.**
 2. In Blender: **Edit → Preferences → Add-ons → Install from Disk**
@@ -46,7 +46,7 @@ whichever way you installed.
 
 !!! info "Why two files"
 
-    `seto_tools.zip` is a classic add-on: it carries its own folder and Blender
+    `void-tools.zip` is a classic add-on: it carries its own folder and Blender
     copies it into `scripts/addons/`. `void_tools-<version>.zip` is an
     extension: its manifest sits at the archive root and Blender names the
     folder itself. One archive cannot be both, so both ship.
@@ -97,12 +97,13 @@ create, and nothing more.
 If you are working from a clone rather than a release:
 
 ```bash
-python scripts/build_zip.py
+python scripts/build_extension.py --blender "/path/to/blender"
 ```
 
-That produces the same `seto_tools.zip`. Do not build it with PowerShell's
-`Compress-Archive` — it writes Windows path separators into the entry names,
-which Blender's installer splits on `/` only, so the add-on extracts as a
-handful of files with backslashes in their names on macOS and Linux and the tab
-never appears. The script checks its own output for exactly that before it
+That produces the same `void-tools.zip` in `dist/`, plus the repository
+listing. Blender does the packing, which is deliberate — do not build it with
+PowerShell's `Compress-Archive`, which writes Windows path separators into the
+entry names. Blender's installer splits on `/` only, so on macOS and Linux the
+add-on extracts as a handful of files with backslashes in their names and the
+tab never appears. The script checks its own output for exactly that before it
 reports success.
