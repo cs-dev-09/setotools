@@ -22,8 +22,8 @@ comes on.*
 <video controls muted playsinline preload="none"
        poster="../../images/vertex-color-bake-collection-poster.jpg"
        style="width:100%;border-radius:.2rem">
-  <source src="https://github.com/seto3d/void-tools/releases/download/v1.3.0/vertex-color-bake-collection.mp4" type="video/mp4">
-  <a href="https://github.com/seto3d/void-tools/releases/download/v1.3.0/vertex-color-bake-collection.mp4">Download the video</a>
+  <source src="https://github.com/seto3d/void-tools/releases/download/v1.3.1/vertex-color-bake-collection.mp4" type="video/mp4">
+  <a href="https://github.com/seto3d/void-tools/releases/download/v1.3.1/vertex-color-bake-collection.mp4">Download the video</a>
 </video>
 
 *A whole collection baked in one press, with the gradient fading between two
@@ -32,8 +32,8 @@ colours rather than only darkening one.*
 <video controls muted playsinline preload="none"
        poster="../../images/vertex-color-bake-global-poster.jpg"
        style="width:100%;border-radius:.2rem">
-  <source src="https://github.com/seto3d/void-tools/releases/download/v1.3.0/vertex-color-bake-global.mp4" type="video/mp4">
-  <a href="https://github.com/seto3d/void-tools/releases/download/v1.3.0/vertex-color-bake-global.mp4">Download the video</a>
+  <source src="https://github.com/seto3d/void-tools/releases/download/v1.3.1/vertex-color-bake-global.mp4" type="video/mp4">
+  <a href="https://github.com/seto3d/void-tools/releases/download/v1.3.1/vertex-color-bake-global.mp4">Download the video</a>
 </video>
 
 *Ambient occlusion and the fake sun casting between objects — an object now

@@ -38,12 +38,12 @@ tool, troubleshooting. Built from [`docs/`](docs) in this repo.
 **[Vertex Color Bake ▶](https://github.com/seto3d/void-tools/releases/download/v1.2.1/vertex-color-bake.mp4)** — ambient occlusion, dirt, grime and
 wear stacked into `Color 1`, one layer at a time. No texture, no extra object,
 no draw call.
-Also: [a whole collection in one press, fading between two colours ▶](https://github.com/seto3d/void-tools/releases/download/v1.3.0/vertex-color-bake-collection.mp4)
-and [AO and the fake sun casting between objects ▶](https://github.com/seto3d/void-tools/releases/download/v1.3.0/vertex-color-bake-global.mp4)
+Also: [a whole collection in one press, fading between two colours ▶](https://github.com/seto3d/void-tools/releases/download/v1.3.1/vertex-color-bake-collection.mp4)
+and [AO and the fake sun casting between objects ▶](https://github.com/seto3d/void-tools/releases/download/v1.3.1/vertex-color-bake-global.mp4)
 
-[![Sign Glow in Blender](docs/images/sign-glow-poster.jpg)](https://github.com/seto3d/void-tools/releases/download/v1.3.0/sign-glow.mp4)
+[![Sign Glow in Blender](docs/images/sign-glow-poster.jpg)](https://github.com/seto3d/void-tools/releases/download/v1.3.1/sign-glow.mp4)
 
-**[Sign Glow ▶](https://github.com/seto3d/void-tools/releases/download/v1.3.0/sign-glow.mp4)** — an emissive halo traced from the lettering's own
+**[Sign Glow ▶](https://github.com/seto3d/void-tools/releases/download/v1.3.1/sign-glow.mp4)** — an emissive halo traced from the lettering's own
 silhouette, on one quad behind it. How a sign reads at night without a single
 light being placed.
 

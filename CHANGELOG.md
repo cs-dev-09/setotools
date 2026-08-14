@@ -2,42 +2,7 @@
 
 All notable changes to Void Tools.
 
-## 1.3.1 — Blender can update this for you now
-
-### Added — an extension repository
-
-Asked for on the Discord, and it is the better way to install this:
-
-    https://seto3d.github.io/void-tools/repo/index.json
-
-Paste that once into **Preferences → Get Extensions → Repositories → Add
-Remote Repository**, and Void Tools appears in Blender's own extension
-list. From then on Blender does the updating — it notices new versions,
-it installs them, and it shows what the add-on is allowed to reach before
-you install it. There is no zip to download and no folder to find.
-
-**Install from Disk still works exactly as before.** Both artifacts ship
-on every release: `seto_tools.zip` for that, and
-`void_tools-<version>.zip` for the repository. They cannot be one file —
-an extension carries its manifest at the archive root and Blender names
-the folder itself, where a legacy add-on brings its own folder.
-
-**This add-on's own updater stands down when Blender is doing the job.**
-Installed from the repository, the Updates panel says so and offers
-nothing: two updaters for one add-on can disagree, and this one could
-drop a legacy copy into `scripts/addons/` beside the extension, which is
-the same classes registered twice.
-
-### Fixed — the version an extension install reports
-
-Blender removes `bl_info` from an extension's module and keeps the same
-information in the manifest instead. Anything reading the attribute
-directly therefore got nothing — so the Updates panel would have said
-"Void Tools 0.0.0", and a bug report sent from the Support panel would
-have carried that number to whoever was trying to reproduce it. Both ask
-`shared/addon_version` now, which knows about both kinds of install.
-
-## 1.3.0 — a sign that lights itself, and a bake that sees the room
+## 1.3.1 — a sign that lights itself, and a bake that sees the room
 
 ### Added — Sign Glow
 
@@ -103,12 +68,45 @@ Thanks to [@cs-dev-09](https://github.com/cs-dev-09) again
   Shift and Scale to place the fade where the asset needs it.
 - **A Clear button**, beside Generate.
 
+### Added — an extension repository
+
+Asked for on the Discord, and it is the better way to install this:
+
+    https://seto3d.github.io/void-tools/repo/index.json
+
+Paste that once into **Preferences → Get Extensions → Repositories → Add
+Remote Repository**, and Void Tools appears in Blender's own extension
+list. From then on Blender does the updating — it notices new versions,
+it installs them, and it shows what the add-on is allowed to reach before
+you install it. There is no zip to download and no folder to find.
+
+**Install from Disk still works exactly as before.** Both artifacts ship
+on every release: `seto_tools.zip` for that, and
+`void_tools-<version>.zip` for the repository. They cannot be one file —
+an extension carries its manifest at the archive root and Blender names
+the folder itself, where a legacy add-on brings its own folder.
+
+**This add-on's own updater stands down when Blender is doing the job.**
+Installed from the repository, the Updates panel says so and offers
+nothing: two updaters for one add-on can disagree, and this one could
+drop a legacy copy into `scripts/addons/` beside the extension, which is
+the same classes registered twice.
+
 ### Fixed — Clear leaves your alpha alone
 
 Clear reset all four channels, alpha included. Alpha in `Color 1` is what
 the decal shaders blend by, so that made every decal on the mesh fully
 opaque — invisibly, from a button that says it only clears colour. It now
 puts the colour back to white and reads the alpha channel back untouched.
+
+### Fixed — the version an extension install reports
+
+Blender removes `bl_info` from an extension's module and keeps the same
+information in the manifest instead. Anything reading the attribute
+directly therefore got nothing — so the Updates panel would have said
+"Void Tools 0.0.0", and a bug report sent from the Support panel would
+have carried that number to whoever was trying to reproduce it. Both ask
+`shared/addon_version` now, which knows about both kinds of install.
 
 ## 1.2.1 — Vertex Color Bake asks before it writes
 
