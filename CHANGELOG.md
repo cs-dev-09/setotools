@@ -2,6 +2,54 @@
 
 All notable changes to Void Tools.
 
+## 1.2.0 — wear with no texture at all
+
+### Added — Vertex Color Bake
+
+Thanks to [@cs-dev-09](https://github.com/cs-dev-09) again
+([#2](https://github.com/seto3d/void-tools/pull/2)): procedural wear baked
+straight into `Color 1` — ambient occlusion, dirt in the concave edges,
+grime on the up-facing surfaces, wear on exposed corners, noise, a
+gradient and a fake directional shadow, stacked, each with its own
+strength. It is the cheapest wear there is: no texture, no extra object,
+no draw call.
+
+**It is the one tool here that writes to the mesh you select**, and it
+says so on its own panel. Baked vertex colour *is* mesh data — there is
+nowhere else for it to go — so the rule every other tool keeps (build
+something separate, never touch the source) has exactly one documented
+exception, and it is one undo away. What it does **not** touch is
+`Color 1`'s **alpha**: that is the channel the decal shaders blend by, and
+the test suite now asserts a bake leaves every alpha exactly where it was.
+
+Its classes arrived under another add-on's `MLOPT_*` namespace and were
+renamed to this add-on's own. That is not tidying: a class name shared
+with an add-on the user also has installed is registered twice and takes
+the whole add-on down with it, and the test suite finds panels by their
+`SETO_PT_` prefix — so under the old name the tool was invisible to every
+test, including the one that drives every panel's draw.
+
+### Changed — bug reports go to the Discord
+
+A ticket is a conversation: somebody can ask which Blender, ask for the
+`.blend`, and say *try this* in the same minute, where an issue waits for
+the next time the maintainer sits down — and most people reporting a
+problem with a Blender add-on do not have a GitHub account to report it
+with. The Support panel now opens a ticket first, copies your versions to
+the clipboard in one press, and keeps the GitHub issue form underneath for
+anyone who would rather write one.
+
+### Fixed — two small things in Trash Scatter
+
+**Clear counted the dirt sheet as a prop** — four props and their grime
+were reported as "5 scattered props", a number anyone could check and find
+wrong. They are counted apart now.
+
+**The reason entities could not be registered vanished with the status
+bar.** A file with no YTYP got the same warning flashing past on every
+scatter, too fast to read. It now stays on the **Selected Scatter** panel
+until it is true no longer.
+
 ## 1.1.0 — dressing the floor, making the texture, choosing the colour
 
 ### Added — Trash Scatter, and the Dressing section it opens

@@ -634,6 +634,10 @@ lone_proxies = [o for o in bpy.data.objects
                 if o.get(object_settings.SRC_PROP) == lone.name]
 check("proxies still land without an MLO", len(lone_proxies) > 0,
       len(lone_proxies))
+check("and the floor keeps the reason where the panel can show it",
+      "MLO" in lone.seto_scatter_data.entity_status
+      or "YTYP" in lone.seto_scatter_data.entity_status,
+      lone.seto_scatter_data.entity_status)
 bpy.ops.seto.scatter_clear()
 
 print("=== one MLO in the file is found without any selection help ===")
@@ -658,6 +662,9 @@ check("the file's only MLO archetype gets the entities",
           1 for o in bpy.data.objects
           if o.get(object_settings.SRC_PROP) == lone.name),
       len(mlo_arch.entities))
+check("and the panel's warning clears once they land",
+      lone.seto_scatter_data.entity_status == "",
+      lone.seto_scatter_data.entity_status)
 bpy.ops.seto.scatter_clear()
 
 print()

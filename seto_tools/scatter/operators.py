@@ -190,13 +190,17 @@ class SETO_OT_scatter_clear(bpy.types.Operator):
         scene = context.scene
         active = context.active_object
 
-        removed = 0
+        # Counted apart, because they are not the same thing: reporting
+        # "5 props" for four props and one dirt sheet is a number the user
+        # can check and find wrong (seen in a user's log).
+        props = 0
+        sheets = 0
         if active is not None and any(
                 obj.get(object_settings.SRC_PROP) == active.name
                 or obj.get(dirt.MARKER) == active.name
                 for obj in bpy.data.objects):
-            removed = object_settings.delete_run(scene, active.name)
-            removed += dirt.remove_overlay(active.name)
+            props = object_settings.delete_run(scene, active.name)
+            sheets = dirt.remove_overlay(active.name)
             if object_settings.TRIS_PROP in active:
                 del active[object_settings.TRIS_PROP]
             if object_settings.BOUNDS_PROP in active:
@@ -208,8 +212,8 @@ class SETO_OT_scatter_clear(bpy.types.Operator):
             sources |= {obj.get(dirt.MARKER) for obj in bpy.data.objects
                         if obj.get(dirt.MARKER)}
             for source in sources:
-                removed += object_settings.delete_run(scene, source)
-                removed += dirt.remove_overlay(source)
+                props += object_settings.delete_run(scene, source)
+                sheets += dirt.remove_overlay(source)
                 owner = bpy.data.objects.get(source)
                 if owner is not None:
                     if object_settings.TRIS_PROP in owner:
@@ -217,11 +221,17 @@ class SETO_OT_scatter_clear(bpy.types.Operator):
                     if object_settings.BOUNDS_PROP in owner:
                         del owner[object_settings.BOUNDS_PROP]
 
-        if not removed:
+        if not props and not sheets:
             self.report({'INFO'}, "No scattered props to remove.")
             return {'CANCELLED'}
 
-        self.report({'INFO'}, f"Removed {removed} scattered props.")
+        parts = []
+        if props:
+            parts.append(f"{props} scattered prop{'s' if props != 1 else ''}")
+        if sheets:
+            parts.append("the dirt sheet" if sheets == 1
+                         else f"{sheets} dirt sheets")
+        self.report({'INFO'}, f"Removed {' and '.join(parts)}.")
         return {'FINISHED'}
 
 

@@ -94,6 +94,14 @@ class SETO_PT_scatter_selected_panel(pl.SelectedPanel, bpy.types.Panel):
                     if obj.get(object_settings.SRC_PROP) == floor.name)
         row.label(text=f"{count} props")
 
+        if data.entity_status:
+            warn = layout.box()
+            warn.alert = True
+            col = warn.column(align=True)
+            col.label(text="Not registered as entities:", icon='ERROR')
+            for line in ui_common.wrap(data.entity_status, 38):
+                col.label(text=line)
+
         layout.prop(data, "live_update")
 
         col = pl.section(layout, "Props", 'OBJECT_DATA')

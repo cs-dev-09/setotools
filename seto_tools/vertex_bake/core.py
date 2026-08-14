@@ -8,6 +8,7 @@ from mathutils import noise
 from bpy.props import BoolProperty, FloatProperty, FloatVectorProperty, PointerProperty
 
 from ..shared import icons
+from ..shared import panel_layout as pl
 
 VERTEX_COLOR_LAYER_NAME = 'Color 1'
 
@@ -159,7 +160,7 @@ def update_detail_stack(self, context):
         except Exception:
             pass
 
-class MLOPT_PG_SceneSettings(bpy.types.PropertyGroup):
+class SETO_PG_vertex_bake(bpy.types.PropertyGroup):
     detail_base_color: FloatVectorProperty(name="Base Color", subtype='COLOR', default=(1.0, 1.0, 1.0), size=3, min=0.0, max=1.0, update=update_detail_stack)
     detail_use_gradient: BoolProperty(name="Use Linear Gradient", default=False, update=update_detail_stack)
     detail_gradient_strength: FloatProperty(name="Gradient Strength", default=0.5, min=0.0, max=2.0, update=update_detail_stack)
@@ -178,12 +179,19 @@ class MLOPT_PG_SceneSettings(bpy.types.PropertyGroup):
     detail_wear_strength: FloatProperty(name="Wear Strength", default=0.1, min=0.0, max=2.0, update=update_detail_stack)
     detail_random_strength: FloatProperty(name="Random Strength", default=0.1, min=0.0, max=1.0, update=update_detail_stack)
 
-class MLOPT_PT_SurfaceDetailPanel(bpy.types.Panel):
-    bl_idname = "MLOPT_PT_SurfaceDetailPanel"
+class SETO_PT_vertex_bake_panel(bpy.types.Panel):
+    # SETO_* like every other class here, and `seto.*` for the operator.
+    # Not tidiness: these arrived as MLOPT_*, and a class name that
+    # belongs to another add-on is registered twice the moment a user has
+    # both installed - which is the crash Materialize's VMAT_* names are
+    # still noted for in the project's context file. The suite also finds
+    # panels by the SETO_PT_ prefix, so the old name kept this one out of
+    # every test, including the one that drives every panel's draw().
+    bl_idname = "SETO_PT_vertex_bake_panel"
     bl_label = "Vertex Color Bake"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
-    bl_category = "Void Tools"
+    bl_category = pl.TAB
     bl_parent_id = "SETO_PT_surface_group"
     bl_options = {'DEFAULT_CLOSED'}
     bl_order = 100  # Ensures it appears at the bottom of the group
@@ -193,7 +201,7 @@ class MLOPT_PT_SurfaceDetailPanel(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        settings = context.scene.mlopt_settings
+        settings = context.scene.seto_vertex_bake
         
         col = layout.column(align=True)
         col.prop(settings, "detail_base_color", text="")
@@ -225,10 +233,10 @@ class MLOPT_PT_SurfaceDetailPanel(bpy.types.Panel):
         layout.separator()
         col = layout.column(align=True)
         col.scale_y = 1.2
-        col.operator("mlopt.generate_detail_stack", icon='NODETREE', text="Generate Vertex Color")
+        col.operator("seto.vertex_bake", icon='NODETREE', text="Generate Vertex Color")
 
-class MLOPT_OT_GenerateDetailStack(bpy.types.Operator):
-    bl_idname = "mlopt.generate_detail_stack"
+class SETO_OT_vertex_bake(bpy.types.Operator):
+    bl_idname = "seto.vertex_bake"
     bl_label = "Generate Detail Stack"
     bl_options = {'REGISTER', 'UNDO'}
     
@@ -241,7 +249,7 @@ class MLOPT_OT_GenerateDetailStack(bpy.types.Operator):
         return {'FINISHED'}
 
 def generate_detail_stack(context):
-    settings = context.scene.mlopt_settings
+    settings = context.scene.seto_vertex_bake
     for obj in context.selected_objects:
         if obj.type != 'MESH':
             continue
@@ -388,19 +396,19 @@ def generate_detail_stack(context):
             write_vertex_colors_fast(layer, values_dict)
 
 classes = (
-    MLOPT_PG_SceneSettings,
-    MLOPT_PT_SurfaceDetailPanel,
-    MLOPT_OT_GenerateDetailStack,
+    SETO_PG_vertex_bake,
+    SETO_PT_vertex_bake_panel,
+    SETO_OT_vertex_bake,
 )
 
 def register():
     for cls in classes:
         bpy.utils.register_class(cls)
-    bpy.types.Scene.mlopt_settings = PointerProperty(type=MLOPT_PG_SceneSettings)
+    bpy.types.Scene.seto_vertex_bake = PointerProperty(type=SETO_PG_vertex_bake)
 
 def unregister():
     _mask_cache.clear()
-    if hasattr(bpy.types.Scene, 'mlopt_settings'):
-        del bpy.types.Scene.mlopt_settings
+    if hasattr(bpy.types.Scene, 'seto_vertex_bake'):
+        del bpy.types.Scene.seto_vertex_bake
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)

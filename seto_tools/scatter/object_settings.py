@@ -394,6 +394,7 @@ def rebuild(floor, context=None):
                     except TypeError:
                         pass  # room list changed under us; entity still lands
 
+        data.entity_status = "" if archetype is not None else problem
         return RebuildResult(len(placements), dressed, archetype, problem)
     finally:
         _rebuilding = False
@@ -535,6 +536,13 @@ class SETO_PG_scatter_data(bpy.types.PropertyGroup):
         description="Rebuild the layout as these settings change",
         default=True,
     )
+    # Why the last rebuild could not register entities, or "" when it
+    # could. Written by rebuild(), read by the panel: the status bar
+    # clears itself after a moment, and a user who scatters three times
+    # sees the same warning flash past three times without ever being
+    # able to read it (seen in a user's log).
+    entity_status: bpy.props.StringProperty(
+        name="Entity Status", default="", options={'HIDDEN'})
 
 
 _classes = (SETO_PG_scatter_data,)
