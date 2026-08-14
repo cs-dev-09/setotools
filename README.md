@@ -31,35 +31,27 @@ tool, troubleshooting. Built from [`docs/`](docs) in this repo.
 | [Pre-Flight](seto_tools/preflight) | The export test you would otherwise run in game — missing UVs, unapplied scale, non-DDS textures | the whole scene, read-only |
 | [Trash Scatter](seto_tools/scatter) | Vanilla GTA litter scattered over a floor as MLO entities — dense along the walls, seeded, spaced — plus a procedural Floor Dirt overlay, the flat grime sheet vanilla interiors use | selected faces |
 
-## What it looks like
+## What's new in 1.3.1
 
-[![Vertex Color Bake in Blender](docs/images/vertex-color-bake-poster.jpg)](https://github.com/seto3d/void-tools/releases/download/v1.2.1/vertex-color-bake.mp4)
-
-**[Vertex Color Bake ▶](https://github.com/seto3d/void-tools/releases/download/v1.2.1/vertex-color-bake.mp4)** — ambient occlusion, dirt, grime and
-wear stacked into `Color 1`, one layer at a time. No texture, no extra object,
-no draw call.
-Also: [a whole collection in one press, fading between two colours ▶](https://github.com/seto3d/void-tools/releases/download/v1.3.1/vertex-color-bake-collection.mp4)
-and [AO and the fake sun casting between objects ▶](https://github.com/seto3d/void-tools/releases/download/v1.3.1/vertex-color-bake-global.mp4)
+<!-- This section carries THIS release only. On the next one, replace it - the
+     older clips stay on their own tool pages in the documentation, which is
+     where somebody browsing the tools will look for them anyway. -->
 
 [![Sign Glow in Blender](docs/images/sign-glow-poster.jpg)](https://github.com/seto3d/void-tools/releases/download/v1.3.1/sign-glow.mp4)
 
 **[Sign Glow ▶](https://github.com/seto3d/void-tools/releases/download/v1.3.1/sign-glow.mp4)** — an emissive halo traced from the lettering's own
 silhouette, on one quad behind it. How a sign reads at night without a single
-light being placed.
+light being placed. Contributed by [Molo Modding](https://github.com/molossen).
 
-[![Trash Scatter in Blender](docs/images/trash-scatter-blender-poster.jpg)](https://github.com/seto3d/void-tools/releases/download/v1.1.0/trash-scatter-blender.mp4)
+[![Vertex Color Bake, a whole collection at once](docs/images/vertex-color-bake-collection-poster.jpg)](https://github.com/seto3d/void-tools/releases/download/v1.3.1/vertex-color-bake-collection.mp4)
 
-**[Trash Scatter ▶](https://github.com/seto3d/void-tools/releases/download/v1.1.0/trash-scatter-blender.mp4)** — litter and floor grime over a
-selected floor, live on the sliders.
-Also: [the same tool on a warehouse floor ▶](https://github.com/seto3d/void-tools/releases/download/v1.1.0/trash-scatter-interior.mp4)
+**[Vertex Color Bake ▶](https://github.com/seto3d/void-tools/releases/download/v1.3.1/vertex-color-bake-collection.mp4)** — a whole collection baked in
+one press, with the gradient fading between two colours. Also:
+[AO and the fake sun casting between objects ▶](https://github.com/seto3d/void-tools/releases/download/v1.3.1/vertex-color-bake-global.mp4),
+so a crate darkens the wall it stands against.
 
-[![Material Maker in game](docs/images/material-maker-in-game-poster.jpg)](https://github.com/seto3d/void-tools/releases/download/v1.1.0/material-maker-in-game.mp4)
-
-**[Material Maker ▶](https://github.com/seto3d/void-tools/releases/download/v1.1.0/material-maker-blender.mp4)** — height, normal and specular from
-one diffuse image, and
-[what it looks like in game ▶](https://github.com/seto3d/void-tools/releases/download/v1.1.0/material-maker-in-game.mp4).
-
-The videos play in the [documentation](https://seto3d.github.io/void-tools/tools/vertex-color-bake/) too, on each tool's own page.
+**Every tool has its own page with its own videos** in the
+[documentation](https://seto3d.github.io/void-tools/).
 
 > **No prop library? Trash Scatter still works.** The add-on ships no GTA
 > models — only their names and their measured sizes, which is what placement
