@@ -31,27 +31,28 @@ tool, troubleshooting. Built from [`docs/`](docs) in this repo.
 | [Pre-Flight](void_tools/preflight) | The export test you would otherwise run in game — missing UVs, unapplied scale, non-DDS textures | the whole scene, read-only |
 | [Trash Scatter](void_tools/scatter) | Vanilla GTA litter scattered over a floor as MLO entities — dense along the walls, seeded, spaced — plus a procedural Floor Dirt overlay, the flat grime sheet vanilla interiors use | selected faces |
 
-## What's new in 1.3.1
+## What's new in 1.2.2
 
-<!-- This section carries THIS release only. On the next one, replace it - the
-     older clips stay on their own tool pages in the documentation, which is
-     where somebody browsing the tools will look for them anyway. -->
+<!-- This section carries THIS release only. On the next one, replace it -
+     the older clips stay on their own tool pages in the documentation, which
+     is where somebody browsing the tools will look for them anyway.
+     GIFs rather than links: GitHub strips <video> from Markdown and turns a
+     linked .mp4 into a plain link nobody clicks, but it plays a GIF inline. -->
 
-[![Sign Glow in Blender](docs/images/sign-glow-poster.jpg)](https://github.com/seto3d/void-tools/releases/download/media/sign-glow.mp4)
+![Sign Glow tracing a halo behind 3D lettering](docs/images/sign-glow.gif)
 
-**[Sign Glow ▶](https://github.com/seto3d/void-tools/releases/download/media/sign-glow.mp4)** — an emissive halo traced from the lettering's own
-silhouette, on one quad behind it. How a sign reads at night without a single
-light being placed. Contributed by [Molo Modding](https://github.com/molossen).
+**Sign Glow** — an emissive halo traced from the lettering's own silhouette,
+on one quad behind it. How a sign reads at night without a single light being
+placed. Contributed by [Molo Modding](https://github.com/molossen).
 
-[![Vertex Color Bake, a whole collection at once](docs/images/vertex-color-bake-collection-poster.jpg)](https://github.com/seto3d/void-tools/releases/download/media/vertex-color-bake-collection.mp4)
+![Vertex Color Bake running over a whole collection](docs/images/vertex-color-bake-collection.gif)
 
-**[Vertex Color Bake ▶](https://github.com/seto3d/void-tools/releases/download/media/vertex-color-bake-collection.mp4)** — a whole collection baked in
-one press, with the gradient fading between two colours. Also:
-[AO and the fake sun casting between objects ▶](https://github.com/seto3d/void-tools/releases/download/media/vertex-color-bake-global.mp4),
-so a crate darkens the wall it stands against.
+**Vertex Color Bake** — a whole collection baked in one press, with the
+gradient fading between two colours. Ambient occlusion and the fake sun now
+cast across the scene too, so a crate darkens the wall it stands against.
 
-**Every tool has its own page with its own videos** in the
-[documentation](https://seto3d.github.io/void-tools/).
+**The full videos play in the [documentation](https://seto3d.github.io/void-tools/)**,
+on each tool's own page — these are seven-second cuts.
 
 > **No prop library? Trash Scatter still works.** The add-on ships no GTA
 > models — only their names and their measured sizes, which is what placement

@@ -2,7 +2,7 @@
 
 All notable changes to Void Tools.
 
-## 1.3.1 — a sign that lights itself, and a bake that sees the room
+## 1.2.2 — a sign that lights itself, and a bake that sees the room
 
 ### Added — Sign Glow
 
