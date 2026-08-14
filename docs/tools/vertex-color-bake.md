@@ -7,6 +7,18 @@ concave edges, grime on the up-facing surfaces, wear on the exposed corners,
 noise, a gradient, and a fake directional shadow — stacked, each with its own
 strength.
 
+## Watch it work
+
+<video controls muted playsinline preload="none"
+       poster="../../images/vertex-color-bake-poster.jpg"
+       style="width:100%;border-radius:.2rem">
+  <source src="https://github.com/seto3d/void-tools/releases/download/v1.2.1/vertex-color-bake.mp4" type="video/mp4">
+  <a href="https://github.com/seto3d/void-tools/releases/download/v1.2.1/vertex-color-bake.mp4">Download the video</a>
+</video>
+
+*Stacking the layers onto a prop and watching `Color 1` fill in as each one
+comes on.*
+
 This is the cheapest wear there is. It costs no texture, no extra object and no
 draw call: the colour rides on vertices the mesh already has.
 

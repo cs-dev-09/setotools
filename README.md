@@ -30,7 +30,13 @@ tool, troubleshooting. Built from [`docs/`](docs) in this repo.
 | [Pre-Flight](seto_tools/preflight) | The export test you would otherwise run in game — missing UVs, unapplied scale, non-DDS textures | the whole scene, read-only |
 | [Trash Scatter](seto_tools/scatter) | Vanilla GTA litter scattered over a floor as MLO entities — dense along the walls, seeded, spaced — plus a procedural Floor Dirt overlay, the flat grime sheet vanilla interiors use | selected faces |
 
-## What 1.1.0 looks like
+## What it looks like
+
+[![Vertex Color Bake in Blender](docs/images/vertex-color-bake-poster.jpg)](https://github.com/seto3d/void-tools/releases/download/v1.2.1/vertex-color-bake.mp4)
+
+**[Vertex Color Bake ▶](https://github.com/seto3d/void-tools/releases/download/v1.2.1/vertex-color-bake.mp4)** — ambient occlusion, dirt, grime and
+wear stacked into `Color 1`, one layer at a time. No texture, no extra object,
+no draw call.
 
 [![Trash Scatter in Blender](docs/images/trash-scatter-blender-poster.jpg)](https://github.com/seto3d/void-tools/releases/download/v1.1.0/trash-scatter-blender.mp4)
 
@@ -44,7 +50,7 @@ Also: [the same tool on a warehouse floor ▶](https://github.com/seto3d/void-to
 one diffuse image, and
 [what it looks like in game ▶](https://github.com/seto3d/void-tools/releases/download/v1.1.0/material-maker-in-game.mp4).
 
-The videos play in the [documentation](https://seto3d.github.io/void-tools/tools/trash-scatter/) too.
+The videos play in the [documentation](https://seto3d.github.io/void-tools/tools/vertex-color-bake/) too, on each tool's own page.
 
 > **No prop library? Trash Scatter still works.** The add-on ships no GTA
 > models — only their names and their measured sizes, which is what placement
