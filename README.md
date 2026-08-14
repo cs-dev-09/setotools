@@ -84,20 +84,37 @@ child panel, so the top of each one is the thing you actually came to press.
 
 ## Install
 
-Grab `seto_tools.zip` from the latest [release](../../releases) (don't unzip),
-then in Blender: **Edit > Preferences > Add-ons > Install from Disk** → pick the
-zip → enable it → restart Blender.
+**From the extension repository** (Blender 4.2+, and it keeps itself updated).
+In **Edit > Preferences > Get Extensions**, open the dropdown top-right →
+**Repositories → + → Add Remote Repository**, and paste:
+
+```
+https://seto3d.github.io/void-tools/repo/index.json
+```
+
+Then search for **Void Tools** in Get Extensions and press Install. Blender
+handles updates from there — and shows what the add-on is allowed to reach
+before you install it.
+
+**From a zip**, unchanged: grab `seto_tools.zip` from the latest
+[release](../../releases) (don't unzip), then **Edit > Preferences > Add-ons >
+Install from Disk** → pick the zip → enable it → restart Blender.
+
+Both artifacts ship on every release — an extension carries its manifest at the
+archive root and Blender names the folder, where a classic add-on brings its
+own folder, so one file cannot be both. **Install one, not both**: two copies
+register the same panels and operators.
 
 Requires Blender 4.2+ and Sollumz with its dependencies installed. Verified in
 Blender 5.0.1 and 5.2.0 LTS.
 
-**Updating** — the **Updates** panel at the top of the tab does it from
-inside Blender: when a new release exists, its version appears on the
-panel header and **Install Update** brings it in with your settings
-intact. The notification comes from one version check per Blender start —
-it carries nothing about you, it is the only network traffic in the
-add-on (the test suite enforces that), and *Check for updates on startup*
-in the preferences turns it off.
+**Updating** — from the repository, Blender does it and the tab's **Updates**
+panel stands aside and says so. From a zip, that panel does it from inside
+Blender: when a new release exists, its version appears on the panel header and
+**Install Update** brings it in with your settings intact. The notification
+comes from one version check per Blender start — it carries nothing about you,
+it is the only network traffic in the add-on (the test suite enforces that),
+and *Check for updates on startup* in the preferences turns it off.
 
 > These used to be three separate add-ons (`seto_fake_ao`, `seto_fake_dmg`,
 > `seto_decal_tool`). If you have any of them installed, **disable and remove

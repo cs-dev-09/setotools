@@ -26,9 +26,16 @@ NEW_ISSUE = "https://github.com/seto3d/void-tools/issues/new"
 
 
 def addon_version():
-    module = sys.modules.get(__package__.rpartition(".")[0])
-    version = getattr(module, "bl_info", {}).get("version", ())
-    return ".".join(str(number) for number in version) or "unknown"
+    """The version to put in the report - see shared/addon_version.
+
+    Not read off `bl_info` here: Blender removes that from an extension and
+    keeps the same information in the manifest, so a report from anyone who
+    installed from the repository would have said 0.0.0 to the person trying
+    to reproduce it.
+    """
+    from ..shared import addon_version as version_info
+
+    return version_info.current_str()
 
 
 def environment():

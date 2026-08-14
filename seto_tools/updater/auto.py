@@ -78,6 +78,11 @@ def _start():
     if _started:
         return None
     _started = True
+    if logic.installed_as_extension():
+        # Blender is already watching the repository this came from. A second
+        # check would be a network request nobody needs and an answer nobody
+        # can act on from here.
+        return None
     preferences = addon_prefs.get()
     if preferences is not None and not getattr(preferences,
                                                "auto_check_updates", True):

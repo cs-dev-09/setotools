@@ -43,6 +43,19 @@ class SETO_PT_updates_panel(bpy.types.Panel):
         layout.label(text=f"Void Tools {logic.current_str()}",
                      icon='BLENDER')
 
+        if logic.installed_as_extension():
+            # Installed from the extension repository, so Blender lists the
+            # version, notices a new one and installs it. Offering to do the
+            # same job from here could put a legacy copy in scripts/addons/
+            # beside the extension - the same classes registered twice.
+            note = layout.column(align=True)
+            note.scale_y = 0.8
+            note.label(text="Blender updates this one.", icon='CHECKMARK')
+            for line in ui_common.wrap(
+                    "Preferences - Get Extensions, then Check for Updates.", 38):
+                note.label(text=line)
+            return
+
         if state.update_available:
             row = layout.row()
             row.scale_y = 1.4
