@@ -17,19 +17,19 @@ tool, troubleshooting. Built from [`docs/`](docs) in this repo.
 
 | Tool | What it makes | Built from |
 | --- | --- | --- |
-| [Ambient Occlusion](seto_tools/fake_ao) | Ambient-occlusion corner decals | selected edges |
-| [Edge Dirt](seto_tools/edge_dirt) | The same strip, carrying a dirt texture you drop in a folder | selected edges |
-| [Edge Wear](seto_tools/fake_damage) | Chipped-edge damage decals | selected edges |
-| [Decal Tool](seto_tools/decal_tool) | Surface-aligned decal planes from your own decal library | selected faces |
-| [Smooth Edge](seto_tools/smooth_edge) | Normal-map strips that make a hard edge read as rounded | selected edges |
-| [Surface Painter](seto_tools/surface_painter) | Dirt, grime and graffiti brushed onto a surface | a paint mesh over the whole object |
-| [Vertex Color Bake](seto_tools/vertex_bake) | Procedural AO, dirt, grime and wear baked into `Color 1` — the one tool that writes to your mesh | the selected objects |
-| [Density Check](seto_tools/density_checker) | A triangle-budget heatmap graded against vanilla GTA | the whole scene, read-only |
-| [Texture Budget](seto_tools/texture_budget) | The same heatmap for texture resolution, plus what the scene costs in VRAM | the whole scene, read-only |
-| [Material Maker](seto_tools/materials) | Height, normal and specular maps from one diffuse image | a diffuse texture |
-| [Sign Glow](seto_tools/sign_glow) | An emissive halo traced from 3D lettering, on a plane behind it — written out as a `.dds` and a Sollumz emissive shader | the selected lettering |
-| [Pre-Flight](seto_tools/preflight) | The export test you would otherwise run in game — missing UVs, unapplied scale, non-DDS textures | the whole scene, read-only |
-| [Trash Scatter](seto_tools/scatter) | Vanilla GTA litter scattered over a floor as MLO entities — dense along the walls, seeded, spaced — plus a procedural Floor Dirt overlay, the flat grime sheet vanilla interiors use | selected faces |
+| [Ambient Occlusion](void-tools/fake_ao) | Ambient-occlusion corner decals | selected edges |
+| [Edge Dirt](void-tools/edge_dirt) | The same strip, carrying a dirt texture you drop in a folder | selected edges |
+| [Edge Wear](void-tools/fake_damage) | Chipped-edge damage decals | selected edges |
+| [Decal Tool](void-tools/decal_tool) | Surface-aligned decal planes from your own decal library | selected faces |
+| [Smooth Edge](void-tools/smooth_edge) | Normal-map strips that make a hard edge read as rounded | selected edges |
+| [Surface Painter](void-tools/surface_painter) | Dirt, grime and graffiti brushed onto a surface | a paint mesh over the whole object |
+| [Vertex Color Bake](void-tools/vertex_bake) | Procedural AO, dirt, grime and wear baked into `Color 1` — the one tool that writes to your mesh | the selected objects |
+| [Density Check](void-tools/density_checker) | A triangle-budget heatmap graded against vanilla GTA | the whole scene, read-only |
+| [Texture Budget](void-tools/texture_budget) | The same heatmap for texture resolution, plus what the scene costs in VRAM | the whole scene, read-only |
+| [Material Maker](void-tools/materials) | Height, normal and specular maps from one diffuse image | a diffuse texture |
+| [Sign Glow](void-tools/sign_glow) | An emissive halo traced from 3D lettering, on a plane behind it — written out as a `.dds` and a Sollumz emissive shader | the selected lettering |
+| [Pre-Flight](void-tools/preflight) | The export test you would otherwise run in game — missing UVs, unapplied scale, non-DDS textures | the whole scene, read-only |
+| [Trash Scatter](void-tools/scatter) | Vanilla GTA litter scattered over a floor as MLO entities — dense along the walls, seeded, spaced — plus a procedural Floor Dirt overlay, the flat grime sheet vanilla interiors use | selected faces |
 
 ## What's new in 1.3.1
 
@@ -88,7 +88,7 @@ Then search for **Void Tools** in Get Extensions and press Install. Blender
 handles updates from there — and shows what the add-on is allowed to reach
 before you install it.
 
-**From a zip**, unchanged: grab `seto_tools.zip` from the latest
+**From a zip**, unchanged: grab `void-tools.zip` from the latest
 [release](../../releases) (don't unzip), then **Edit > Preferences > Add-ons >
 Install from Disk** → pick the zip → enable it → restart Blender.
 
@@ -115,7 +115,7 @@ and *Check for updates on startup* in the preferences turns it off.
 ## Layout
 
 ```
-seto_tools/
+void-tools/
     __init__.py      registers the tools, in panel order
     shared/          code every tool uses
         sollumz_integration.py   every call into Sollumz, and the material builders
@@ -190,7 +190,7 @@ its operators only read the scene.
   is what the decal shaders use as their blend factor; the RGB is not read by
   either `decal.sps` or `decal_normal_only.sps`, and is fixed so generated
   geometry is recognisable and consistent. It lives in
-  [`shared/vertex_color.py`](seto_tools/shared/vertex_color.py) — change it
+  [`shared/vertex_color.py`](void-tools/shared/vertex_color.py) — change it
   there and all four follow.
 - **Shaded smooth.** Everything these tools generate is set smooth, so a strip
   shows no hard band at its quad boundaries. Applied to the generated object
@@ -269,7 +269,7 @@ Void Tools is built in the open, and it is better for the people who turn up.
   is a preset list on the object, and the alpha cannot be touched by picking a
   colour.
 
-  And **[Vertex Color Bake](seto_tools/vertex_bake)** ([#2](../../pull/2)) —
+  And **[Vertex Color Bake](void-tools/vertex_bake)** ([#2](../../pull/2)) —
   ambient occlusion, dirt, grime, wear, noise and a fake sun, stacked and baked
   straight into `Color 1`, with the raycasting cached so the sliders stay live.
   The cheapest wear in the add-on: no texture, no extra object, no draw call.
@@ -279,7 +279,7 @@ Void Tools is built in the open, and it is better for the people who turn up.
 - [@gecu3d](https://github.com/gecu3d) — **Material Maker**: height, normal and specular maps from a
   single diffuse image, written as a standalone add-on and folded in here.
 
-- [Molo Modding](https://github.com/molossen) — **[Sign Glow](seto_tools/sign_glow)**:
+- [Molo Modding](https://github.com/molossen) — **[Sign Glow](void-tools/sign_glow)**:
   the halo behind lit 3D lettering. It traces the letters' own silhouette,
   blurs it at two radii — a tight core and a wide bloom — and puts the result
   on an emissive plane just behind them, which is how a sign reads at night in
