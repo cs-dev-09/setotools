@@ -245,6 +245,13 @@ Void Tools is built in the open, and it is better for the people who turn up.
   is a preset list on the object, and the alpha cannot be touched by picking a
   colour.
 
+  And **[Vertex Color Bake](seto_tools/vertex_bake)** ([#2](../../pull/2)) —
+  ambient occlusion, dirt, grime, wear, noise and a fake sun, stacked and baked
+  straight into `Color 1`, with the raycasting cached so the sliders stay live.
+  The cheapest wear in the add-on: no texture, no extra object, no draw call.
+  It is also the only tool here that writes to the mesh you select, which is
+  not a slip — baked vertex colour is mesh data and has nowhere else to live.
+
 - [@gecu3d](https://github.com/gecu3d) — **Material Maker**: height, normal and specular maps from a
   single diffuse image, written as a standalone add-on and folded in here.
 
