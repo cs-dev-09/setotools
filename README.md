@@ -1,9 +1,11 @@
 # Void Tools
 
 One Blender add-on for GTA V / FiveM asset authoring, built on
-[Sollumz](https://docs.sollumz.org). Every authoring tool builds separate decal
-geometry and never touches your original mesh — and the one analysis tool only
-reads.
+[Sollumz](https://docs.sollumz.org). Almost every tool builds separate decal
+geometry and never touches your original mesh; the analysis tools only read.
+The exception is **Vertex Color Bake**, which writes `Color 1` onto the mesh you
+select — baked vertex colour is mesh data, so there is nowhere else for it to
+go.
 
 📖 **[Documentation](https://seto3d.github.io/void-tools/)** — install, every
 tool, troubleshooting. Built from [`docs/`](docs) in this repo.
@@ -21,6 +23,7 @@ tool, troubleshooting. Built from [`docs/`](docs) in this repo.
 | [Decal Tool](seto_tools/decal_tool) | Surface-aligned decal planes from your own decal library | selected faces |
 | [Smooth Edge](seto_tools/smooth_edge) | Normal-map strips that make a hard edge read as rounded | selected edges |
 | [Surface Painter](seto_tools/surface_painter) | Dirt, grime and graffiti brushed onto a surface | a paint mesh over the whole object |
+| [Vertex Color Bake](seto_tools/vertex_bake) | Procedural AO, dirt, grime and wear baked into `Color 1` — the one tool that writes to your mesh | the selected objects |
 | [Density Check](seto_tools/density_checker) | A triangle-budget heatmap graded against vanilla GTA | the whole scene, read-only |
 | [Texture Budget](seto_tools/texture_budget) | The same heatmap for texture resolution, plus what the scene costs in VRAM | the whole scene, read-only |
 | [Material Maker](seto_tools/materials) | Height, normal and specular maps from one diffuse image | a diffuse texture |

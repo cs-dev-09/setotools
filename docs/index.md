@@ -3,15 +3,20 @@
 One Blender add-on for GTA V / FiveM asset authoring, built on
 [Sollumz](https://docs.sollumz.org).
 
-Every authoring tool builds **separate** geometry and never modifies the mesh
+Almost every tool here builds **separate** geometry and never modifies the mesh
 you point it at. The analysis tools only read. Delete what a tool made and your
-asset is exactly as it was — that is the one rule with no exceptions anywhere
-in this add-on.
+asset is exactly as it was.
+
+**One tool is deliberately different.**
+[Vertex Color Bake](tools/vertex-color-bake.md) writes `Color 1` onto the mesh
+you select, because baked vertex colour *is* mesh data — there is nowhere else
+to put it. It is the only tool here that changes your object, it says so on its
+panel, and it is one undo away.
 
 [Install it](installation.md){ .md-button .md-button--primary }
 [Browse the tools](the-tab.md){ .md-button }
 
-## The eleven tools
+## The twelve tools
 
 | Tool | What it makes | Built from |
 | --- | --- | --- |
@@ -21,6 +26,7 @@ in this add-on.
 | [Decal Tool](tools/decal-tool.md) | Surface-aligned decal planes from your own library | selected faces |
 | [Surface Painter](tools/surface-painter.md) | Dirt, grime and graffiti brushed onto a surface | a paint mesh over the object |
 | [Edge Dirt](tools/edge-dirt.md) | The same strip as Ambient Occlusion, carrying a dirt texture | selected edges |
+| [Vertex Color Bake](tools/vertex-color-bake.md) | Procedural wear baked into `Color 1` — **writes to your mesh** | the selected objects |
 | [Density Check](tools/density-check.md) | A triangle-budget heatmap graded against vanilla GTA | the scene, read-only |
 | [Texture Budget](tools/texture-budget.md) | The same heatmap for texture resolution, plus VRAM cost | the scene, read-only |
 | [Pre-Flight](tools/pre-flight.md) | The export test you would otherwise run in game | the scene, read-only |

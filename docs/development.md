@@ -45,7 +45,12 @@ nothing.
 
 ## Rules that are decided, not open
 
-- **Source meshes are never modified.** The one rule with no exceptions.
+- **Source meshes are never modified** — with one stated exception. Every tool
+  that *builds* something builds it as a separate object. **Vertex Color Bake**
+  writes `Color 1` onto the selected mesh, because that is what baking vertex
+  colour means; it is the only one, it is documented as such on its own page and
+  on the front page, and adding a second exception is a decision, not a
+  detail.
 - **Live rebuilds never call `bpy.ops`.** They run from property update
   callbacks, where operators are unsafe — data API only.
 - **Panels are drawn through `shared/panel_layout.py`**, not by hand. One

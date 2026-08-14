@@ -17,7 +17,7 @@ to point at.
 
 # (name, url or "", what for). Keep the "what for" short enough for the N-panel.
 CONTRIBUTORS = (
-    ("cs-dev-09", "https://github.com/cs-dev-09", "Vertex Colour picker"),
+    ("cs-dev-09", "https://github.com/cs-dev-09", "Vertex Colour picker, Vertex Color Bake"),
     ("gecu", "https://github.com/gecu3d", "Material Maker"),
 )
 

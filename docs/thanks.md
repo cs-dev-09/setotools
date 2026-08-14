@@ -29,6 +29,12 @@ The PR arrived tested, followed the project's conventions closely, and passed
 the whole suite on both supported Blender versions on the first run. That is
 rarer than it should be, and it is why it went in the same day.
 
+**[Vertex Color Bake](tools/vertex-color-bake.md)** was theirs too — procedural
+AO, dirt, grime and wear baked into `Color 1`, with the expensive raycasting
+cached on the mesh so the sliders stay live. It is the one tool in the add-on
+that writes to the object you select, which is not a slip: baked vertex colour
+is mesh data and has nowhere else to live.
+
 ### [@gecu3d](https://github.com/gecu3d)
 
 **[Material Maker](tools/material-maker.md)** — height, normal and specular
