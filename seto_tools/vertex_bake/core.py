@@ -5,7 +5,7 @@ import numpy as np
 from mathutils import Vector, Matrix
 from mathutils.bvhtree import BVHTree
 from mathutils import noise
-from bpy.props import BoolProperty, FloatProperty, FloatVectorProperty, PointerProperty
+from bpy.props import BoolProperty, EnumProperty, FloatProperty, FloatVectorProperty, PointerProperty
 
 from ..shared import icons
 from ..shared import panel_layout as pl
@@ -25,7 +25,9 @@ def _geo_signature(obj, bm):
     coords = np.empty(vcount * 3, dtype=np.float64)
     mesh.vertices.foreach_get('co', coords)
     checksum = float(np.dot(coords, coords))
-    return (vcount, ecount, round(checksum, 3))
+    # Include world matrix so moving the object invalidates the cache
+    matrix_sig = tuple(round(v, 4) for row in obj.matrix_world for v in row)
+    return (vcount, ecount, round(checksum, 3), matrix_sig)
 
 def _get_cache_entry(obj, bm):
     sig = _geo_signature(obj, bm)
@@ -205,18 +207,30 @@ def _flush_pending():
     return None          # one shot
 
 
+def get_target_objects(context, is_live=False):
+    """Return the list of mesh objects to bake, based on the target mode."""
+    settings = context.scene.seto_vertex_bake
+    if not is_live and settings.target_mode == 'COLLECTION' and settings.target_collection:
+        col = settings.target_collection
+        if settings.bake_hidden:
+            return [obj for obj in col.all_objects if obj.type == 'MESH']
+        else:
+            return [obj for obj in col.all_objects
+                    if obj.type == 'MESH' and obj.visible_get()]
+    return [obj for obj in context.selected_objects if obj.type == 'MESH']
+
+
 def update_detail_stack(self, context):
     global _timer_armed
     if _baking or not self.live_update:
         return
-    selected = [obj for obj in context.selected_objects
-                if obj.type == 'MESH']
-    if not selected:
+    targets = get_target_objects(context, is_live=True)
+    if not targets:
         return
     if bpy.app.background:
-        _bake_now(selected)
+        _bake_now(targets)
         return
-    _pending.update(obj.name for obj in selected)
+    _pending.update(obj.name for obj in targets)
     if not _timer_armed:
         _timer_armed = True
         bpy.app.timers.register(_flush_pending,
@@ -237,7 +251,33 @@ class SETO_PG_vertex_bake(bpy.types.PropertyGroup):
     # failure is indistinguishable from having nothing to do.
     last_error: bpy.props.StringProperty(default="", options={'HIDDEN'})
 
+    target_mode: EnumProperty(
+        name="Target",
+        description="Choose what to bake: your current selection or an entire collection",
+        items=[
+            ('SELECTED', "Selected Objects", "Bake only the currently selected mesh objects"),
+            ('COLLECTION', "Collection", "Bake every mesh object inside a chosen collection"),
+        ],
+        default='SELECTED',
+    )
+    target_collection: PointerProperty(
+        name="Collection",
+        description="The collection whose mesh objects will be baked",
+        type=bpy.types.Collection,
+    )
+    bake_hidden: BoolProperty(
+        name="Include Hidden",
+        description="When on, objects hidden in the viewport are still baked. "
+                    "When off, only visible objects in the collection are processed",
+        default=False,
+    )
+
     detail_base_color: FloatVectorProperty(name="Base Color", subtype='COLOR', default=(1.0, 1.0, 1.0), size=3, min=0.0, max=1.0, update=update_detail_stack)
+    gradient_use_colors: BoolProperty(name="Use Custom Colors", default=False, update=update_detail_stack)
+    gradient_color_top: FloatVectorProperty(name="Top Color", subtype='COLOR', default=(1.0, 1.0, 1.0), size=3, min=0.0, max=1.0, update=update_detail_stack)
+    gradient_color_bottom: FloatVectorProperty(name="Bottom Color", subtype='COLOR', default=(0.0, 0.0, 0.0), size=3, min=0.0, max=1.0, update=update_detail_stack)
+    gradient_shift: FloatProperty(name="Gradient Shift", default=0.0, min=-2.0, max=2.0, update=update_detail_stack)
+    gradient_scale: FloatProperty(name="Gradient Scale", default=1.0, min=0.1, max=10.0, update=update_detail_stack)
     detail_use_gradient: BoolProperty(name="Use Linear Gradient", default=False, update=update_detail_stack)
     detail_gradient_strength: FloatProperty(name="Gradient Strength", default=0.5, min=0.0, max=2.0, update=update_detail_stack)
     detail_use_ao: BoolProperty(name="Use AO", default=True, update=update_detail_stack)
@@ -278,7 +318,16 @@ class SETO_PT_vertex_bake_panel(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         settings = context.scene.seto_vertex_bake
-        
+
+        # ------------------------------------------------- target mode
+        box = layout.box()
+        box.label(text="Target", icon='OUTLINER_COLLECTION')
+        box.prop(settings, "target_mode", text="")
+        if settings.target_mode == 'COLLECTION':
+            row = box.row(align=True)
+            row.prop(settings, "target_collection", text="")
+            row.prop(settings, "bake_hidden", text="", icon='HIDE_OFF' if settings.bake_hidden else 'HIDE_ON')
+
         col = layout.column(align=True)
         col.prop(settings, "detail_base_color", text="")
         layout.separator()
@@ -293,6 +342,24 @@ class SETO_PT_vertex_bake_panel(bpy.types.Panel):
             sub.prop(settings, prop_strength, text="")
             
         draw_layer("Gradient", "detail_use_gradient", "detail_gradient_strength", 'COLOR')
+        if settings.detail_use_gradient:
+            row = col.row(align=True)
+            row.separator(factor=2.0)
+            row.prop(settings, "gradient_use_colors")
+            if settings.gradient_use_colors:
+                row = col.row(align=True)
+                row.separator(factor=2.0)
+                row.prop(settings, "gradient_color_top", text="Top")
+                
+                row = col.row(align=True)
+                row.separator(factor=2.0)
+                row.prop(settings, "gradient_color_bottom", text="Bottom")
+                
+            row = col.row(align=True)
+            row.separator(factor=2.0)
+            row.prop(settings, "gradient_shift", text="Shift")
+            row.prop(settings, "gradient_scale", text="Scale")
+                
         draw_layer("Ambient Occlusion", "detail_use_ao", "detail_ao_strength", 'SHADING_RENDERED')
         draw_layer("Edge Dirt", "detail_use_edge_dirt", "detail_edge_dirt_strength", 'BRUSH_DATA')
         draw_layer("Floor Grime", "detail_use_floor_grime", "detail_floor_grime_strength", 'MATFLUID')
@@ -315,18 +382,21 @@ class SETO_PT_vertex_bake_panel(bpy.types.Panel):
                 col.label(text=line)
 
         layout.separator()
-        # The switch first: this tool writes to the mesh you have
-        # selected, so whether it does that while you drag is a decision
-        # worth seeing before you drag.
         layout.prop(settings, "live_update")
         col = layout.column(align=True)
         col.scale_y = 1.2
-        col.operator("seto.vertex_bake", icon='NODETREE', text="Generate Vertex Color")
+        row = col.row(align=True)
+        row.operator("seto.vertex_bake_clear", icon='X', text="Clear")
+        row.operator("seto.vertex_bake", icon='NODETREE', text="Generate Vertex Color")
 
         note = layout.column(align=True)
         note.scale_y = 0.8
-        note.label(text="Writes Color 1 onto the selected mesh.",
-                   icon='INFO')
+        if settings.target_mode == 'COLLECTION' and settings.target_collection:
+            count = len([o for o in settings.target_collection.all_objects if o.type == 'MESH'])
+            note.label(text=f"Collection: {count} mesh objects.", icon='INFO')
+        else:
+            note.label(text="Writes Color 1 onto the selected mesh.",
+                       icon='INFO')
 
 class SETO_OT_vertex_bake(bpy.types.Operator):
     bl_idname = "seto.vertex_bake"
@@ -335,22 +405,75 @@ class SETO_OT_vertex_bake(bpy.types.Operator):
     
     @classmethod
     def poll(cls, context):
+        settings = context.scene.seto_vertex_bake
+        if settings.target_mode == 'COLLECTION':
+            return settings.target_collection is not None
         return context.active_object is not None and context.active_object.type == 'MESH'
         
     def execute(self, context):
-        objects = [obj for obj in context.selected_objects
-                   if obj.type == 'MESH']
+        objects = get_target_objects(context)
         if not objects:
-            self.report({'ERROR'}, "Select a mesh to bake onto.")
+            self.report({'ERROR'}, "No mesh objects found to bake.")
             return {'CANCELLED'}
-        if not _bake_now(objects, report_to=self):
+
+        settings = context.scene.seto_vertex_bake
+        depsgraph = context.evaluated_depsgraph_get()
+        scene = context.scene
+        total = len(objects)
+        wm = context.window_manager
+        wm.progress_begin(0, total)
+
+        try:
+            for i, obj in enumerate(objects):
+                wm.progress_update(i)
+                generate_detail_stack(context, objects=[obj], force_rebuild=True)
+                settings.last_error = ""
+        except Exception as error:
+            import traceback
+            traceback.print_exc()
+            settings.last_error = f"{type(error).__name__}: {error}"
+            self.report({'ERROR'}, f"Bake failed: {error}")
+            wm.progress_end()
             return {'CANCELLED'}
+
+        wm.progress_end()
         self.report({'INFO'},
-                    f"Baked Color 1 onto {len(objects)} "
-                    f"object{'s' if len(objects) != 1 else ''}.")
+                    f"Baked Color 1 onto {total} "
+                    f"object{'s' if total != 1 else ''}.")
         return {'FINISHED'}
 
-def generate_detail_stack(context, objects=None):
+class SETO_OT_vertex_bake_clear(bpy.types.Operator):
+    bl_idname = "seto.vertex_bake_clear"
+    bl_label = "Clear Vertex Colors"
+    bl_options = {'REGISTER', 'UNDO'}
+    
+    @classmethod
+    def poll(cls, context):
+        settings = context.scene.seto_vertex_bake
+        if settings.target_mode == 'COLLECTION':
+            return settings.target_collection is not None
+        return context.active_object is not None and context.active_object.type == 'MESH'
+        
+    def execute(self, context):
+        objects = get_target_objects(context)
+        if not objects:
+            self.report({'ERROR'}, "No mesh objects found to clear.")
+            return {'CANCELLED'}
+
+        for obj in objects:
+            layer = obj.data.color_attributes.get(VERTEX_COLOR_LAYER_NAME)
+            if not layer:
+                continue
+            n_loops = len(layer.data)
+            if n_loops == 0:
+                continue
+            flat = np.full(n_loops * 4, 1.0, dtype=np.float32)
+            layer.data.foreach_set('color', flat)
+            
+        self.report({'INFO'}, f"Cleared Color 1 on {len(objects)} object(s).")
+        return {'FINISHED'}
+
+def generate_detail_stack(context, objects=None, force_rebuild=False):
     """Bake `objects`, or the selection when none are given.
 
     The explicit list is what the debounced live path hands back after
@@ -359,6 +482,8 @@ def generate_detail_stack(context, objects=None):
     would write to the wrong mesh.
     """
     settings = context.scene.seto_vertex_bake
+    depsgraph = context.evaluated_depsgraph_get()
+    scene = context.scene
     for obj in (context.selected_objects if objects is None else objects):
         if obj.type != 'MESH':
             continue
@@ -366,30 +491,42 @@ def generate_detail_stack(context, objects=None):
         bm.verts.ensure_lookup_table()
         bm.faces.ensure_lookup_table()
         cache = _get_cache_entry(obj, bm)
+        if force_rebuild:
+            cache.clear()
+            cache['sig'] = _geo_signature(obj, bm)
         result_values = {v.index: 1.0 for v in bm.verts}
 
         if settings.detail_use_gradient:
             if 'gradient_z' not in cache:
-                min_z = min((v.co.z for v in bm.verts), default=0.0)
-                max_z = max((v.co.z for v in bm.verts), default=1.0)
-                z_range = max_z - min_z
+                matrix_world = obj.matrix_world
+                world_zs = {v.index: (matrix_world @ v.co).z for v in bm.verts}
                 gradient_z = {}
-                if z_range > 0.0001:
-                    for v in bm.verts:
-                        gradient_z[v.index] = (v.co.z - min_z) / z_range
+                if world_zs:
+                    min_z = min(world_zs.values())
+                    max_z = max(world_zs.values())
+                    z_range = max_z - min_z
+                    if z_range > 0.0001:
+                        for idx, wz in world_zs.items():
+                            gradient_z[idx] = (wz - min_z) / z_range
                 cache['gradient_z'] = gradient_z
-            for vi, normalized_z in cache['gradient_z'].items():
-                val = 1.0 - ((1.0 - normalized_z) * settings.detail_gradient_strength)
-                result_values[vi] *= max(0.0, min(1.0, val))
+            if not settings.gradient_use_colors:
+                for vi, normalized_z in cache['gradient_z'].items():
+                    adjusted_z = max(0.0, min(1.0, ((normalized_z - 0.5) * settings.gradient_scale) + 0.5 + settings.gradient_shift))
+                    val = 1.0 - ((1.0 - adjusted_z) * settings.detail_gradient_strength)
+                    result_values[vi] *= max(0.0, min(1.0, val))
 
         if settings.detail_use_ao:
             if 'ao_hits' not in cache:
-                bvh = BVHTree.FromBMesh(bm)
                 samples = 32
                 golden_ratio = (1 + 5 ** 0.5) / 2
                 ao_hits = {}
+                matrix_world = obj.matrix_world
+                normal_matrix = matrix_world.to_3x3()
                 for v in bm.verts:
                     hit_count = 0
+                    world_origin = matrix_world @ v.co
+                    world_normal = (normal_matrix @ v.normal).normalized()
+                    ray_start = world_origin + world_normal * 0.0001
                     for i in range(samples):
                         theta = 2 * math.pi * i / golden_ratio
                         phi = math.acos(1 - (i + 0.5) / samples)
@@ -399,7 +536,8 @@ def generate_detail_stack(context, objects=None):
                         ray_dir = Vector((x, y, z))
                         if ray_dir.dot(v.normal) < 0:
                             ray_dir = -ray_dir
-                        hit, _, _, _ = bvh.ray_cast(v.co + v.normal * 0.0001, ray_dir, 0.25)
+                        world_ray_dir = (normal_matrix @ ray_dir).normalized()
+                        hit, _, _, _, _, _ = scene.ray_cast(depsgraph, ray_start, world_ray_dir, distance=0.25)
                         if hit: hit_count += 1
                     ao_hits[v.index] = hit_count
                 cache['ao_hits'] = ao_hits
@@ -473,15 +611,17 @@ def generate_detail_stack(context, objects=None):
                 dy = math.sin(yaw) * math.cos(pitch)
                 dz = -math.sin(pitch)
                 world_light_dir = Vector((dx, dy, dz)).normalized()
-                local_light_dir = obj.matrix_world.inverted().to_3x3() @ world_light_dir
-                local_light_dir.normalize()
-                bvh = BVHTree.FromBMesh(bm)
-                to_light = -local_light_dir
+                to_light_world = -world_light_dir
                 shadow_ndotl = {}
+                matrix_world = obj.matrix_world
+                normal_matrix = matrix_world.to_3x3()
                 for v in bm.verts:
-                    n_dot_l = max(0.0, v.normal.dot(to_light))
+                    world_normal = (normal_matrix @ v.normal).normalized()
+                    n_dot_l = max(0.0, world_normal.dot(to_light_world))
                     if n_dot_l > 0.001:
-                        hit, _, _, _ = bvh.ray_cast(v.co + v.normal * 0.001, to_light, 100.0)
+                        world_origin = matrix_world @ v.co
+                        ray_start = world_origin + world_normal * 0.001
+                        hit, _, _, _, _, _ = scene.ray_cast(depsgraph, ray_start, to_light_world, distance=100.0)
                         if hit:
                             n_dot_l = 0.0
                     shadow_ndotl[v.index] = n_dot_l
@@ -493,11 +633,31 @@ def generate_detail_stack(context, objects=None):
 
         values_dict = {}
         layer = ensure_color_layer(obj.data, VERTEX_COLOR_LAYER_NAME)
+        
+        base_r, base_g, base_b = settings.detail_base_color
+        use_grad_colors = settings.detail_use_gradient and settings.gradient_use_colors
+        top_r, top_g, top_b = settings.gradient_color_top
+        bot_r, bot_g, bot_b = settings.gradient_color_bottom
+        grad_cache = cache.get('gradient_z', {})
+
         for v in bm.verts:
             val = max(0.0, min(1.0, result_values[v.index]))
-            r = val * settings.detail_base_color[0]
-            g = val * settings.detail_base_color[1]
-            b = val * settings.detail_base_color[2]
+            if use_grad_colors:
+                g_val = grad_cache.get(v.index, 1.0)
+                g_val = max(0.0, min(1.0, ((g_val - 0.5) * settings.gradient_scale) + 0.5 + settings.gradient_shift))
+                
+                cr = bot_r * (1.0 - g_val) + top_r * g_val
+                cg = bot_g * (1.0 - g_val) + top_g * g_val
+                cb = bot_b * (1.0 - g_val) + top_b * g_val
+                    
+                r = val * cr
+                g = val * cg
+                b = val * cb
+            else:
+                r = val * base_r
+                g = val * base_g
+                b = val * base_b
+                
             for loop in v.link_loops:
                 values_dict[loop.index] = (r, g, b)
         bm.free()
@@ -508,6 +668,7 @@ classes = (
     SETO_PG_vertex_bake,
     SETO_PT_vertex_bake_panel,
     SETO_OT_vertex_bake,
+    SETO_OT_vertex_bake_clear,
 )
 
 def register():
