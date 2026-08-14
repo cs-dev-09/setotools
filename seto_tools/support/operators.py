@@ -103,7 +103,26 @@ class SETO_OT_support_clear(bpy.types.Operator):
         return {'FINISHED'}
 
 
-_classes = (SETO_OT_support_report, SETO_OT_support_clear)
+class SETO_OT_support_copy_versions(bpy.types.Operator):
+    """Copy the versions a bug report needs, ready to paste into a ticket"""
+    bl_idname = "seto.support_copy_versions"
+    bl_label = "Copy Versions"
+    bl_options = {'REGISTER'}
+
+    def execute(self, context):
+        # The three answers nobody has to hand: which Blender, which version of
+        # this add-on, and whether Sollumz was even found. Typed from memory
+        # they are wrong often enough to cost a round trip, and the Discord
+        # ticket asks for all three in its first reply.
+        lines = [f"{name}: {value}" for name, value in report.environment()]
+        text = "\n".join(lines)
+        context.window_manager.clipboard = text
+        self.report({'INFO'}, "Versions copied - paste them into your ticket.")
+        return {'FINISHED'}
+
+
+_classes = (SETO_OT_support_report, SETO_OT_support_clear,
+            SETO_OT_support_copy_versions)
 
 
 def register():

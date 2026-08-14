@@ -19,6 +19,14 @@ from ..shared import panel_layout as pl
 SPONSOR_URL = "https://github.com/sponsors/seto3d"
 ISSUES_URL = "https://github.com/seto3d/void-tools/issues"
 
+# Where a bug report actually gets answered. A ticket on the Discord is a
+# conversation - somebody can ask which Blender, ask for the .blend, and say
+# "try this" in the same minute - where a GitHub issue is a letter that waits
+# for the next time the maintainer sits down. Most people reporting a problem
+# with a Blender add-on are not GitHub users either, and an issue form asks
+# them for an account before it asks them what went wrong.
+DISCORD_URL = "https://discord.gg/2xwCCnFxyK"
+
 
 def draw_links(layout, issues=True):
     """The links, drawn the same way wherever they appear.
@@ -60,10 +68,59 @@ class SETO_PT_support_panel(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
+
+        # The Discord first, and on its own. A ticket there gets asked "which
+        # Blender?" and "can you attach the .blend?" in the same minute, which
+        # is most of what fixing a report takes - and it does not ask anybody
+        # for a GitHub account before it asks them what went wrong.
+        box = layout.box()
+        box.label(text="Report a bug", icon='ERROR')
+
+        note = box.column(align=True)
+        note.scale_y = 0.8
+        note.label(text="Open a ticket on the Discord - that is")
+        note.label(text="where these get answered, usually same day.")
+
+        row = box.row()
+        row.scale_y = 1.4
+        row.operator("wm.url_open", text="Open a Ticket on Discord",
+                     icon='URL').url = DISCORD_URL
+
+        # The one thing the old form was genuinely good at: nobody remembers
+        # which Blender they are on, whether Sollumz was even found, or which
+        # version of this add-on they installed. The ticket wants all three,
+        # so they go to the clipboard in one press instead of being typed
+        # wrongly from memory.
+        box.operator("seto.support_copy_versions", icon='COPYDOWN')
+
+        layout.separator()
+        draw_links(layout, issues=True)
+
+        note = layout.column(align=True)
+        note.scale_y = 0.8
+        note.label(text="Void Tools is free and always will be.")
+        note.label(text="If it saved you an afternoon, there is a")
+        note.label(text="page for that - no pressure either way.")
+
+
+class SETO_PT_support_github_panel(pl.PlainChildPanel, bpy.types.Panel):
+    """The GitHub issue form, kept for people who would rather write one.
+
+    Second, and collapsed: the Discord is where a report gets answered, but an
+    issue is a better home for something reproducible that should stay
+    findable, and some people simply prefer it. The form itself is unchanged -
+    see properties.py for why it is shaped the way it is.
+    """
+    bl_label = "Report on GitHub instead"
+    bl_idname = "SETO_PT_support_github_panel"
+    bl_parent_id = "SETO_PT_support_panel"
+    bl_order = pl.FIRST_CHILD
+
+    def draw(self, context):
+        layout = self.layout
         settings = context.scene.seto_support
 
         box = layout.box()
-        box.label(text="Report a bug", icon='ERROR')
 
         col = box.column(align=True)
         col.label(text="Title")
@@ -110,17 +167,8 @@ class SETO_PT_support_panel(bpy.types.Panel):
         # matters - and a wall of small print in the panel is read once
         # and scrolled past for ever after.
 
-        layout.separator()
-        draw_links(layout, issues=False)
 
-        note = layout.column(align=True)
-        note.scale_y = 0.8
-        note.label(text="Void Tools is free and always will be.")
-        note.label(text="If it saved you an afternoon, there is a")
-        note.label(text="page for that - no pressure either way.")
-
-
-_classes = (SETO_PT_support_panel,)
+_classes = (SETO_PT_support_panel, SETO_PT_support_github_panel)
 
 
 def register():
