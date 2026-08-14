@@ -460,6 +460,105 @@ def find_or_create_decal_material(texture_stem, texture_path, reuse=True):
     return material
 
 
+# ------------------------------------------------ Sign Glow material
+
+# Preference order, best first. A sign halo wants **additive** blending - light
+# added to what is behind it, which is what a glow physically is - and it wants
+# alpha, because the halo's own alpha is its shape. Everything after the first
+# entry is a fallback for a Sollumz whose shader table does not carry it; the
+# further down the list, the less the shader does, but all of them emit.
+EMISSIVE_SHADER_CANDIDATES = (
+    "emissive_additive_alpha.sps",
+    "emissive_additive_uv_alpha.sps",
+    "emissive_alpha.sps",
+    "emissivestrong_alpha.sps",
+    "emissive.sps",
+    "emissivestrong.sps",
+)
+
+SIGN_GLOW_MATERIAL_PREFIX = "seto_signglow_"
+
+
+def _shader_manager():
+    """szio's ShaderManager - the table of what shaders exist in this Sollumz."""
+    shader_module = importlib.import_module("szio.gta5.shader")
+    return shader_module.ShaderManager
+
+
+def list_emissive_shaders():
+    """Every emissive shader this installation actually has, sorted.
+
+    For the panel's magnifier button. Sollumz versions differ in what their
+    shader table carries, and "the shader you asked for is not here" is only
+    useful next to "these are".
+    """
+    try:
+        shaders = getattr(_shader_manager(), "shaders", None)
+    except (ImportError, SollumzUnavailableError):
+        return []
+    if isinstance(shaders, dict):
+        return sorted(name for name in shaders if "emissive" in str(name).lower())
+    return [name for name in EMISSIVE_SHADER_CANDIDATES
+            if _shader_exists(name)]
+
+
+def _shader_exists(name):
+    try:
+        return _shader_manager().find_shader(name) is not None
+    except (ImportError, SollumzUnavailableError, AttributeError):
+        return False
+
+
+def find_or_create_emissive_material(name, image, preferred_shader):
+    """A Sollumz emissive material carrying `image`, or a clear reason why not.
+
+    Returns `(material, shader_used)`. Unlike the other builders here this one
+    does **not** reuse: every sign glow has its own generated texture, so a
+    shared material would mean two signs wearing one halo.
+
+    The preferred shader is tried first and the candidates after it, because a
+    missing shader is a Sollumz-version difference rather than a mistake by the
+    user, and failing outright would leave them reading a shader table to find
+    the one word that differs. What was actually used is returned so the panel
+    can say so.
+
+    post_create_shader_add_default_images stays uncalled, as everywhere else: it
+    would drop a blank generated image into the other slots and that blank
+    exports as a real texture.
+    """
+    shader_materials = _import("ydr.shader_materials")
+    if not hasattr(shader_materials, "create_shader"):
+        raise SollumzShaderError(
+            "This Sollumz has no ydr.shader_materials.create_shader.")
+
+    order = [preferred_shader] + [c for c in EMISSIVE_SHADER_CANDIDATES
+                                  if c != preferred_shader]
+    tried = []
+    for candidate in order:
+        if not _shader_exists(candidate):
+            tried.append(f"{candidate}: not in this Sollumz")
+            continue
+        try:
+            material = shader_materials.create_shader(candidate)
+        except Exception as error:            # noqa: BLE001 - reported, not hidden
+            tried.append(f"{candidate}: {type(error).__name__}")
+            continue
+        material.name = f"{SIGN_GLOW_MATERIAL_PREFIX}{name}"
+        node = get_diffuse_node(material)
+        if node is None:
+            bpy.data.materials.remove(material)
+            tried.append(f"{candidate}: no {DIFFUSE_SAMPLER_NODE} node")
+            continue
+        node.image = image
+        return material, candidate
+
+    available = list_emissive_shaders()
+    detail = "; ".join(tried[:3])
+    if available:
+        detail += " | available: " + ", ".join(available[:5])
+    raise SollumzShaderError(detail or "no emissive shader could be created")
+
+
 def assign_material_to_object(obj, material):
     """Assign `material` to `obj`'s mesh and bring its UV/Color attributes in
     line with what the shader expects, the same way Sollumz's own

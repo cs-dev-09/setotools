@@ -170,7 +170,8 @@ for parent, expected in (
         ("SETO_PT_analysis_group",
          ["SETO_PT_density_checker_panel", "SETO_PT_texture_budget_panel",
           "SETO_PT_preflight_panel"]),
-        ("SETO_PT_materials_group", ["SETO_PT_material_maker_panel"]),
+        ("SETO_PT_materials_group",
+         ["SETO_PT_material_maker_panel", "SETO_PT_sign_glow_panel"]),
         ("SETO_PT_dressing_group", ["SETO_PT_scatter_panel"])):
     got = [c.bl_idname for c in panels
            if getattr(c, "bl_parent_id", "") == parent]
