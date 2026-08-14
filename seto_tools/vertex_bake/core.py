@@ -382,6 +382,9 @@ class SETO_PT_vertex_bake_panel(bpy.types.Panel):
                 col.label(text=line)
 
         layout.separator()
+        # The switch first: this tool writes to the mesh you have
+        # selected, so whether it does that while you drag is a decision
+        # worth seeing before you drag.
         layout.prop(settings, "live_update")
         col = layout.column(align=True)
         col.scale_y = 1.2
@@ -417,8 +420,6 @@ class SETO_OT_vertex_bake(bpy.types.Operator):
             return {'CANCELLED'}
 
         settings = context.scene.seto_vertex_bake
-        depsgraph = context.evaluated_depsgraph_get()
-        scene = context.scene
         total = len(objects)
         wm = context.window_manager
         wm.progress_begin(0, total)
@@ -467,9 +468,16 @@ class SETO_OT_vertex_bake_clear(bpy.types.Operator):
             n_loops = len(layer.data)
             if n_loops == 0:
                 continue
-            flat = np.full(n_loops * 4, 1.0, dtype=np.float32)
+            # Clear undoes the colour this tool wrote, and nothing else.
+            # Alpha in `Color 1` is what the decal shaders blend by, so it
+            # is read back and put down untouched - writing 1.0 over it
+            # would make every decal on the mesh fully opaque, invisibly,
+            # from a button labelled Clear.
+            flat = np.empty(n_loops * 4, dtype=np.float32)
+            layer.data.foreach_get('color', flat)
+            flat.reshape(n_loops, 4)[:, :3] = 1.0
             layer.data.foreach_set('color', flat)
-            
+
         self.report({'INFO'}, f"Cleared Color 1 on {len(objects)} object(s).")
         return {'FINISHED'}
 

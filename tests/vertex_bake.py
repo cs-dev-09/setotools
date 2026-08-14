@@ -87,6 +87,8 @@ bystander.name = "bake_bystander"
 # convex shape - so the layer can only be shown to work somewhere that
 # actually occludes itself.
 import bmesh  # noqa: E402
+import math  # noqa: E402
+from mathutils import Vector  # noqa: E402
 room_mesh = bpy.data.meshes.new("bake_room")
 bm = bmesh.new()
 bmesh.ops.create_cube(bm, size=2.0)
@@ -192,6 +194,116 @@ source = open(core.__file__, encoding="utf-8").read()
 check("nothing in here swallows an exception without a word",
       "except Exception:\n            pass" not in source
       and "except Exception:\n        pass" not in source)
+
+print("=== Clear takes back the colour, and nothing else ===")
+# Clear exists to undo a bake. The channel it must leave alone is the same
+# one the bake must leave alone - alpha is what the decal shaders blend by,
+# so a Clear that resets it to 1.0 makes every decal on that mesh fully
+# opaque, invisibly, from a button that says it only clears colour.
+settings.live_update = False
+only(cube)
+bpy.ops.seto.vertex_bake()
+attr = cube.data.color_attributes[core.VERTEX_COLOR_LAYER_NAME]
+for item in attr.data:
+    item.color = (0.2, 0.2, 0.2, 0.4)
+bpy.ops.seto.vertex_bake_clear()
+cleared = colours(cube)
+check("Clear puts the colour back to white",
+      all(abs(c[i] - 1.0) < BYTE for c in cleared for i in range(3)),
+      cleared[:2])
+check("and leaves every alpha exactly where it was",
+      all(abs(c[3] - 0.4) < BYTE for c in cleared),
+      sorted({round(c[3], 3) for c in cleared})[:4])
+
+print("=== a whole collection, not just what you clicked ===")
+group = bpy.data.collections.new("bake_group")
+scene.collection.children.link(group)
+members = []
+for i in range(3):
+    member_mesh = bpy.data.meshes.new(f"bake_member_{i}")
+    bm = bmesh.new()
+    bmesh.ops.create_cube(bm, size=1.0)
+    bm.to_mesh(member_mesh)
+    bm.free()
+    member = bpy.data.objects.new(f"bake_member_{i}", member_mesh)
+    group.objects.link(member)
+    members.append(member)
+hidden = members[-1]
+hidden.hide_set(True)
+
+deselect_all()
+view.objects.active = None
+settings.target_mode = 'COLLECTION'
+settings.target_collection = group
+settings.bake_hidden = False
+check("a chosen collection is a target on its own - nothing need be selected",
+      bpy.ops.seto.vertex_bake.poll())
+bpy.ops.seto.vertex_bake()
+check("every visible member is baked",
+      all(core.VERTEX_COLOR_LAYER_NAME in m.data.color_attributes
+          for m in members[:-1]))
+check("and one hidden in the viewport is left alone until asked for",
+      core.VERTEX_COLOR_LAYER_NAME not in hidden.data.color_attributes)
+settings.bake_hidden = True
+bpy.ops.seto.vertex_bake()
+check("Include Hidden is what reaches it",
+      core.VERTEX_COLOR_LAYER_NAME in hidden.data.color_attributes)
+
+print("=== live update stays on the selection, whatever the target is ===")
+# A slider drag walking a whole collection is the difference between a
+# laggy drag and a Blender that has stopped answering. The target mode is
+# for the button; the drag is always just what you have selected.
+settings.live_update = True
+only(cube)
+member_before = colours(members[0])
+cube_before = colours(cube)
+settings.detail_base_color = (0.0, 0.0, 1.0)
+check("a setting change still bakes the selection", colours(cube) != cube_before)
+check("and leaves the collection behind it untouched",
+      colours(members[0]) == member_before)
+
+print("=== the gradient can carry two colours ===")
+settings.target_mode = 'SELECTED'
+settings.live_update = False
+only(cube)
+cube.rotation_euler = (0.0, 0.0, 0.0)
+view.update()
+for name in ("detail_use_ao", "detail_use_edge_dirt", "detail_use_floor_grime",
+             "detail_use_edge_wear", "detail_use_random",
+             "detail_use_fake_shadow"):
+    setattr(settings, name, False)
+settings.detail_use_gradient = True
+settings.gradient_use_colors = True
+settings.gradient_color_top = (1.0, 0.0, 0.0)
+settings.gradient_color_bottom = (0.0, 0.0, 1.0)
+settings.gradient_shift = 0.0
+settings.gradient_scale = 1.0
+bpy.ops.seto.vertex_bake()
+graded = colours(cube)
+check("the top of the mesh takes the top colour",
+      any(c[0] > 1.0 - BYTE and c[2] < BYTE for c in graded), graded[:2])
+check("the bottom takes the bottom colour",
+      any(c[2] > 1.0 - BYTE and c[0] < BYTE for c in graded), graded[:2])
+
+print("=== the mask dies when the object moves ===")
+# AO, shadow and the gradient are all measured in world space now, so a
+# cached mask belongs to a transform as much as to a mesh. Without the
+# matrix in the signature a rotated object keeps the shading it had while
+# it was upright, and only the button (which rebuilds anyway) looks right.
+probe = core.get_bmesh_from_object(cube)
+sig_upright = core._geo_signature(cube, probe)
+upright = colours(cube)
+cube.rotation_euler = (math.radians(90.0), 0.0, 0.0)
+view.update()
+sig_rotated = core._geo_signature(cube, probe)
+probe.free()
+check("the signature follows the transform, not only the mesh",
+      sig_upright != sig_rotated)
+bpy.ops.seto.vertex_bake()
+check("so the same cube bakes differently once it is on its side",
+      colours(cube) != upright)
+cube.rotation_euler = (0.0, 0.0, 0.0)
+view.update()
 
 print("=== it refuses politely ===")
 deselect_all()
