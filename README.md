@@ -27,6 +27,7 @@ tool, troubleshooting. Built from [`docs/`](docs) in this repo.
 | [Density Check](seto_tools/density_checker) | A triangle-budget heatmap graded against vanilla GTA | the whole scene, read-only |
 | [Texture Budget](seto_tools/texture_budget) | The same heatmap for texture resolution, plus what the scene costs in VRAM | the whole scene, read-only |
 | [Material Maker](seto_tools/materials) | Height, normal and specular maps from one diffuse image | a diffuse texture |
+| [Sign Glow](seto_tools/sign_glow) | An emissive halo traced from 3D lettering, on a plane behind it — written out as a `.dds` and a Sollumz emissive shader | the selected lettering |
 | [Pre-Flight](seto_tools/preflight) | The export test you would otherwise run in game — missing UVs, unapplied scale, non-DDS textures | the whole scene, read-only |
 | [Trash Scatter](seto_tools/scatter) | Vanilla GTA litter scattered over a floor as MLO entities — dense along the walls, seeded, spaced — plus a procedural Floor Dirt overlay, the flat grime sheet vanilla interiors use | selected faces |
 
@@ -37,6 +38,14 @@ tool, troubleshooting. Built from [`docs/`](docs) in this repo.
 **[Vertex Color Bake ▶](https://github.com/seto3d/void-tools/releases/download/v1.2.1/vertex-color-bake.mp4)** — ambient occlusion, dirt, grime and
 wear stacked into `Color 1`, one layer at a time. No texture, no extra object,
 no draw call.
+Also: [a whole collection in one press, fading between two colours ▶](https://github.com/seto3d/void-tools/releases/download/v1.3.0/vertex-color-bake-collection.mp4)
+and [AO and the fake sun casting between objects ▶](https://github.com/seto3d/void-tools/releases/download/v1.3.0/vertex-color-bake-global.mp4)
+
+[![Sign Glow in Blender](docs/images/sign-glow-poster.jpg)](https://github.com/seto3d/void-tools/releases/download/v1.3.0/sign-glow.mp4)
+
+**[Sign Glow ▶](https://github.com/seto3d/void-tools/releases/download/v1.3.0/sign-glow.mp4)** — an emissive halo traced from the lettering's own
+silhouette, on one quad behind it. How a sign reads at night without a single
+light being placed.
 
 [![Trash Scatter in Blender](docs/images/trash-scatter-blender-poster.jpg)](https://github.com/seto3d/void-tools/releases/download/v1.1.0/trash-scatter-blender.mp4)
 
@@ -260,6 +269,15 @@ Void Tools is built in the open, and it is better for the people who turn up.
 
 - [@gecu3d](https://github.com/gecu3d) — **Material Maker**: height, normal and specular maps from a
   single diffuse image, written as a standalone add-on and folded in here.
+
+- [Molo Modding](https://github.com/molossen) — **[Sign Glow](seto_tools/sign_glow)**:
+  the halo behind lit 3D lettering. It traces the letters' own silhouette,
+  blurs it at two radii — a tight core and a wide bloom — and puts the result
+  on an emissive plane just behind them, which is how a sign reads at night in
+  game without a single real light being placed. Written as a standalone
+  add-on and folded in here; the DDS writer it brought is now shared by the
+  whole project, because nothing else here could put a texture on disk in a
+  format GTA reads.
 
 **Sponsors**
 

@@ -48,6 +48,22 @@ the one tool here that makes a texture rather than putting one onto geometry.
 The algorithms are ported from Bounding Box Software's Materialize, which is
 why this add-on is GPL-3.
 
+### [Molo Modding](https://github.com/molossen)
+
+**[Sign Glow](tools/sign-glow.md)** — the halo behind lit 3D lettering.
+
+Also written as a standalone add-on and handed over whole. It traces the
+letters' own silhouette, blurs it at two radii — a tight core and a wide bloom —
+and puts the result on an emissive plane just behind them. That is how a lit
+sign reads at night in GTA: not with a light per sign, which no interior's
+budget survives, but with a plane carrying a picture of the glow, which is what
+vanilla signage does.
+
+What it brought with it outlasts the tool. Blender cannot write DDS, and until
+this arrived nothing in the add-on could put a texture on disk in a format the
+game reads; that writer is `shared/dds.py` now, and it belongs to the whole
+project.
+
 
 ## Sponsors
 

@@ -16,7 +16,7 @@ panel, and it is one undo away.
 [Install it](installation.md){ .md-button .md-button--primary }
 [Browse the tools](the-tab.md){ .md-button }
 
-## The twelve tools
+## The thirteen tools
 
 | Tool | What it makes | Built from |
 | --- | --- | --- |
@@ -31,6 +31,7 @@ panel, and it is one undo away.
 | [Texture Budget](tools/texture-budget.md) | The same heatmap for texture resolution, plus VRAM cost | the scene, read-only |
 | [Pre-Flight](tools/pre-flight.md) | The export test you would otherwise run in game | the scene, read-only |
 | [Material Maker](tools/material-maker.md) | Height, normal and specular maps | one diffuse image |
+| [Sign Glow](tools/sign-glow.md) | An emissive halo behind lit 3D lettering | the selected lettering |
 | [Trash Scatter](tools/trash-scatter.md) | Vanilla GTA litter placed as MLO entities, plus the floor grime under it | selected floor faces |
 
 ## Why it is shaped like this

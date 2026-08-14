@@ -2,6 +2,79 @@
 
 All notable changes to Void Tools.
 
+## 1.3.0 — a sign that lights itself, and a bake that sees the room
+
+### Added — Sign Glow
+
+Thanks to [Molo Modding](https://github.com/molossen), who wrote it as a
+standalone add-on: the halo behind lit 3D lettering, in the **Materials**
+section.
+
+Select the letters and press Create. The tool traces their own silhouette
+onto a plane square-on to the sign, blurs it at two radii — a tight core
+hugging the letters and a wide bloom behind them — and puts the result on
+an emissive plane just behind the lettering. That is how a sign reads at
+night in game without a single real light being placed, and it costs one
+quad and one texture.
+
+Everything after Create is live: colour, the two blur sizes and their
+intensities, resolution, how far behind the letters the plane sits.
+**Auto Fit** sizes the plane from the halo itself, so widening the bloom
+grows the plane to hold it rather than clipping it. The plane inherits
+the sign's rotation, so its transform gizmo runs along the sign rather
+than along the world.
+
+**The plane fades out rather than ending on a line.** It is a bordered
+grid whose outer ring of vertices carries `Color 1` alpha **0** — that
+alpha is what the emissive shader blends by, so a plane that stayed at 1.0
+to its border would stop at a hard rectangle even where its halo had
+already faded to nothing, and read in game as a lit box of air around the
+sign. **Edge Fade** sets how wide the fading band is.
+
+**The new glow already wears the shader it will be exported with**, an
+`emissive_additive_alpha.sps` pointing at the generated halo — a sign that
+looks right in Blender and arrives in game as a grey quad is the thing
+this tool exists to avoid. If your Sollumz does not carry that shader the
+next emissive one that exists is used and the panel says which; versions
+differ, and hunting through a shader table for the one word that changed
+is not a thing anyone should have to do.
+
+**Nothing is written to your drive until you ask for it.** The texture
+stays packed in the .blend, which is all the viewport and the material
+need. **Export for Sollumz** writes the `.dds` beside your `.blend` and
+rebuilds the material around the file — the step that makes the sign
+exportable, since Sollumz embeds whatever the image points at — and
+**Save DDS** writes it wherever you choose. After an export, every rebuild
+keeps that file equal to the halo you are looking at. Everything except
+the shader works with no Sollumz installed at all.
+
+### Added — Vertex Color Bake casts across the whole scene
+
+Thanks to [@cs-dev-09](https://github.com/cs-dev-09) again
+([#3](https://github.com/seto3d/void-tools/pull/3)):
+
+- **Ambient Occlusion and Fake Shadow now see other objects.** They used
+  to raycast against the object being baked and nothing else, so a crate
+  against a wall was occluded by neither. Both now cast against the
+  scene, in world space, which also means moving an object re-bakes it
+  rather than keeping the shading it had somewhere else.
+- **A Collection target**, with a progress bar. Point it at a collection
+  and the button bakes every mesh in it — optionally including the ones
+  hidden in the viewport — with nothing selected at all. Live Update
+  stays on your selection whatever the target is: a slider drag walking a
+  whole collection is not a live tool.
+- **Two-colour gradients.** The linear gradient can fade between a top
+  and a bottom colour rather than only darkening the base one, with
+  Shift and Scale to place the fade where the asset needs it.
+- **A Clear button**, beside Generate.
+
+### Fixed — Clear leaves your alpha alone
+
+Clear reset all four channels, alpha included. Alpha in `Color 1` is what
+the decal shaders blend by, so that made every decal on the mesh fully
+opaque — invisibly, from a button that says it only clears colour. It now
+puts the colour back to white and reads the alpha channel back untouched.
+
 ## 1.2.1 — Vertex Color Bake asks before it writes
 
 ### Added — a Live Update switch on Vertex Color Bake

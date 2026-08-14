@@ -19,6 +19,26 @@ strength.
 *Stacking the layers onto a prop and watching `Color 1` fill in as each one
 comes on.*
 
+<video controls muted playsinline preload="none"
+       poster="../../images/vertex-color-bake-collection-poster.jpg"
+       style="width:100%;border-radius:.2rem">
+  <source src="https://github.com/seto3d/void-tools/releases/download/v1.3.0/vertex-color-bake-collection.mp4" type="video/mp4">
+  <a href="https://github.com/seto3d/void-tools/releases/download/v1.3.0/vertex-color-bake-collection.mp4">Download the video</a>
+</video>
+
+*A whole collection baked in one press, with the gradient fading between two
+colours rather than only darkening one.*
+
+<video controls muted playsinline preload="none"
+       poster="../../images/vertex-color-bake-global-poster.jpg"
+       style="width:100%;border-radius:.2rem">
+  <source src="https://github.com/seto3d/void-tools/releases/download/v1.3.0/vertex-color-bake-global.mp4" type="video/mp4">
+  <a href="https://github.com/seto3d/void-tools/releases/download/v1.3.0/vertex-color-bake-global.mp4">Download the video</a>
+</video>
+
+*Ambient occlusion and the fake sun casting between objects — an object now
+darkens the one it stands against, not only itself.*
+
 This is the cheapest wear there is. It costs no texture, no extra object and no
 draw call: the colour rides on vertices the mesh already has.
 
@@ -41,6 +61,34 @@ draw call: the colour rides on vertices the mesh already has.
 
 Every object in the selection is baked, not just the active one.
 
+**Clear** puts `Color 1` back to white on the same targets. It leaves the
+alpha channel exactly where it was — that is the channel the decal shaders
+blend by, and resetting it would make every decal on the mesh opaque without
+saying so.
+
+### Baking a whole collection
+
+The **Target** at the top of the panel switches between **Selected Objects**
+and **Collection**. Point it at a collection and Generate bakes every mesh
+inside it — with nothing selected at all — reporting progress as it goes.
+**Include Hidden** decides whether objects hidden in the viewport are baked
+too; off by default, because hidden usually means "not this one".
+
+Live Update always follows your **selection**, whatever the target is. A
+slider drag that walked a whole collection would not be live, it would be a
+freeze.
+
+### Casting between objects
+
+AO and Fake Shadow cast against the **scene**, not only against the object
+being baked. A crate standing against a wall darkens where it meets the wall,
+and the wall darkens behind the crate — which is the difference between baked
+lighting and a per-object effect.
+
+Two things follow from that. Moving an object invalidates its cache, so it
+re-bakes rather than keeping the shading it had somewhere else. And what is
+around an object at bake time matters: bake the room with the furniture in it.
+
 ## The layers
 
 | Layer | What it darkens or lightens | Default |
@@ -55,6 +103,12 @@ Every object in the selection is baked, not just the active one.
 
 **Base Color** is what all of it multiplies down from — white unless you want
 the whole object tinted.
+
+The **Linear Gradient** can carry two colours instead of darkening the base
+one: tick **Use Custom Colors** and it fades from a **Top** colour to a
+**Bottom** one down the object's world height. **Shift** slides the fade up or
+down, **Scale** tightens or spreads it — so the transition can be put where the
+asset needs it rather than where the bounding box happens to put it.
 
 ## Why it is fast
 
