@@ -9,6 +9,7 @@ from bpy.props import BoolProperty, FloatProperty, FloatVectorProperty, PointerP
 
 from ..shared import icons
 from ..shared import panel_layout as pl
+from ..shared import ui_common
 
 VERTEX_COLOR_LAYER_NAME = 'Color 1'
 
@@ -153,14 +154,89 @@ def write_vertex_colors_fast(layer, values_dict):
             colors[loop_idx, 2] = b
     layer.data.foreach_set('color', colors.reshape(-1))
 
-def update_detail_stack(self, context):
-    if context.selected_objects:
+# ============================================================
+# Live baking
+# ============================================================
+# This tool writes to the user's own mesh, so "live" has to be a choice
+# and a drag has to cost one bake rather than forty. Both are the same
+# machinery the strip tools use: a switch, and a one-shot timer that
+# fires when the hand stops. Background Blender has no event loop, so
+# there the bake happens immediately.
+
+_baking = False
+_pending = set()
+_timer_armed = False
+DEBOUNCE_SECONDS = 0.25
+
+
+def _bake_now(objects, report_to=None):
+    """Bake `objects`, putting any failure where it can be seen.
+
+    The old version swallowed every exception, which made a bake that
+    could not run look exactly like a bake that had nothing to do.
+    """
+    settings = bpy.context.scene.seto_vertex_bake
+    try:
+        generate_detail_stack(bpy.context, objects=objects)
+        settings.last_error = ""
+    except Exception as error:
+        import traceback
+        traceback.print_exc()
+        settings.last_error = f"{type(error).__name__}: {error}"
+        if report_to is not None:
+            report_to.report({'ERROR'}, f"Bake failed: {error}")
+        return False
+    return True
+
+
+def _flush_pending():
+    global _timer_armed, _baking
+    _timer_armed = False
+    names = list(_pending)
+    _pending.clear()
+    objects = [obj for obj in (bpy.data.objects.get(n) for n in names)
+               if obj is not None and obj.type == 'MESH']
+    if objects:
+        _baking = True
         try:
-            generate_detail_stack(context)
-        except Exception:
-            pass
+            _bake_now(objects)
+        finally:
+            _baking = False
+    return None          # one shot
+
+
+def update_detail_stack(self, context):
+    global _timer_armed
+    if _baking or not self.live_update:
+        return
+    selected = [obj for obj in context.selected_objects
+                if obj.type == 'MESH']
+    if not selected:
+        return
+    if bpy.app.background:
+        _bake_now(selected)
+        return
+    _pending.update(obj.name for obj in selected)
+    if not _timer_armed:
+        _timer_armed = True
+        bpy.app.timers.register(_flush_pending,
+                                first_interval=DEBOUNCE_SECONDS)
+
 
 class SETO_PG_vertex_bake(bpy.types.PropertyGroup):
+    live_update: BoolProperty(
+        name="Live Update",
+        description="Bake as these settings change. This tool writes to "
+                    "the mesh you have selected, so turning it off is how "
+                    "you look at the settings without touching anything - "
+                    "the Generate button then does it when you ask",
+        default=True,
+    )
+    # What the last bake failed with, or "". Shown on the panel: a
+    # property callback has no status bar to report into, and a silent
+    # failure is indistinguishable from having nothing to do.
+    last_error: bpy.props.StringProperty(default="", options={'HIDDEN'})
+
     detail_base_color: FloatVectorProperty(name="Base Color", subtype='COLOR', default=(1.0, 1.0, 1.0), size=3, min=0.0, max=1.0, update=update_detail_stack)
     detail_use_gradient: BoolProperty(name="Use Linear Gradient", default=False, update=update_detail_stack)
     detail_gradient_strength: FloatProperty(name="Gradient Strength", default=0.5, min=0.0, max=2.0, update=update_detail_stack)
@@ -230,10 +306,27 @@ class SETO_PT_vertex_bake_panel(bpy.types.Panel):
             row.prop(settings, "detail_shadow_angle", text="Angle")
             row.prop(settings, "detail_shadow_altitude", text="Altitude")
             
+        if settings.last_error:
+            warn = layout.box()
+            warn.alert = True
+            col = warn.column(align=True)
+            col.label(text="Last bake failed:", icon='ERROR')
+            for line in ui_common.wrap(settings.last_error, 38):
+                col.label(text=line)
+
         layout.separator()
+        # The switch first: this tool writes to the mesh you have
+        # selected, so whether it does that while you drag is a decision
+        # worth seeing before you drag.
+        layout.prop(settings, "live_update")
         col = layout.column(align=True)
         col.scale_y = 1.2
         col.operator("seto.vertex_bake", icon='NODETREE', text="Generate Vertex Color")
+
+        note = layout.column(align=True)
+        note.scale_y = 0.8
+        note.label(text="Writes Color 1 onto the selected mesh.",
+                   icon='INFO')
 
 class SETO_OT_vertex_bake(bpy.types.Operator):
     bl_idname = "seto.vertex_bake"
@@ -245,12 +338,28 @@ class SETO_OT_vertex_bake(bpy.types.Operator):
         return context.active_object is not None and context.active_object.type == 'MESH'
         
     def execute(self, context):
-        generate_detail_stack(context)
+        objects = [obj for obj in context.selected_objects
+                   if obj.type == 'MESH']
+        if not objects:
+            self.report({'ERROR'}, "Select a mesh to bake onto.")
+            return {'CANCELLED'}
+        if not _bake_now(objects, report_to=self):
+            return {'CANCELLED'}
+        self.report({'INFO'},
+                    f"Baked Color 1 onto {len(objects)} "
+                    f"object{'s' if len(objects) != 1 else ''}.")
         return {'FINISHED'}
 
-def generate_detail_stack(context):
+def generate_detail_stack(context, objects=None):
+    """Bake `objects`, or the selection when none are given.
+
+    The explicit list is what the debounced live path hands back after
+    the timer fires - by then the selection may be something else, and
+    baking whatever happens to be selected a quarter of a second later
+    would write to the wrong mesh.
+    """
     settings = context.scene.seto_vertex_bake
-    for obj in context.selected_objects:
+    for obj in (context.selected_objects if objects is None else objects):
         if obj.type != 'MESH':
             continue
         bm = get_bmesh_from_object(obj)

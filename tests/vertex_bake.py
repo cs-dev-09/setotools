@@ -167,18 +167,31 @@ check("strength 0 gives the flat base colour back",
       all(abs(c[0] - 1.0) < BYTE for c in colours(cube)),
       colours(cube)[:2])
 
-print("=== changing a setting bakes, with no button pressed ===")
-# Pinned because it is surprising, not because it is obviously right: every
-# setting carries an update callback that bakes the current selection at
-# once. It is what makes the panel feel live, and it also means a mesh is
-# written to by browsing the panel with it selected. If that is ever
-# turned into a Live toggle like the strip tools have, this check is the
-# one that should change with it.
+print("=== live update is a switch, and it is honoured ===")
+# It writes to the user's own mesh, so "bake while you drag" has to be
+# something they chose. With it off, a property change must not touch a
+# thing - not even the object sitting selected in front of them.
+settings.live_update = False
 settings.detail_base_color = (1.0, 1.0, 1.0)
 only(bystander)
 settings.detail_base_color = (0.0, 1.0, 0.0)
-check("a property change bakes the selection immediately",
+check("with Live Update off, changing a setting bakes nothing",
+      core.VERTEX_COLOR_LAYER_NAME not in bystander.data.color_attributes)
+
+settings.live_update = True
+settings.detail_base_color = (1.0, 1.0, 1.0)
+check("with it on, the selection is baked as the setting changes",
       core.VERTEX_COLOR_LAYER_NAME in bystander.data.color_attributes)
+
+print("=== a failed bake is never silent ===")
+check("the settings carry the last failure, for the panel to show",
+      hasattr(settings, "last_error"))
+check("and a bake that worked leaves it empty", settings.last_error == "",
+      settings.last_error)
+source = open(core.__file__, encoding="utf-8").read()
+check("nothing in here swallows an exception without a word",
+      "except Exception:\n            pass" not in source
+      and "except Exception:\n        pass" not in source)
 
 print("=== it refuses politely ===")
 deselect_all()

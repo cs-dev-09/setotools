@@ -2,6 +2,31 @@
 
 All notable changes to Void Tools.
 
+## 1.2.1 — Vertex Color Bake asks before it writes
+
+### Added — a Live Update switch on Vertex Color Bake
+
+It writes to the mesh you have selected, and every setting used to bake
+the moment it changed — so looking through the panel with an object
+selected wrote to that object, and one slider drag was dozens of bakes.
+
+**Live Update** is that decision, made visible, on by default like every
+other live tool here. Turn it off and the settings are yours to read and
+set; **Generate Vertex Color** then does it when you ask. With it on, a
+drag now costs **one** bake, when your hand stops, and it bakes the
+objects that were selected when you changed the setting rather than
+whatever is selected a quarter-second later.
+
+The panel also says plainly, under the button, that it writes `Color 1`
+onto the selected mesh.
+
+### Fixed — a bake that fails says so
+
+The live path swallowed every exception, which made a bake that could not
+run look exactly like a bake with nothing to do. The reason now lands on
+the panel and in the console, and the Generate button reports it properly
+instead of returning success.
+
 ## 1.2.0 — wear with no texture at all
 
 ### Added — Vertex Color Bake
