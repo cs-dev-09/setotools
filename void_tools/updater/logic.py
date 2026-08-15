@@ -10,6 +10,9 @@ from ..shared import addon_version
 
 RELEASES_LATEST = "https://api.github.com/repos/seto3d/void-tools/releases/latest"
 RELEASES_PAGE = "https://github.com/seto3d/void-tools/releases/latest"
+# Where somebody is sent when the new release cannot be installed over the old
+# one - the three clicks that move a zip install onto the repository.
+INSTALL_GUIDE = "https://seto3d.github.io/void-tools/installation/"
 DOWNLOAD_PREFIX = "https://github.com/seto3d/void-tools/releases/download/"
 ASSET_NAME = "void-tools.zip"
 
@@ -83,4 +86,38 @@ def pick(release):
         if (asset.get("name") == ASSET_NAME
                 and asset.get("browser_download_url")):
             return tag, asset["browser_download_url"], int(asset.get("size", 0))
+    return None
+
+
+# ---- what shape is the archive we just downloaded ------------------------
+
+LEGACY, EXTENSION = "legacy", "extension"
+
+
+def archive_shape(names):
+    """Classify a downloaded zip by its entry names, or None if it is neither.
+
+    Two shapes are legitimate and they want opposite handling, which is the
+    whole reason this is a function with a test rather than a condition inside
+    the installer:
+
+      * **legacy** - one `void_tools/` root with the package init inside it.
+        `preferences.addon_install` understands exactly this.
+      * **extension** - `blender_manifest.toml` and the init at the *root*.
+        Handing that to `addon_install` scatters the add-on loose across
+        scripts/addons.
+
+    The releases ship the extension shape now, so an installer that only knew
+    the legacy one refused every real update with "this did not look like Void
+    Tools" - which is what shipped in 1.2.2, and what nothing here caught
+    because no test ever looked at the shape of the actual asset.
+    """
+    names = list(names)
+    if not names:
+        return None
+    if ("void_tools/__init__.py" in names
+            and all(name.startswith("void_tools/") for name in names)):
+        return LEGACY
+    if "blender_manifest.toml" in names and "__init__.py" in names:
+        return EXTENSION
     return None

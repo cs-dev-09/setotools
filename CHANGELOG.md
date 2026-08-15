@@ -12,6 +12,21 @@ All notable changes to Void Tools.
 > the first version's `if not bpy.app.background` guard meant no background
 > test could ever have caught it.
 
+### Fixed — the Update button could not install anything
+
+The releases carry a Blender **extension** package now — its manifest and
+its `__init__.py` sit at the archive root, where a classic add-on zip has
+a folder. The in-add-on updater only knew the old shape, so it inspected
+every genuine update and refused it with *"the download did not look like
+Void Tools"*. Accepting it would have been worse: `addon_install` scatters
+a root-level archive loose across `scripts/addons`.
+
+It tells the two apart now. An extension package cannot be installed over
+a classic copy — Blender puts it somewhere else entirely and both would
+register the same panels — so the button says so plainly and opens the
+install guide, rather than leaving two Void Tools in one Blender. Moving
+across is a one-time thing; after it, Blender does the updating.
+
 ### Fixed — pink textures after an update
 
 The textures the strip tools ship with live inside the add-on, and Blender

@@ -105,18 +105,40 @@ class SETO_OT_update_install(bpy.types.Operator):
             self.report({'ERROR'}, state.status)
             return {'CANCELLED'}
 
-        # The zip has to look like this add-on before it goes anywhere
-        # near the addons folder: one void_tools/ root with the package
-        # init in it, nothing outside it.
+        # The zip has to look like this add-on before it goes anywhere near
+        # the addons folder. There are two shapes it can legitimately be, and
+        # they want completely different handling:
+        #
+        #   legacy    one void_tools/ root with the package init in it
+        #   extension blender_manifest.toml and the init at the *root*
+        #
+        # The releases ship the extension one now, and `addon_install` would
+        # scatter it loose across scripts/addons - which is why this refuses
+        # rather than guesses.
         try:
             with zipfile.ZipFile(path) as archive:
                 names = archive.namelist()
-                looks_right = ("void_tools/__init__.py" in names
-                               and all(name.startswith("void_tools/")
-                                       for name in names))
         except zipfile.BadZipFile:
-            looks_right = False
-        if not looks_right:
+            names = []
+        shape = logic.archive_shape(names)
+
+        if shape == logic.EXTENSION:
+            # An extension cannot be installed *over* a legacy copy: Blender
+            # puts it somewhere else entirely and both would register the same
+            # classes. Since this button only exists on a legacy install - the
+            # panel stands down when Blender is doing the updating - the honest
+            # answer is to say so and let the user move across once, rather
+            # than leave two Void Tools in one Blender.
+            state.update_available = False
+            state.status = (f"{state.latest} ships as a Blender extension, "
+                            f"which cannot be installed over this copy. "
+                            f"Remove Void Tools in Preferences - Add-ons, then "
+                            f"install it from the repository (see the docs).")
+            self.report({'WARNING'}, state.status)
+            bpy.ops.wm.url_open(url=logic.INSTALL_GUIDE)
+            return {'FINISHED'}
+
+        if shape != logic.LEGACY:
             state.status = ("The download did not look like Void Tools - "
                             "nothing was installed.")
             self.report({'ERROR'}, state.status)
