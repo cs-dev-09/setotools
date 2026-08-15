@@ -109,6 +109,41 @@ check("the load handler is registered",
 check("and it is persistent, or it would be dropped by the first file load",
       hasattr(texture_repair._on_load, "_bpy_persistent"))
 
+print("=== no register() may reach for bpy.data ===")
+# The bug this cost: while Blender registers add-ons at startup, `bpy.data` is
+# a `_RestrictData` stand-in and `bpy.data.images` raises AttributeError -
+# register() fails and the whole add-on is dropped, so the tab never appears.
+# Worse, the first attempt guarded that call with `if not bpy.app.background`,
+# which meant no background test could ever have caught it. This is a static
+# scan for exactly that shape, across every module in the add-on.
+import ast  # noqa: E402
+
+offenders = []
+for folder, _subfolders, files in os.walk(PACKAGE):
+    if "__pycache__" in folder:
+        continue
+    for name in sorted(f for f in files if f.endswith(".py")):
+        path = os.path.join(folder, name)
+        tree = ast.parse(open(path, encoding="utf-8").read())
+        for node in ast.walk(tree):
+            if not (isinstance(node, ast.FunctionDef)
+                    and node.name in ("register", "unregister")):
+                continue
+            for sub in ast.walk(node):
+                if (isinstance(sub, ast.Attribute)
+                        and isinstance(sub.value, ast.Attribute)
+                        and sub.value.attr == "data"
+                        and isinstance(sub.value.value, ast.Name)
+                        and sub.value.value.id == "bpy"):
+                    offenders.append(f"{os.path.relpath(path, PACKAGE)}:"
+                                     f"{node.name}() -> bpy.data.{sub.attr}")
+check("nothing in any register()/unregister() touches bpy.data",
+      not offenders, offenders[:3])
+
+check("the deferred pass is what fixes the already-open file",
+      hasattr(texture_repair, "_repair_once")
+      and texture_repair._repair_once() is None)
+
 print("=== it repairs the datablock, never the disk ===")
 source = open(texture_repair.__file__, encoding="utf-8").read()
 check("nothing in here opens a file for writing",

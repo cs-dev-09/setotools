@@ -2,7 +2,15 @@
 
 All notable changes to Void Tools.
 
-## 1.2.3 — bundled textures find themselves again
+## 1.2.4 — bundled textures find themselves again *(unreleased)*
+
+> 1.2.3 carried this fix and was withdrawn within the hour: it repaired the
+> paths from `register()`, and `bpy.data` is restricted while Blender loads
+> add-ons, so the add-on failed to register and the tab did not appear at all.
+> The repair now runs from a zero-interval timer instead, once the event loop
+> is up. `tests/texture_repair.py` scans every module for that shape, because
+> the first version's `if not bpy.app.background` guard meant no background
+> test could ever have caught it.
 
 ### Fixed — pink textures after an update
 

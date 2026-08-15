@@ -85,15 +85,33 @@ def _on_load(_file):
               f"the add-on's current location.")
 
 
+def _repair_once():
+    """The deferred pass over the file that was already open."""
+    repair_all()
+    return None                 # one shot
+
+
 def register():
     if _on_load not in bpy.app.handlers.load_post:
         bpy.app.handlers.load_post.append(_on_load)
-    # And once now, for the file that is already open - installing an update
-    # does not reload it.
-    if not bpy.app.background:
-        repair_all()
+
+    # The file that is already open still wants fixing - installing an update
+    # does not reload it - but **not from here**. While Blender registers
+    # add-ons at startup, `bpy.data` is a `_RestrictData` stand-in: reaching
+    # for `bpy.data.images` raises AttributeError, register() fails, and the
+    # whole add-on is dropped. The tab simply does not appear, which is how
+    # this shipped in 1.2.3.
+    #
+    # A zero-interval timer runs the moment the event loop starts, by which
+    # time the real data is there. In background Blender there is no event
+    # loop and nothing to repair for a user to look at, so it never fires -
+    # and that is also why the first version's `if not bpy.app.background`
+    # guard kept every test from ever seeing the bug.
+    bpy.app.timers.register(_repair_once, first_interval=0.0)
 
 
 def unregister():
     if _on_load in bpy.app.handlers.load_post:
         bpy.app.handlers.load_post.remove(_on_load)
+    if bpy.app.timers.is_registered(_repair_once):
+        bpy.app.timers.unregister(_repair_once)
