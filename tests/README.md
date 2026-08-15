@@ -7,8 +7,20 @@ Sollumz renaming a helper, a shader parameter moving, an attribute landing on th
 wrong domain.
 
 ```bash
-blender -b --python tests/verify_decal_tool.py
+python tests/run_all.py --blender "D:/Blender52/blender.exe"
+blender -b --python tests/verify_decal_tool.py          # one script on its own
 ```
+
+**Use the runner once Void Tools is installed from the extension repository.**
+The copy Blender has enabled is then `bl_ext.<repo>.void_tools` while these
+scripts import the working tree - two module objects for the same code, so the
+panels a test finds are the installed ones and the state it pokes at is the
+repo's, and suites fail for reasons that have nothing to do with the code.
+Registering the repo copy on top of the installed one is worse: the same
+classes twice. `run_all.py` stands the installed copy down for each run and
+gives the repo copy the preferences entry it would otherwise lack, both in
+memory - `default_set=False`, preferences never saved, so the install is
+exactly as it was when the run ends.
 
 Each script prints one `[PASS]`/`[FAIL]` line per check, ends with
 `RESULT: n/n checks passed`, and exits non-zero if anything failed.
