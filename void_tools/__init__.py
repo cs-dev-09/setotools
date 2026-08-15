@@ -4,7 +4,7 @@ bl_info = {
     # Public versioning starts at 1.0.0 with the launch. The changelog's
     # 0.2-1.9 entries were private development builds that never shipped;
     # their numbers stay in the log as history, not as releases.
-    "version": (1, 2, 2),
+    "version": (1, 2, 3),
     "blender": (4, 2, 0),
     "location": "View3D > N-Panel > Void Tools",
     # Blender turns these two into the Documentation and Report a Bug buttons
@@ -37,6 +37,7 @@ bl_info = {
 # used to be copy-pasted into each of them, the bundled-texture lookup, and the
 # Color 1 vertex colour they all write.
 from .shared import icons
+from .shared import texture_repair
 from .shared import strip_settings
 from .shared import manual_offset
 from .shared import viewport_grade
@@ -62,7 +63,7 @@ from . import vertex_bake
 # one of its sections, and Blender drops a panel whose bl_parent_id is not
 # registered yet. viewport_grade comes before the Analysis tools for the same
 # kind of reason: both of them read scene.seto_grade, which it declares.
-_modules = (icons, strip_settings, manual_offset, viewport_grade, groups,
+_modules = (icons, texture_repair, strip_settings, manual_offset, viewport_grade, groups,
             fake_damage, smooth_edge, fake_ao, decal_tool, surface_painter,
             edge_dirt, density_checker, texture_budget, preflight, materials,
             sign_glow, scatter, updater, support, vertex_bake)

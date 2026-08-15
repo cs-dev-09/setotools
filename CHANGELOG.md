@@ -2,6 +2,29 @@
 
 All notable changes to Void Tools.
 
+## 1.2.3 — bundled textures find themselves again
+
+### Fixed — pink textures after an update
+
+The textures the strip tools ship with live inside the add-on, and Blender
+records where an image came from as an **absolute path**. So every scene
+made with them names the folder the add-on was installed in at the time —
+and 1.2.2 moved that folder, from `seto_tools` to `void_tools`. An old
+scene opened afterwards asked for a path that no longer existed and showed
+the tell-tale pink, and restarting did not help, because the folder really
+was gone.
+
+Those paths are repaired when a file is opened now. An image is only
+touched when it is **missing**, when its path is shaped like one of our
+tools' `textures/` folders, and when that exact file exists inside the
+add-on — so it can only ever re-point an image at something we ship, and a
+missing texture belonging to anything else is left alone.
+
+This also covers the pink you may have seen *during* an update: the folder
+is deleted and written again under a running Blender, which loses the file
+for a moment. That one was always fixed by restarting, and now it is
+fixed without.
+
 ## 1.2.2 — a sign that lights itself, and a bake that sees the room
 
 ### Added — Sign Glow
