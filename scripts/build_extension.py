@@ -5,8 +5,14 @@
 Two things come out of `dist/`:
 
   * `void-tools.zip` - the add-on, and the only file that goes on a release;
-  * `index.json` - the repository listing, copied into `docs/repo/` and served
-    from GitHub Pages.
+  * `index.json` - the repository listing.
+
+**The listing is only published with `--publish`.** `docs/repo/index.json` is
+served from GitHub Pages and is what every installed copy reads to decide which
+version to fetch, so a build that writes it every time is a build that can
+advertise a release nobody made: a test build of an unreleased version,
+committed with the code, gave everyone who checked for updates a 404. Pass the
+flag when the version is actually going out, and not before.
 
 Add that listing's URL once under **Preferences -> Get Extensions ->
 Repositories** and Blender does the updating from then on, which is what a user
@@ -155,6 +161,9 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--blender", required=True,
                         help="Path to a Blender 4.2+ executable")
+    parser.add_argument("--publish", action="store_true",
+                        help="Also write docs/repo/index.json - the listing "
+                             "Blender reads. Only for a version being released")
     args = parser.parse_args()
 
     version = ".".join(str(part) for part in bl_info()["version"])
@@ -214,7 +223,8 @@ def main():
     print(f"{os.path.relpath(output, ROOT)}: {len(names)} files, {version}")
     print(f"  {os.path.getsize(output) / 1024:.0f} KB")
     print(f"{os.path.relpath(published, ROOT)}: "
-          f"{len(index.get('data', []))} listing(s)")
+          f"{len(index.get('data', []))} listing(s)"
+          + ("" if args.publish else "  (not published - pass --publish)"))
     for entry in index.get("data", []):
         print(f"  {entry.get('id')} {entry.get('version')} -> {entry['archive_url']}")
     return 0
