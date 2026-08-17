@@ -27,10 +27,10 @@ def check(name, cond, detail=""):
     RESULTS.append((bool(cond), name, detail))
     print(f"[{'PASS' if cond else 'FAIL'}] {name}" + (f"  -- {detail}" if detail and not cond else ""))
 
-import seto_tools
-from seto_tools.shared import icons
+import void_tools
+from void_tools.shared import icons
 if getattr(bpy.types, "SETO_PT_fake_ao_panel", None) is None:
-    seto_tools.register()
+    void_tools.register()
 
 EXPECTED = {
     "geometry": "SETO_PT_geometry_group",
@@ -177,8 +177,8 @@ def clickable(log, fragment):
                for kind, item, enabled in log)
 
 
-from seto_tools.decal_tool import library as decal_library
-from seto_tools.surface_painter import library as surface_library
+from void_tools.decal_tool import library as decal_library
+from void_tools.surface_painter import library as surface_library
 
 # The user's own library may well be configured in the Blender this runs in, so
 # emptiness is forced rather than assumed.

@@ -19,10 +19,10 @@ def check(name, cond, detail=""):
     RESULTS.append((bool(cond), name, detail))
     print(f"[{'PASS' if cond else 'FAIL'}] {name}" + (f"  -- {detail}" if detail and not cond else ""))
 
-import seto_tools
-from seto_tools.shared import sollumz_integration as szi
+import void_tools
+from void_tools.shared import sollumz_integration as szi
 if getattr(bpy.types, "SETO_PT_fake_ao_panel", None) is None:
-    seto_tools.register()
+    void_tools.register()
 
 
 def only(*real):

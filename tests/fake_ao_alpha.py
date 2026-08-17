@@ -19,11 +19,11 @@ def check(n, c, d=""):
     R.append((bool(c), n, d)); print(f"[{'PASS' if c else 'FAIL'}] {n}" + (f"  -- {d}" if d and not c else ""))
     return bool(c)
 
-import seto_tools
+import void_tools
 if getattr(bpy.types, "SETO_PT_fake_ao_panel", None) is None:
-    seto_tools.register()
-from seto_tools.fake_ao import geometry, operators
-from seto_tools.shared import vertex_color
+    void_tools.register()
+from void_tools.fake_ao import geometry, operators
+from void_tools.shared import vertex_color
 
 CENTER = vertex_color.DEFAULT_ALPHA_CENTER
 OUTER = vertex_color.DEFAULT_ALPHA_OUTER
@@ -150,7 +150,7 @@ check("and putting it back restores exactly what was there",
 
 # --- 7. The helper on its own ------------------------------------------------
 from mathutils import Matrix  # noqa: E402
-from seto_tools.shared import run_fade  # noqa: E402
+from void_tools.shared import run_fade  # noqa: E402
 
 # This tool grew the along-run fade first and carried its own copy of it for a
 # while. One implementation now, re-exported here - if the copy comes back,

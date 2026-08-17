@@ -5,10 +5,10 @@ def check(n,c,d=""):
     R.append((bool(c),n,d)); print(f"[{'PASS' if c else 'FAIL'}] {n}" + (f"  -- {d}" if d and not c else ""))
     return bool(c)
 
-import seto_tools
+import void_tools
 if getattr(bpy.types, "SETO_PT_smooth_edge_panel", None) is None:
-    seto_tools.register()
-from seto_tools.shared import vertex_color
+    void_tools.register()
+from void_tools.shared import vertex_color
 
 EXPECTED_RGB = (0.0, 0.7, 0.0)
 check("shared constant is #00B200", tuple(round(c,4) for c in vertex_color.DEFAULT_RGB) == EXPECTED_RGB,
@@ -66,7 +66,7 @@ import os
 lib = os.path.join(bpy.app.tempdir, "D", "Dirt"); os.makedirs(lib, exist_ok=True)
 im = bpy.data.images.new("dirt_01.png",4,4,alpha=True); im.pixels=[.5,.3,.2,.5]*16
 im.filepath_raw=os.path.join(lib,"dirt_01.png"); im.file_format='PNG'; im.save(); bpy.data.images.remove(im)
-from seto_tools.decal_tool import preferences as dp
+from void_tools.decal_tool import preferences as dp
 dp.set_library_path(os.path.join(bpy.app.tempdir,"D")); bpy.ops.seto.refresh_decal_library()
 s = bpy.context.scene.seto_decal; s.category="Dirt"; s.texture="dirt_01"
 bpy.ops.mesh.primitive_cube_add(size=2, location=(9,0,0))

@@ -26,9 +26,9 @@ def check(name, cond, detail=""):
     print(f"[{'PASS' if cond else 'FAIL'}] {name}" + (f"  -- {detail}" if detail and not cond else ""))
     return bool(cond)
 
-import seto_tools
+import void_tools
 if getattr(bpy.types, "SETO_PT_fake_ao_panel", None) is None:
-    seto_tools.register()
+    void_tools.register()
 
 settings = bpy.context.scene.seto_fake_ao
 WIDTH = 0.2
@@ -118,7 +118,7 @@ strip = build(wall)
 check("says so instead of building nothing silently", strip is None)
 
 print("=== the panel offers it, and hides Bevel behind it ===")
-from seto_tools.fake_ao import ui as ao_ui
+from void_tools.fake_ao import ui as ao_ui
 
 _UILAYOUT_PROPS = set(bpy.types.UILayout.bl_rna.properties.keys())
 

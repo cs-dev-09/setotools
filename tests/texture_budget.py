@@ -16,12 +16,12 @@ def check(name, cond, detail=""):
     RESULTS.append((bool(cond), name, detail))
     print(f"[{'PASS' if cond else 'FAIL'}] {name}" + (f"  -- {detail}" if detail and not cond else ""))
 
-import seto_tools
+import void_tools
 if getattr(bpy.types, "SETO_PT_texture_budget_panel", None) is None:
-    seto_tools.register()
+    void_tools.register()
 
-from seto_tools.texture_budget import geometry, operators
-from seto_tools.shared import budget, viewport_grade as vg
+from void_tools.texture_budget import geometry, operators
+from void_tools.shared import budget, viewport_grade as vg
 
 print("=== the maths ===")
 check("texel density is the square root of pixels over area",

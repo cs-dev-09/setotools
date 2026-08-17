@@ -14,11 +14,11 @@ def check(name, cond, detail=""):
     RESULTS.append((bool(cond), name, detail))
     print(f"[{'PASS' if cond else 'FAIL'}] {name}" + (f"  -- {detail}" if detail and not cond else ""))
 
-import seto_tools
+import void_tools
 if getattr(bpy.types, "SETO_PT_support_panel", None) is None:
-    seto_tools.register()
+    void_tools.register()
 
-from seto_tools.support import report
+from void_tools.support import report
 
 print("=== the body says what a maintainer asks for first ===")
 body = report.build_body("pressed Analyze", "everything went grey",
@@ -41,7 +41,7 @@ check("Blender's version is reported",
 check("the add-on's own version is found, not a placeholder",
       environment["Void Tools"] not in ("", "unknown"), environment)
 check("and it matches bl_info", environment["Void Tools"]
-      == ".".join(str(n) for n in seto_tools.bl_info["version"]), environment)
+      == ".".join(str(n) for n in void_tools.bl_info["version"]), environment)
 check("whether Sollumz was found is reported either way",
       environment["Sollumz"].startswith(("found", "not found")), environment)
 check("the OS is named", bool(environment["OS"].strip()), environment)
@@ -69,7 +69,7 @@ check("a huge one is", report.too_long(report.build_url("t", "x" * 9000)))
 
 print("=== nothing here reaches the network on its own ===")
 import inspect
-from seto_tools.support import operators as support_operators
+from void_tools.support import operators as support_operators
 source = inspect.getsource(support_operators) + inspect.getsource(report)
 for forbidden in ("urlopen", "requests", "socket", "http.client"):
     check(f"no {forbidden} anywhere in the support code",
@@ -110,7 +110,7 @@ check("the title went", settings.title == "", settings.title)
 check("the answers went", settings.steps_0 == "", settings.steps_0)
 
 print("=== each question is one field, and the plumbing knows it ===")
-from seto_tools.support import properties as support_properties
+from void_tools.support import properties as support_properties
 # One line per question is the settled answer - every taller shape either
 # moved the panel under the user's hands or sat unfilled. The stack
 # machinery stays for the day that changes, exercised at whatever LINES

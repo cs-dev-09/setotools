@@ -32,11 +32,11 @@ def check(n, c, d=""):
     print(f"[{'PASS' if c else 'FAIL'}] {n}" + (f"  -- {d}" if d and not c else ""))
     return bool(c)
 
-import seto_tools
+import void_tools
 if getattr(bpy.types, "SETO_PT_fake_ao_panel", None) is None:
-    seto_tools.register()
+    void_tools.register()
 
-from seto_tools.shared import manual_offset
+from void_tools.shared import manual_offset
 
 check("Pin Position is registered", hasattr(bpy.types, "SETO_OT_pin_strip_position"))
 check("Clear Offset is registered", hasattr(bpy.types, "SETO_OT_clear_strip_position"))

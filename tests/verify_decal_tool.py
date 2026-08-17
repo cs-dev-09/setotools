@@ -23,9 +23,9 @@ REPO_ROOT = r"D:\SetoClaude\setotools"
 if REPO_ROOT not in sys.path:
     sys.path.append(REPO_ROOT)
 
-import seto_tools
-from seto_tools.decal_tool import geometry, library, preferences, previews, properties
-from seto_tools.shared import sollumz_integration as szi
+import void_tools
+from void_tools.decal_tool import geometry, library, preferences, previews, properties
+from void_tools.shared import sollumz_integration as szi
 
 RESULTS = []
 TOL = 1e-5
@@ -673,7 +673,7 @@ def main():
     # registering twice raises, so only register (and unregister) if it is not.
     already_enabled = getattr(bpy.types, "SETO_PT_decal_tool_panel", None) is not None
     if not already_enabled:
-        seto_tools.register()
+        void_tools.register()
     else:
         print("       (seto_decal_tool was already enabled in this Blender)")
     try:
@@ -1062,7 +1062,7 @@ def main():
 
         # RGB must survive an alpha change untouched - it is the shared
         # #00B200 the other tools write, not white.
-        from seto_tools.shared import vertex_color
+        from void_tools.shared import vertex_color
         check("changing alpha does not disturb the RGB",
               all(all(close(d.color_srgb[i], vertex_color.DEFAULT_RGB[i], 1e-2)
                       for i in range(3)) for d in colour),
@@ -1241,7 +1241,7 @@ def main():
     finally:
         leave_edit()
         if not already_enabled:
-            seto_tools.unregister()
+            void_tools.unregister()
         shutil.rmtree(tmp_root, ignore_errors=True)
 
 

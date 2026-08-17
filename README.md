@@ -17,40 +17,42 @@ tool, troubleshooting. Built from [`docs/`](docs) in this repo.
 
 | Tool | What it makes | Built from |
 | --- | --- | --- |
-| [Ambient Occlusion](seto_tools/fake_ao) | Ambient-occlusion corner decals | selected edges |
-| [Edge Dirt](seto_tools/edge_dirt) | The same strip, carrying a dirt texture you drop in a folder | selected edges |
-| [Edge Wear](seto_tools/fake_damage) | Chipped-edge damage decals | selected edges |
-| [Decal Tool](seto_tools/decal_tool) | Surface-aligned decal planes from your own decal library | selected faces |
-| [Smooth Edge](seto_tools/smooth_edge) | Normal-map strips that make a hard edge read as rounded | selected edges |
-| [Surface Painter](seto_tools/surface_painter) | Dirt, grime and graffiti brushed onto a surface | a paint mesh over the whole object |
-| [Vertex Color Bake](seto_tools/vertex_bake) | Procedural AO, dirt, grime and wear baked into `Color 1` — the one tool that writes to your mesh | the selected objects |
-| [Density Check](seto_tools/density_checker) | A triangle-budget heatmap graded against vanilla GTA | the whole scene, read-only |
-| [Texture Budget](seto_tools/texture_budget) | The same heatmap for texture resolution, plus what the scene costs in VRAM | the whole scene, read-only |
-| [Material Maker](seto_tools/materials) | Height, normal and specular maps from one diffuse image | a diffuse texture |
-| [Pre-Flight](seto_tools/preflight) | The export test you would otherwise run in game — missing UVs, unapplied scale, non-DDS textures | the whole scene, read-only |
-| [Trash Scatter](seto_tools/scatter) | Vanilla GTA litter scattered over a floor as MLO entities — dense along the walls, seeded, spaced — plus a procedural Floor Dirt overlay, the flat grime sheet vanilla interiors use | selected faces |
+| [Ambient Occlusion](void_tools/fake_ao) | Ambient-occlusion corner decals | selected edges |
+| [Edge Dirt](void_tools/edge_dirt) | The same strip, carrying a dirt texture you drop in a folder | selected edges |
+| [Edge Wear](void_tools/fake_damage) | Chipped-edge damage decals | selected edges |
+| [Decal Tool](void_tools/decal_tool) | Surface-aligned decal planes from your own decal library | selected faces |
+| [Smooth Edge](void_tools/smooth_edge) | Normal-map strips that make a hard edge read as rounded | selected edges |
+| [Surface Painter](void_tools/surface_painter) | Dirt, grime and graffiti brushed onto a surface | a paint mesh over the whole object |
+| [Vertex Color Bake](void_tools/vertex_bake) | Procedural AO, dirt, grime and wear baked into `Color 1` — the one tool that writes to your mesh | the selected objects |
+| [Density Check](void_tools/density_checker) | A triangle-budget heatmap graded against vanilla GTA | the whole scene, read-only |
+| [Texture Budget](void_tools/texture_budget) | The same heatmap for texture resolution, plus what the scene costs in VRAM | the whole scene, read-only |
+| [Material Maker](void_tools/materials) | Height, normal and specular maps from one diffuse image | a diffuse texture |
+| [Sign Glow](void_tools/sign_glow) | An emissive halo traced from 3D lettering, on a plane behind it — written out as a `.dds` and a Sollumz emissive shader | the selected lettering |
+| [Pre-Flight](void_tools/preflight) | The export test you would otherwise run in game — missing UVs, unapplied scale, non-DDS textures | the whole scene, read-only |
+| [Trash Scatter](void_tools/scatter) | Vanilla GTA litter scattered over a floor as MLO entities — dense along the walls, seeded, spaced — plus a procedural Floor Dirt overlay, the flat grime sheet vanilla interiors use | selected faces |
 
-## What it looks like
+## What's new in 1.2.2
 
-[![Vertex Color Bake in Blender](docs/images/vertex-color-bake-poster.jpg)](https://github.com/seto3d/void-tools/releases/download/v1.2.1/vertex-color-bake.mp4)
+<!-- This section carries THIS release only. On the next one, replace it -
+     the older clips stay on their own tool pages in the documentation, which
+     is where somebody browsing the tools will look for them anyway.
+     GIFs rather than links: GitHub strips <video> from Markdown and turns a
+     linked .mp4 into a plain link nobody clicks, but it plays a GIF inline. -->
 
-**[Vertex Color Bake ▶](https://github.com/seto3d/void-tools/releases/download/v1.2.1/vertex-color-bake.mp4)** — ambient occlusion, dirt, grime and
-wear stacked into `Color 1`, one layer at a time. No texture, no extra object,
-no draw call.
+![Sign Glow tracing a halo behind 3D lettering](docs/images/sign-glow.gif)
 
-[![Trash Scatter in Blender](docs/images/trash-scatter-blender-poster.jpg)](https://github.com/seto3d/void-tools/releases/download/v1.1.0/trash-scatter-blender.mp4)
+**Sign Glow** — an emissive halo traced from the lettering's own silhouette,
+on one quad behind it. How a sign reads at night without a single light being
+placed. Contributed by [Molo Modding](https://github.com/molossen).
 
-**[Trash Scatter ▶](https://github.com/seto3d/void-tools/releases/download/v1.1.0/trash-scatter-blender.mp4)** — litter and floor grime over a
-selected floor, live on the sliders.
-Also: [the same tool on a warehouse floor ▶](https://github.com/seto3d/void-tools/releases/download/v1.1.0/trash-scatter-interior.mp4)
+![Vertex Color Bake running over a whole collection](docs/images/vertex-color-bake-collection.gif)
 
-[![Material Maker in game](docs/images/material-maker-in-game-poster.jpg)](https://github.com/seto3d/void-tools/releases/download/v1.1.0/material-maker-in-game.mp4)
+**Vertex Color Bake** — a whole collection baked in one press, with the
+gradient fading between two colours. Ambient occlusion and the fake sun now
+cast across the scene too, so a crate darkens the wall it stands against.
 
-**[Material Maker ▶](https://github.com/seto3d/void-tools/releases/download/v1.1.0/material-maker-blender.mp4)** — height, normal and specular from
-one diffuse image, and
-[what it looks like in game ▶](https://github.com/seto3d/void-tools/releases/download/v1.1.0/material-maker-in-game.mp4).
-
-The videos play in the [documentation](https://seto3d.github.io/void-tools/tools/vertex-color-bake/) too, on each tool's own page.
+**The full videos play in the [documentation](https://seto3d.github.io/void-tools/)**,
+on each tool's own page — these are seven-second cuts.
 
 > **No prop library? Trash Scatter still works.** The add-on ships no GTA
 > models — only their names and their measured sizes, which is what placement
@@ -75,20 +77,37 @@ child panel, so the top of each one is the thing you actually came to press.
 
 ## Install
 
-Grab `seto_tools.zip` from the latest [release](../../releases) (don't unzip),
-then in Blender: **Edit > Preferences > Add-ons > Install from Disk** → pick the
-zip → enable it → restart Blender.
+**From the extension repository** (Blender 4.2+, and it keeps itself updated).
+In **Edit > Preferences > Get Extensions**, open the dropdown top-right →
+**Repositories → + → Add Remote Repository**, and paste:
+
+```
+https://seto3d.github.io/void-tools/repo/index.json
+```
+
+Then search for **Void Tools** in Get Extensions and press Install. Blender
+handles updates from there — and shows what the add-on is allowed to reach
+before you install it.
+
+**From a zip**, unchanged: grab `void-tools.zip` from the latest
+[release](../../releases) (don't unzip), then **Edit > Preferences > Add-ons >
+Install from Disk** → pick the zip → enable it → restart Blender.
+
+Both artifacts ship on every release — an extension carries its manifest at the
+archive root and Blender names the folder, where a classic add-on brings its
+own folder, so one file cannot be both. **Install one, not both**: two copies
+register the same panels and operators.
 
 Requires Blender 4.2+ and Sollumz with its dependencies installed. Verified in
 Blender 5.0.1 and 5.2.0 LTS.
 
-**Updating** — the **Updates** panel at the top of the tab does it from
-inside Blender: when a new release exists, its version appears on the
-panel header and **Install Update** brings it in with your settings
-intact. The notification comes from one version check per Blender start —
-it carries nothing about you, it is the only network traffic in the
-add-on (the test suite enforces that), and *Check for updates on startup*
-in the preferences turns it off.
+**Updating** — from the repository, Blender does it and the tab's **Updates**
+panel stands aside and says so. From a zip, that panel does it from inside
+Blender: when a new release exists, its version appears on the panel header and
+**Install Update** brings it in with your settings intact. The notification
+comes from one version check per Blender start — it carries nothing about you,
+it is the only network traffic in the add-on (the test suite enforces that),
+and *Check for updates on startup* in the preferences turns it off.
 
 > These used to be three separate add-ons (`seto_fake_ao`, `seto_fake_dmg`,
 > `seto_decal_tool`). If you have any of them installed, **disable and remove
@@ -97,7 +116,7 @@ in the preferences turns it off.
 ## Layout
 
 ```
-seto_tools/
+void_tools/
     __init__.py      registers the tools, in panel order
     shared/          code every tool uses
         sollumz_integration.py   every call into Sollumz, and the material builders
@@ -172,7 +191,7 @@ its operators only read the scene.
   is what the decal shaders use as their blend factor; the RGB is not read by
   either `decal.sps` or `decal_normal_only.sps`, and is fixed so generated
   geometry is recognisable and consistent. It lives in
-  [`shared/vertex_color.py`](seto_tools/shared/vertex_color.py) — change it
+  [`shared/vertex_color.py`](void_tools/shared/vertex_color.py) — change it
   there and all four follow.
 - **Shaded smooth.** Everything these tools generate is set smooth, so a strip
   shows no hard band at its quad boundaries. Applied to the generated object
@@ -251,7 +270,7 @@ Void Tools is built in the open, and it is better for the people who turn up.
   is a preset list on the object, and the alpha cannot be touched by picking a
   colour.
 
-  And **[Vertex Color Bake](seto_tools/vertex_bake)** ([#2](../../pull/2)) —
+  And **[Vertex Color Bake](void_tools/vertex_bake)** ([#2](../../pull/2)) —
   ambient occlusion, dirt, grime, wear, noise and a fake sun, stacked and baked
   straight into `Color 1`, with the raycasting cached so the sliders stay live.
   The cheapest wear in the add-on: no texture, no extra object, no draw call.
@@ -260,6 +279,15 @@ Void Tools is built in the open, and it is better for the people who turn up.
 
 - [@gecu3d](https://github.com/gecu3d) — **Material Maker**: height, normal and specular maps from a
   single diffuse image, written as a standalone add-on and folded in here.
+
+- [Molo Modding](https://github.com/molossen) — **[Sign Glow](void_tools/sign_glow)**:
+  the halo behind lit 3D lettering. It traces the letters' own silhouette,
+  blurs it at two radii — a tight core and a wide bloom — and puts the result
+  on an emissive plane just behind them, which is how a sign reads at night in
+  game without a single real light being placed. Written as a standalone
+  add-on and folded in here; the DDS writer it brought is now shared by the
+  whole project, because nothing else here could put a texture on disk in a
+  format GTA reads.
 
 **Sponsors**
 

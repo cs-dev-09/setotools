@@ -1,4 +1,4 @@
-"""Draw seto_tools/icons/edge_dirt.png in the style of the others.
+"""Draw void_tools/icons/edge_dirt.png in the style of the others.
 
 32x32, pure white RGB, the art carried entirely by alpha - matching what
 fake_ao.png and the rest already do.

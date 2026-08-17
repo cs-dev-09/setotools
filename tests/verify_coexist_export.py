@@ -14,9 +14,9 @@ REPO_ROOT = r"D:\SetoClaude\setotools"
 if REPO_ROOT not in sys.path:
     sys.path.append(REPO_ROOT)
 
-import seto_tools
-from seto_tools.decal_tool import preferences as decal_prefs
-from seto_tools.shared import sollumz_integration as szi
+import void_tools
+from void_tools.decal_tool import preferences as decal_prefs
+from void_tools.shared import sollumz_integration as szi
 
 RESULTS = []
 
@@ -47,10 +47,10 @@ def main():
     # only the missing ones are registered here (and only those unregistered).
     registered = []
     if getattr(bpy.types, "SETO_PT_decal_tool_panel", None) is None:
-        seto_tools.register()
-        registered.append(seto_tools)
+        void_tools.register()
+        registered.append(void_tools)
     else:
-        print("       (seto_tools was already enabled in this Blender)")
+        print("       (void_tools was already enabled in this Blender)")
 
     # The tab is two sections, and each tool nests inside the one that matches
     # what it produces: Geometry builds new mesh along the selected edges,

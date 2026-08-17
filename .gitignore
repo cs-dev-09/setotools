@@ -5,6 +5,11 @@ __pycache__/
 # Built addon zips - published as GitHub Release assets, not tracked here
 *.zip
 
+# Where scripts/build_extension.py stages the extension package before it is
+# uploaded. The listing it also writes, docs/repo/index.json, IS tracked: that
+# one is served from GitHub Pages and is how Blender finds the release.
+dist/
+
 # Built documentation - GitHub Actions builds and publishes it, see
 # .github/workflows/docs.yml. The source is docs/.
 site/

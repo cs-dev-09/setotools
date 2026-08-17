@@ -4,11 +4,11 @@ R=[]
 def check(n,c,d=""):
     R.append((bool(c),n,d)); print(f"[{'PASS' if c else 'FAIL'}] {n}" + (f"  -- {d}" if d and not c else ""))
 
-import seto_tools
-from seto_tools.fake_damage import textures as dmg_textures
+import void_tools
+from void_tools.fake_damage import textures as dmg_textures
 if getattr(bpy.types, "SETO_PT_smooth_edge_panel", None) is None:
-    seto_tools.register()
-szi = sys.modules["seto_tools.shared.sollumz_integration"]
+    void_tools.register()
+szi = sys.modules["void_tools.shared.sollumz_integration"]
 
 print("fake_damage bundled texture:", repr(dmg_textures.bundled_texture_path()))
 
@@ -97,7 +97,7 @@ lib = os.path.join(bpy.app.tempdir, "Decals", "Dirt"); os.makedirs(lib, exist_ok
 img = bpy.data.images.new("dirt_01.png", 4, 4, alpha=True); img.pixels=[0.5,0.3,0.2,0.5]*16
 img.filepath_raw = os.path.join(lib,"dirt_01.png"); img.file_format='PNG'; img.save()
 bpy.data.images.remove(img)
-from seto_tools.decal_tool import preferences as dp
+from void_tools.decal_tool import preferences as dp
 dp.set_library_path(os.path.join(bpy.app.tempdir, "Decals"))
 bpy.ops.seto.refresh_decal_library()
 s = bpy.context.scene.seto_decal; s.category="Dirt"; s.texture="dirt_01"; s.width=0.3; s.height=0.3

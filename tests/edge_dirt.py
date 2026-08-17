@@ -21,13 +21,13 @@ def check(n, c, d=""):
     print(f"[{'PASS' if c else 'FAIL'}] {n}" + (f"  -- {d}" if d and not c else ""))
     return bool(c)
 
-import seto_tools
+import void_tools
 if getattr(bpy.types, "SETO_PT_edge_dirt_panel", None) is None:
-    seto_tools.register()
+    void_tools.register()
 
-from seto_tools.edge_dirt import object_settings as dirt_settings
-from seto_tools.edge_dirt import properties as dirt_properties
-from seto_tools.fake_ao import object_settings as ao_settings
+from void_tools.edge_dirt import object_settings as dirt_settings
+from void_tools.edge_dirt import properties as dirt_properties
+from void_tools.fake_ao import object_settings as ao_settings
 
 check("the operator is registered", hasattr(bpy.types, "SETO_OT_create_edge_dirt"))
 check("the rebuild operator is registered", hasattr(bpy.types, "SETO_OT_edge_dirt_rebuild"))
@@ -118,7 +118,7 @@ if check("Create Edge Dirt builds a strip", result == {'FINISHED'}, str(result))
 # afterwards, so **Bevel Mesh on the finished strip was a dead tick**: it drew,
 # it could be clicked, and nothing anywhere read it. It is a live modifier now,
 # the same one the other three tools drive.
-from seto_tools.fake_ao import source_bevel  # noqa: E402
+from void_tools.fake_ao import source_bevel  # noqa: E402
 
 
 def evaluated_verts(obj):
@@ -168,8 +168,8 @@ if check("a strip builds with Bevel on", beveled_result == {'FINISHED'}, str(bev
 # into edge_dirt/textures/ leaves behind - must be filled on reuse, or the tool
 # stays broken however many times the texture is added. A slot the user has
 # filled is still never overwritten.
-from seto_tools.shared import sollumz_integration as szi
-from seto_tools.edge_dirt import textures as dirt_textures
+from void_tools.shared import sollumz_integration as szi
+from void_tools.edge_dirt import textures as dirt_textures
 
 bundled = dirt_textures.bundled_texture_path()
 existing = szi._find_existing_edge_dirt_material()

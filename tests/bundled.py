@@ -5,13 +5,13 @@ def check(n,c,d=""):
     R.append((bool(c),n,d)); print(f"[{'PASS' if c else 'FAIL'}] {n}" + (f"  -- {d}" if d and not c else ""))
     return bool(c)
 
-import seto_tools
+import void_tools
 if getattr(bpy.types, "SETO_PT_smooth_edge_panel", None) is None:
-    seto_tools.register()
-from seto_tools.fake_ao import textures as ao_tex
-from seto_tools.edge_dirt import textures as dirt_tex
-from seto_tools.fake_damage import textures as dmg_tex
-from seto_tools.smooth_edge import textures as se_tex
+    void_tools.register()
+from void_tools.fake_ao import textures as ao_tex
+from void_tools.edge_dirt import textures as dirt_tex
+from void_tools.fake_damage import textures as dmg_tex
+from void_tools.smooth_edge import textures as se_tex
 
 for label, mod, folder in (("Ambient Occlusion", ao_tex, "fake_ao"),
                            ("Edge Dirt", dirt_tex, "edge_dirt"),

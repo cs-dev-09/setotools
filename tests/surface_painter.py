@@ -21,12 +21,12 @@ def check(name, cond, detail=""):
     RESULTS.append((bool(cond), name, detail))
     print(f"[{'PASS' if cond else 'FAIL'}] {name}" + (f"  -- {detail}" if detail and not cond else ""))
 
-import seto_tools
+import void_tools
 if getattr(bpy.types, "SETO_PT_surface_painter_panel", None) is None:
-    seto_tools.register()
+    void_tools.register()
 
 import importlib
-from seto_tools.surface_painter import shell
+from void_tools.surface_painter import shell
 smod = importlib.import_module("bl_ext.user_default.sollumz.ydr.shader_materials")
 
 # The add-on ships no textures of its own, so the test builds a library: a
@@ -59,7 +59,7 @@ check("the library scan found the texture", st.texture == "Dirt_Test_01", st.tex
 # pointed Custom Library at exactly that and got "No textures yet", because
 # categories were subfolders and nothing else - while the Decal Tool had always
 # accepted loose files. Both tools take them now, under the same name.
-from seto_tools.surface_painter import library as sp_library
+from void_tools.surface_painter import library as sp_library
 
 flat_root = os.path.join(tempfile.mkdtemp(prefix="seto_sp_flat_"), "flat")
 os.makedirs(flat_root)
@@ -298,7 +298,7 @@ check("a ray parallel to the wall is refused, not guessed", edge_on is None,
       edge_on)
 
 print("=== Sollumz is found however it was installed ===")
-from seto_tools.shared import sollumz_integration as szi
+from void_tools.shared import sollumz_integration as szi
 
 
 def _imports(dotted):
@@ -343,7 +343,7 @@ check("and it reports as available", szi.is_sollumz_available(),
       szi.get_status_message()[1])
 
 print("=== the panel says so when Sollumz is missing ===")
-from seto_tools.shared import ui_common
+from void_tools.shared import ui_common
 
 real_status = szi.get_status_message
 drawn = []

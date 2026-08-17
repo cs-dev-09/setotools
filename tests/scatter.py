@@ -25,14 +25,14 @@ def check(name, cond, detail=""):
           + (f"  -- {detail}" if detail and not cond else ""))
 
 
-import seto_tools  # noqa: E402
+import void_tools  # noqa: E402
 if getattr(bpy.types, "SETO_PT_scatter_panel", None) is None:
-    seto_tools.register()
+    void_tools.register()
 
 from mathutils import Vector  # noqa: E402
-from seto_tools.scatter import (  # noqa: E402
+from void_tools.scatter import (  # noqa: E402
     catalog, geometry, library, object_settings, operators)
-from seto_tools.shared import addon_prefs  # noqa: E402
+from void_tools.shared import addon_prefs  # noqa: E402
 
 # Never let this run write test paths into the user's saved preferences.
 bpy.context.preferences.use_preferences_save = False
@@ -232,7 +232,7 @@ check("the seam between the slabs is not a wall", not seam_hit, seam_hit)
 bpy.data.objects.remove(seam_floor)
 
 print("=== the dirt maths, before any scene is involved ===")
-from seto_tools.scatter import dirt as dirt_mod  # noqa: E402
+from void_tools.scatter import dirt as dirt_mod  # noqa: E402
 
 check("value noise is deterministic and bounded",
       dirt_mod.value_noise(3.7, -1.2, 42) == dirt_mod.value_noise(3.7, -1.2, 42)

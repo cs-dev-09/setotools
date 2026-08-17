@@ -7,10 +7,10 @@ def check(n,c,d=""):
 def same(g,e,t=1.0/255):
     return len(g)==len(e) and all(abs(a-b)<=t for a,b in zip(g,e))
 
-import seto_tools
+import void_tools
 if getattr(bpy.types, "SETO_PT_decal_tool_panel", None) is None:
-    seto_tools.register()
-from seto_tools.decal_tool import preferences as dp, geometry
+    void_tools.register()
+from void_tools.decal_tool import preferences as dp, geometry
 
 lib = os.path.join(bpy.app.tempdir, "B", "Dirt"); os.makedirs(lib, exist_ok=True)
 im = bpy.data.images.new("dirt_01.png",4,4,alpha=True); im.pixels=[.5,.3,.2,.5]*16

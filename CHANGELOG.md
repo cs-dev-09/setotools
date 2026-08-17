@@ -2,6 +2,158 @@
 
 All notable changes to Void Tools.
 
+## 1.2.4 — bundled textures find themselves again *(unreleased)*
+
+> 1.2.3 carried this fix and was withdrawn within the hour: it repaired the
+> paths from `register()`, and `bpy.data` is restricted while Blender loads
+> add-ons, so the add-on failed to register and the tab did not appear at all.
+> The repair now runs from a zero-interval timer instead, once the event loop
+> is up. `tests/texture_repair.py` scans every module for that shape, because
+> the first version's `if not bpy.app.background` guard meant no background
+> test could ever have caught it.
+
+### Fixed — the Update button could not install anything
+
+The releases carry a Blender **extension** package now — its manifest and
+its `__init__.py` sit at the archive root, where a classic add-on zip has
+a folder. The in-add-on updater only knew the old shape, so it inspected
+every genuine update and refused it with *"the download did not look like
+Void Tools"*. Accepting it would have been worse: `addon_install` scatters
+a root-level archive loose across `scripts/addons`.
+
+It tells the two apart now. An extension package cannot be installed over
+a classic copy — Blender puts it somewhere else entirely and both would
+register the same panels — so the button says so plainly and opens the
+install guide, rather than leaving two Void Tools in one Blender. Moving
+across is a one-time thing; after it, Blender does the updating.
+
+### Fixed — pink textures after an update
+
+The textures the strip tools ship with live inside the add-on, and Blender
+records where an image came from as an **absolute path**. So every scene
+made with them names the folder the add-on was installed in at the time —
+and 1.2.2 moved that folder, from `seto_tools` to `void_tools`. An old
+scene opened afterwards asked for a path that no longer existed and showed
+the tell-tale pink, and restarting did not help, because the folder really
+was gone.
+
+Those paths are repaired when a file is opened now. An image is only
+touched when it is **missing**, when its path is shaped like one of our
+tools' `textures/` folders, and when that exact file exists inside the
+add-on — so it can only ever re-point an image at something we ship, and a
+missing texture belonging to anything else is left alone.
+
+This also covers the pink you may have seen *during* an update: the folder
+is deleted and written again under a running Blender, which loses the file
+for a moment. That one was always fixed by restarting, and now it is
+fixed without.
+
+## 1.2.2 — a sign that lights itself, and a bake that sees the room
+
+### Added — Sign Glow
+
+Thanks to [Molo Modding](https://github.com/molossen), who wrote it as a
+standalone add-on: the halo behind lit 3D lettering, in the **Materials**
+section.
+
+Select the letters and press Create. The tool traces their own silhouette
+onto a plane square-on to the sign, blurs it at two radii — a tight core
+hugging the letters and a wide bloom behind them — and puts the result on
+an emissive plane just behind the lettering. That is how a sign reads at
+night in game without a single real light being placed, and it costs one
+quad and one texture.
+
+Everything after Create is live: colour, the two blur sizes and their
+intensities, resolution, how far behind the letters the plane sits.
+**Auto Fit** sizes the plane from the halo itself, so widening the bloom
+grows the plane to hold it rather than clipping it. The plane inherits
+the sign's rotation, so its transform gizmo runs along the sign rather
+than along the world.
+
+**The plane fades out rather than ending on a line.** It is a bordered
+grid whose outer ring of vertices carries `Color 1` alpha **0** — that
+alpha is what the emissive shader blends by, so a plane that stayed at 1.0
+to its border would stop at a hard rectangle even where its halo had
+already faded to nothing, and read in game as a lit box of air around the
+sign. **Edge Fade** sets how wide the fading band is.
+
+**The new glow already wears the shader it will be exported with**, an
+`emissive_additive_alpha.sps` pointing at the generated halo — a sign that
+looks right in Blender and arrives in game as a grey quad is the thing
+this tool exists to avoid. If your Sollumz does not carry that shader the
+next emissive one that exists is used and the panel says which; versions
+differ, and hunting through a shader table for the one word that changed
+is not a thing anyone should have to do.
+
+**Nothing is written to your drive until you ask for it.** The texture
+stays packed in the .blend, which is all the viewport and the material
+need. **Export for Sollumz** writes the `.dds` beside your `.blend` and
+rebuilds the material around the file — the step that makes the sign
+exportable, since Sollumz embeds whatever the image points at — and
+**Save DDS** writes it wherever you choose. After an export, every rebuild
+keeps that file equal to the halo you are looking at. Everything except
+the shader works with no Sollumz installed at all.
+
+### Added — Vertex Color Bake casts across the whole scene
+
+Thanks to [@cs-dev-09](https://github.com/cs-dev-09) again
+([#3](https://github.com/seto3d/void-tools/pull/3)):
+
+- **Ambient Occlusion and Fake Shadow now see other objects.** They used
+  to raycast against the object being baked and nothing else, so a crate
+  against a wall was occluded by neither. Both now cast against the
+  scene, in world space, which also means moving an object re-bakes it
+  rather than keeping the shading it had somewhere else.
+- **A Collection target**, with a progress bar. Point it at a collection
+  and the button bakes every mesh in it — optionally including the ones
+  hidden in the viewport — with nothing selected at all. Live Update
+  stays on your selection whatever the target is: a slider drag walking a
+  whole collection is not a live tool.
+- **Two-colour gradients.** The linear gradient can fade between a top
+  and a bottom colour rather than only darkening the base one, with
+  Shift and Scale to place the fade where the asset needs it.
+- **A Clear button**, beside Generate.
+
+### Added — an extension repository
+
+Asked for on the Discord, and it is the better way to install this:
+
+    https://seto3d.github.io/void-tools/repo/index.json
+
+Paste that once into **Preferences → Get Extensions → Repositories → Add
+Remote Repository**, and Void Tools appears in Blender's own extension
+list. From then on Blender does the updating — it notices new versions,
+it installs them, and it shows what the add-on is allowed to reach before
+you install it. There is no zip to download and no folder to find.
+
+**Install from Disk still works exactly as before.** Both artifacts ship
+on every release: `void-tools.zip` for that, and
+`void_tools-<version>.zip` for the repository. They cannot be one file —
+an extension carries its manifest at the archive root and Blender names
+the folder itself, where a legacy add-on brings its own folder.
+
+**This add-on's own updater stands down when Blender is doing the job.**
+Installed from the repository, the Updates panel says so and offers
+nothing: two updaters for one add-on can disagree, and this one could
+drop a legacy copy into `scripts/addons/` beside the extension, which is
+the same classes registered twice.
+
+### Fixed — Clear leaves your alpha alone
+
+Clear reset all four channels, alpha included. Alpha in `Color 1` is what
+the decal shaders blend by, so that made every decal on the mesh fully
+opaque — invisibly, from a button that says it only clears colour. It now
+puts the colour back to white and reads the alpha channel back untouched.
+
+### Fixed — the version an extension install reports
+
+Blender removes `bl_info` from an extension's module and keeps the same
+information in the manifest instead. Anything reading the attribute
+directly therefore got nothing — so the Updates panel would have said
+"Void Tools 0.0.0", and a bug report sent from the Support panel would
+have carried that number to whoever was trying to reproduce it. Both ask
+`shared/addon_version` now, which knows about both kinds of install.
+
 ## 1.2.1 — Vertex Color Bake asks before it writes
 
 ### Added — a Live Update switch on Vertex Color Bake
@@ -662,7 +814,7 @@ wall whose object happens to be rotated still fades toward the real floor.
 A sixth tool, at the bottom of the **Surface** section. It is Ambient Occlusion
 with a different texture on it: the same strip, the same Width, alphas, Bevel
 and Ground Level, the same live rebuild on the finished strip — but it takes
-its image from `seto_tools/edge_dirt/textures/` and puts it on a
+its image from `void_tools/edge_dirt/textures/` and puts it on a
 `seto_edgedirt` material of its own.
 
 **The folder is the setting.** Drop a dirt texture in and every strip the tool
@@ -847,7 +999,7 @@ each other.
 ### Changed — the tab has its own icons
 
 All seven panel headers — both sections and all five tools — now draw a PNG
-that ships with the add-on, in `seto_tools/icons/`, loaded through the same
+that ships with the add-on, in `void_tools/icons/`, loaded through the same
 preview mechanism the decal and dirt thumbnails use. Blender's built-in set has
 nothing for "chipped corner" or "dirt brushed onto a wall", and two tools were
 sharing an icon because of it.
@@ -1109,7 +1261,7 @@ size and a missing rotation as three separate failures.
 ### One add-on instead of three
 
 Fake AO, Fake Damage and the new Decal Tool now ship as a single **Seto Tools**
-add-on (`seto_tools/`) rather than three that had to be installed separately.
+add-on (`void_tools/`) rather than three that had to be installed separately.
 They already shared the Seto Tools N-panel tab; now they share a process and,
 more usefully, one copy of the Sollumz integration.
 
@@ -1230,7 +1382,7 @@ does that Fake Damage did not:
 ### Removed
 
 - The `seto_fake_ao/`, `seto_fake_dmg/` and `seto_decal_tool/` folders, and their
-  separate zips, superseded by `seto_tools/`.
+  separate zips, superseded by `void_tools/`.
 
 ### Verified
 

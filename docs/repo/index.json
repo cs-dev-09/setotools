@@ -1,0 +1,34 @@
+{
+  "version": "v1",
+  "blocklist": [],
+  "data": [
+    {
+      "schema_version": "1.0.0",
+      "id": "void_tools",
+      "name": "Void Tools",
+      "tagline": "GTA V / FiveM asset authoring tools, built on Sollumz",
+      "version": "1.2.2",
+      "type": "add-on",
+      "maintainer": "Seto <https://github.com/seto3d>",
+      "license": [
+        "SPDX:GPL-3.0-or-later"
+      ],
+      "blender_version_min": "4.2.0",
+      "website": "https://seto3d.github.io/void-tools/",
+      "copyright": [
+        "2026 Sertan (seto3d)"
+      ],
+      "permissions": {
+        "network": "Ask github.com for a newer release, and fetch it when you ask"
+      },
+      "tags": [
+        "Material",
+        "Mesh",
+        "Object"
+      ],
+      "archive_url": "https://github.com/seto3d/void-tools/releases/download/v1.2.2/void-tools.zip",
+      "archive_size": 440519,
+      "archive_hash": "sha256:5c54a88d52f7188839707ba56606f2ac093676c9dabbb035e0f006e6a4a00f91"
+    }
+  ]
+}

@@ -21,8 +21,8 @@ diffuse comes from.
 <video controls muted playsinline preload="none"
        poster="../../images/material-maker-blender-poster.jpg"
        style="width:100%;border-radius:.2rem">
-  <source src="https://github.com/seto3d/void-tools/releases/download/v1.1.0/material-maker-blender.mp4" type="video/mp4">
-  <a href="https://github.com/seto3d/void-tools/releases/download/v1.1.0/material-maker-blender.mp4">Download the video</a>
+  <source src="https://github.com/seto3d/void-tools/releases/download/media/material-maker-blender.mp4" type="video/mp4">
+  <a href="https://github.com/seto3d/void-tools/releases/download/media/material-maker-blender.mp4">Download the video</a>
 </video>
 
 *One diffuse image in, height, normal and specular out, straight onto the
@@ -31,8 +31,8 @@ material.*
 <video controls muted playsinline preload="none"
        poster="../../images/material-maker-in-game-poster.jpg"
        style="width:100%;border-radius:.2rem">
-  <source src="https://github.com/seto3d/void-tools/releases/download/v1.1.0/material-maker-in-game.mp4" type="video/mp4">
-  <a href="https://github.com/seto3d/void-tools/releases/download/v1.1.0/material-maker-in-game.mp4">Download the video</a>
+  <source src="https://github.com/seto3d/void-tools/releases/download/media/material-maker-in-game.mp4" type="video/mp4">
+  <a href="https://github.com/seto3d/void-tools/releases/download/media/material-maker-in-game.mp4">Download the video</a>
 </video>
 
 *The same material in game, lit by GTA — which is the only place the normal
