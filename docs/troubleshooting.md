@@ -1,5 +1,20 @@
 # Troubleshooting
 
+## Shadow Map Baker does nothing when I press Bake
+
+Cycles is disabled. It is the only engine that bakes, it ships as an add-on,
+and on some installs it is switched off — the Render Engine dropdown then shows
+only EEVEE. **Edit → Preferences → Add-ons**, search *Cycles*, tick it.
+
+Two other things that look like the same symptom:
+
+- **Bake & Process Texture is greyed out** — press **Prepare Shadow Mesh**
+  first. The bake only runs on the mesh that makes (`ShadowMap_Mesh`); if you
+  clicked another object afterwards, select that mesh again.
+- **The mesh still looks plain, and the material is not a Sollumz one** — the
+  `decal_dirt` material is assigned at the *end* of the bake, not by Prepare.
+  A mesh whose material is still `ShadowMap_Mat` has not been baked yet.
+
 ## The tab is not there at all
 
 **Restart Blender** first — installing an add-on does not always finish until

@@ -262,6 +262,17 @@ class SETO_PG_shadow_map(bpy.types.PropertyGroup):
         ),
         default=True,
     )
+    keep_uvs: BoolProperty(
+        name="Keep Existing UVs",
+        description=(
+            "Bake into the UV layout the mesh already has, instead of running "
+            "Smart UV Project. Vanilla GTA shadow maps are packed by hand into "
+            "a few large islands, which is what keeps them sharp - Smart UV "
+            "Project scatters a room into hundreds of small ones and spends "
+            "most of the texture on the gaps between them"
+        ),
+        default=False,
+    )
     offset_distance: FloatProperty(
         name="Surface Offset",
         description="Push the shadow mesh along normals to prevent Z-fighting",
@@ -374,6 +385,7 @@ class SETO_PT_shadow_map_panel(bpy.types.Panel):
         # Mesh preparation
         col = layout.column(align=True)
         col.prop(settings, "offset_distance")
+        col.prop(settings, "keep_uvs")
         col.separator()
 
         row = col.row()
@@ -519,15 +531,26 @@ class SETO_OT_prepare_shadow_mesh(bpy.types.Operator):
             bm.to_mesh(shadow_obj.data)
             bm.free()
 
-            # Generate UVs via Smart UV Project
-            bpy.ops.object.mode_set(mode='EDIT')
-            bpy.ops.mesh.select_all(action='SELECT')
-            bpy.ops.uv.smart_project(
-                angle_limit=1.15192,
-                margin_method='SCALED',
-                island_margin=0.02,
-            )
-            bpy.ops.object.mode_set(mode='OBJECT')
+            # Generate UVs via Smart UV Project - unless the mesh already
+            # carries a layout worth keeping. A hand-packed lightmap layout is
+            # the difference between vanilla's crisp shadow maps and a blurred
+            # one: Smart UV Project scatters a room into hundreds of islands,
+            # and at any resolution most of the texture goes on their margins.
+            if not settings.keep_uvs:
+                bpy.ops.object.mode_set(mode='EDIT')
+                bpy.ops.mesh.select_all(action='SELECT')
+                bpy.ops.uv.smart_project(
+                    angle_limit=1.15192,
+                    margin_method='SCALED',
+                    island_margin=0.02,
+                )
+                bpy.ops.object.mode_set(mode='OBJECT')
+            elif not shadow_obj.data.uv_layers:
+                settings.last_error = (
+                    "Keep Existing UVs is on, but this mesh has no UV map. "
+                    "Unwrap it first, or turn the option off."
+                )
+                return {'CANCELLED'}
 
             # Rename UV layer for Sollumz compatibility
             if shadow_obj.data.uv_layers:
@@ -727,6 +750,22 @@ class SETO_OT_bake_shadow_map(bpy.types.Operator):
         patched_images = _patch_missing_file_images(mat)
 
         scene = context.scene
+        # Cycles is the only engine that bakes, and it is an add-on that can be
+        # switched off - on a Blender where it is, assigning the engine below
+        # raises a bare TypeError from deep in the bake and the panel shows it
+        # as gibberish. Say what is wrong and where to fix it instead.
+        engines = [
+            item.identifier
+            for item in bpy.types.RenderSettings.bl_rna.properties["engine"].enum_items
+        ]
+        if 'CYCLES' not in engines:
+            settings.last_error = (
+                "Cycles is disabled - baking needs it. "
+                "Edit > Preferences > Add-ons, search Cycles, tick it."
+            )
+            self.report({'ERROR'}, settings.last_error)
+            return {'CANCELLED'}
+
         orig_engine = scene.render.engine
 
         sun_obj = None

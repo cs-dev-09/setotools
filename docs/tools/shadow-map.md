@@ -73,6 +73,13 @@ The file lands next to your `.blend` unless **Output Path** says otherwise.
     re-bake. A re-bake costs seconds to minutes; levels cost nothing and can be
     undone by dragging them back.
 
+!!! warning "Cycles has to be enabled"
+
+    Cycles is an add-on, and on some installs it is switched off — the Render
+    Engine dropdown then offers only EEVEE. Baking needs it: **Edit →
+    Preferences → Add-ons**, search *Cycles*, tick it. The panel says so rather
+    than failing with a raw error.
+
 !!! warning "Cycles does the baking"
 
     Blender bakes with Cycles, whatever your viewport is set to. A very large
