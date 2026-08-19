@@ -79,6 +79,7 @@ nav:
       - Surface Painter: tools/surface-painter.md
       - Edge Dirt: tools/edge-dirt.md
       - Vertex Color Bake: tools/vertex-color-bake.md
+      - Shadow Map Baker: tools/shadow-map.md
   - Analysis tools:
       - Density Check: tools/density-check.md
       - Texture Budget: tools/texture-budget.md

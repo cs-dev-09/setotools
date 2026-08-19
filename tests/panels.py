@@ -166,7 +166,7 @@ for parent, expected in (
         ("SETO_PT_surface_group",
          ["SETO_PT_fake_ao_panel", "SETO_PT_decal_tool_panel",
           "SETO_PT_surface_painter_panel", "SETO_PT_edge_dirt_panel",
-          "SETO_PT_vertex_bake_panel"]),
+          "SETO_PT_vertex_bake_panel", "SETO_PT_shadow_map_panel"]),
         ("SETO_PT_analysis_group",
          ["SETO_PT_density_checker_panel", "SETO_PT_texture_budget_panel",
           "SETO_PT_preflight_panel"]),
