@@ -57,6 +57,7 @@ from . import scatter
 from . import updater
 from . import support
 from . import vertex_bake
+from . import shadow_map  
 
 # Panel order. icons first because every panel header asks it for an icon id,
 # then groups - and that one is not merely tidiness: every tool panel hangs off
@@ -66,7 +67,7 @@ from . import vertex_bake
 _modules = (icons, texture_repair, strip_settings, manual_offset, viewport_grade, groups,
             fake_damage, smooth_edge, fake_ao, decal_tool, surface_painter,
             edge_dirt, density_checker, texture_budget, preflight, materials,
-            sign_glow, scatter, updater, support, vertex_bake)
+            sign_glow, scatter, updater, support, vertex_bake, shadow_map)
 
 
 def register():
