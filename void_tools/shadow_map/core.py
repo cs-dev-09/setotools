@@ -647,7 +647,9 @@ def _compositor_post_process(img, context, use_denoise, blur_radius):
         last_node = blur_node
 
     comp_node = tree.nodes.new('CompositorNodeComposite')
+    viewer_node = tree.nodes.new('CompositorNodeViewer')
     tree.links.new(last_node.outputs[0], comp_node.inputs[0])
+    tree.links.new(last_node.outputs[0], viewer_node.inputs[0])
 
     orig_scene = context.window.scene
     context.window.scene = temp_scene
@@ -655,9 +657,12 @@ def _compositor_post_process(img, context, use_denoise, blur_radius):
     pixels = None
     try:
         bpy.ops.render.render(write_still=False)
-        result_img = bpy.data.images['Render Result']
-        pixels = np.empty(width * height * 4, dtype=np.float32)
-        result_img.pixels.foreach_get(pixels)
+        result_img = bpy.data.images.get('Viewer Node')
+        if result_img and len(result_img.pixels) > 0:
+            pixels = np.empty(width * height * 4, dtype=np.float32)
+            result_img.pixels.foreach_get(pixels)
+        else:
+            print("[ShadowMap] Viewer Node image not found or empty.")
     finally:
         context.window.scene = orig_scene
         bpy.data.objects.remove(cam_obj)
