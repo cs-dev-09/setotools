@@ -24,6 +24,7 @@ tool, troubleshooting. Built from [`docs/`](docs) in this repo.
 | [Smooth Edge](void_tools/smooth_edge) | Normal-map strips that make a hard edge read as rounded | selected edges |
 | [Surface Painter](void_tools/surface_painter) | Dirt, grime and graffiti brushed onto a surface | a paint mesh over the whole object |
 | [Vertex Color Bake](void_tools/vertex_bake) | Procedural AO, dirt, grime and wear baked into `Color 1` — the one tool that writes to your mesh | the selected objects |
+| [Shadow Map Baker](void_tools/shadow_map) | Bakes the room's own light into a texture and puts it back as a `decal_dirt` decal — AO, an aimed sun, or your own lights; levels adjusted live without re-baking | the selected surfaces |
 | [Density Check](void_tools/density_checker) | A triangle-budget heatmap graded against vanilla GTA | the whole scene, read-only |
 | [Texture Budget](void_tools/texture_budget) | The same heatmap for texture resolution, plus what the scene costs in VRAM | the whole scene, read-only |
 | [Material Maker](void_tools/materials) | Height, normal and specular maps from one diffuse image | a diffuse texture |
@@ -276,6 +277,12 @@ Void Tools is built in the open, and it is better for the people who turn up.
   The cheapest wear in the add-on: no texture, no extra object, no draw call.
   It is also the only tool here that writes to the mesh you select, which is
   not a slip — baked vertex colour is mesh data and has nowhere else to live.
+
+  And the **[Shadow Map Baker](void_tools/shadow_map)** ([#4](../../pull/4)) —
+  the room's own light baked into a texture and put back as a `decal_dirt`
+  decal, which is how an MLO gets shadow at all indoors. Ambient occlusion, a
+  sun you aim, or the lights you placed yourself; the levels adjust live, so
+  the bake is paid for once and the dialling-in afterwards is free.
 
 - [@gecu3d](https://github.com/gecu3d) — **Material Maker**: height, normal and specular maps from a
   single diffuse image, written as a standalone add-on and folded in here.

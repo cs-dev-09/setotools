@@ -35,6 +35,11 @@ cached on the mesh so the sliders stay live. It is the one tool in the add-on
 that writes to the object you select, which is not a slip: baked vertex colour
 is mesh data and has nowhere else to live.
 
+**[Shadow Map Baker](tools/shadow-map.md)** is theirs as well — the room's own
+light baked into a texture and put back as a `decal_dirt` decal, which is how
+GTA's interiors get shadow at all. Three bake modes, and the levels adjust live
+so the expensive part happens once and the dialling-in is free.
+
 ### [@gecu3d](https://github.com/gecu3d)
 
 **[Material Maker](tools/material-maker.md)** — height, normal and specular

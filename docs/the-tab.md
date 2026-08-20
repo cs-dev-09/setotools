@@ -1,7 +1,7 @@
 # The tab
 
 Everything lives in one N-panel tab, **Void Tools**, split into five sections
-by what a tool works on. Twelve tools side by side would be a wall of
+by what a tool works on. Thirteen tools side by side would be a wall of
 collapsible headers with no hint of which one to reach for; the sections are
 the hint.
 
@@ -19,7 +19,8 @@ Void Tools
 │     ├── Decal Tool
 │     ├── Surface Painter
 │     ├── Edge Dirt
-│     └── Vertex Color Bake
+│     ├── Vertex Color Bake
+│     └── Shadow Map Baker
 │
 ├── Analysis                   reads the scene, changes nothing
 │     ├── Density Check

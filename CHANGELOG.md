@@ -4,6 +4,26 @@ All notable changes to Void Tools.
 
 ## 1.2.4 — bundled textures find themselves again *(unreleased)*
 
+### Added - Shadow Map Baker
+
+The light in a room, baked into a texture and put back on a copy of the surface
+as a `decal_dirt` decal. That is how GTA's own interiors have shadow at all: an
+MLO gets almost none in real time, so it is painted into the asset first.
+
+Three steps, in the order the panel puts them. **Prepare Shadow Mesh**
+duplicates the selection, pushes it off the wall along its normals so the decal
+cannot z-fight, and gives it its own unwrap - not the wall's, which is built for
+a tiling texture and usually overlaps itself, and would draw the shadow twice.
+**Bake & Process** runs it: ambient occlusion (needs no lights and reads as
+contact shadow anywhere), a sun you aim by angle and altitude, or the scene
+lights you placed yourself, with denoise, blur and firefly clamping so a low
+sample count still comes out clean. Then **Levels** - invert, input and output
+black and white, gamma - which are live and **do not re-bake**, so the
+expensive half happens once and dialling the contrast in afterwards is free.
+Nothing reaches disk until Save Changes to Disk.
+
+Contributed by @cs-dev-09.
+
 > 1.2.3 carried this fix and was withdrawn within the hour: it repaired the
 > paths from `register()`, and `bpy.data` is restricted while Blender loads
 > add-ons, so the add-on failed to register and the tab did not appear at all.

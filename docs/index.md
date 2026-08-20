@@ -27,6 +27,7 @@ panel, and it is one undo away.
 | [Surface Painter](tools/surface-painter.md) | Dirt, grime and graffiti brushed onto a surface | a paint mesh over the object |
 | [Edge Dirt](tools/edge-dirt.md) | The same strip as Ambient Occlusion, carrying a dirt texture | selected edges |
 | [Vertex Color Bake](tools/vertex-color-bake.md) | Procedural wear baked into `Color 1` — **writes to your mesh** | the selected objects |
+| [Shadow Map Baker](tools/shadow-map.md) | Baked interior light as a `decal_dirt` decal | the selected surfaces |
 | [Density Check](tools/density-check.md) | A triangle-budget heatmap graded against vanilla GTA | the scene, read-only |
 | [Texture Budget](tools/texture-budget.md) | The same heatmap for texture resolution, plus VRAM cost | the scene, read-only |
 | [Pre-Flight](tools/pre-flight.md) | The export test you would otherwise run in game | the scene, read-only |
