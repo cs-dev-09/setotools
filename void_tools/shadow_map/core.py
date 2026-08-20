@@ -335,7 +335,7 @@ class SETO_PG_shadow_map(bpy.types.PropertyGroup):
     post_blur: IntProperty(
         name="Soften (Blur) px",
         description="Gaussian blur radius applied after baking",
-        default=10, min=0, max=50,
+        default=1, min=0, max=50,
     )
     use_clamp: BoolProperty(
         name="Clamp Fireflies",
@@ -755,22 +755,6 @@ class SETO_OT_bake_shadow_map(bpy.types.Operator):
         patched_images = _patch_missing_file_images(mat)
 
         scene = context.scene
-        # Cycles is the only engine that bakes, and it is an add-on that can be
-        # switched off - on a Blender where it is, assigning the engine below
-        # raises a bare TypeError from deep in the bake and the panel shows it
-        # as gibberish. Say what is wrong and where to fix it instead.
-        engines = [
-            item.identifier
-            for item in bpy.types.RenderSettings.bl_rna.properties["engine"].enum_items
-        ]
-        if 'CYCLES' not in engines:
-            settings.last_error = (
-                "Cycles is disabled - baking needs it. "
-                "Edit > Preferences > Add-ons, search Cycles, tick it."
-            )
-            self.report({'ERROR'}, settings.last_error)
-            return {'CANCELLED'}
-
         orig_engine = scene.render.engine
 
         sun_obj = None
@@ -802,10 +786,21 @@ class SETO_OT_bake_shadow_map(bpy.types.Operator):
             sun_obj.rotation_euler = direction.to_track_quat('-Z', 'Y').to_euler()
 
         try:
+            # Blender baking requires Cycles. Attempt to switch to it, then
+            # verify — Blender silently ignores invalid engine names rather
+            # than raising an exception.
+            scene.render.engine = 'CYCLES'
+            if scene.render.engine != 'CYCLES':
+                settings.last_error = (
+                    "Cycles is disabled - baking needs it. "
+                    "Edit > Preferences > Get Extensions, search 'Cycles Render Engine', install/tick it."
+                )
+                self.report({'ERROR'}, settings.last_error)
+                return {'CANCELLED'}
+
             # CUSTOM mode uses the scene's existing render settings as-is;
             # AO and SUN modes override them with the addon's own values.
             if settings.bake_mode != 'CUSTOM':
-                scene.render.engine = 'CYCLES'
                 scene.cycles.samples = int(settings.samples)
                 if settings.use_clamp:
                     scene.cycles.sample_clamp_direct = settings.clamp_value
@@ -930,9 +925,7 @@ class SETO_OT_bake_shadow_map(bpy.types.Operator):
                 scene.world.light_settings.distance = orig_ao_distance
             if created_world:
                 bpy.data.worlds.remove(scene.world)
-            # Restore render engine (only changed for AO / SUN modes)
-            if settings.bake_mode != 'CUSTOM':
-                scene.render.engine = orig_engine
+            scene.render.engine = orig_engine
 
         return {'FINISHED'}
 
